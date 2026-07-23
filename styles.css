@@ -22,7 +22,7 @@
   --radius-sm: 12px;
   --shadow: 0 24px 60px rgba(2, 6, 23, 0.5);
   --shadow-soft: 0 12px 40px rgba(2, 6, 23, 0.35);
-  --header-h: 76px;
+  --header-h: 84px;
   --font-display: "Outfit", system-ui, sans-serif;
   --font-body: "Figtree", system-ui, sans-serif;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
@@ -201,18 +201,20 @@ p {
 }
 
 .brand img {
-  height: 54px;
+  height: 62px;
   width: auto;
-  border-radius: 10px;
-  background: #f8fafc;
+  border-radius: 12px;
+  background: #020617;
   box-shadow:
-    0 0 0 1px rgba(59, 130, 246, 0.2),
-    0 8px 24px rgba(2, 6, 23, 0.35);
+    0 0 0 1px rgba(59, 130, 246, 0.28),
+    0 8px 24px rgba(2, 6, 23, 0.45);
+  object-fit: cover;
+  object-position: center top;
   image-rendering: -webkit-optimize-contrast;
 }
 
 .brand-footer img {
-  height: 64px;
+  height: 72px;
 }
 
 .site-nav {
@@ -328,15 +330,15 @@ p {
 
 .hero-logo {
   display: block;
-  width: min(180px, 58%);
+  width: min(200px, 52%);
   height: auto;
   margin: 0 0 1rem;
-  border-radius: 16px;
-  background: #f8fafc;
+  border-radius: 18px;
+  background: #020617;
   box-shadow:
-    0 16px 40px rgba(2, 6, 23, 0.4),
-    0 0 0 1px rgba(59, 130, 246, 0.22),
-    0 0 32px rgba(59, 130, 246, 0.1);
+    0 18px 44px rgba(2, 6, 23, 0.5),
+    0 0 0 1px rgba(59, 130, 246, 0.28),
+    0 0 36px rgba(228, 155, 63, 0.12);
   image-rendering: -webkit-optimize-contrast;
 }
 
@@ -1203,10 +1205,14 @@ a.ba-frame:hover img {
   gap: 1.15rem;
 }
 
-.footer-top {
-  color: #fff;
-  font-weight: 600;
-  font-size: 0.9rem;
+.footer-meta p {
+  margin: 0;
+}
+
+.footer-locale {
+  margin-top: 0.25rem !important;
+  font-size: 0.85rem;
+  color: rgba(148, 163, 184, 0.85);
 }
 
 .footer-top:hover {
@@ -1347,11 +1353,11 @@ a.ba-frame:hover img {
   }
 
   .brand img {
-    height: 48px;
+    height: 54px;
   }
 
   .hero-logo {
-    width: min(150px, 62%);
+    width: min(160px, 48%);
   }
 
   .service-item {
