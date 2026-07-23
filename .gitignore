@@ -1,6 +1,10 @@
 # Unused / oversized media not referenced by the live site
 assets/hero-webdesign.mp4
 assets/3129671-hd_1920_1080_30fps.mp4
+assets/hero-laptop-web.png
+assets/hero-office-screens.png
+assets/hero-website-ui.png
+assets/hero-desk-mockups.png
 assets/slide-*.png
 assets/portfolio-4elements.bak.jpg
 assets/portfolio-4elements.jpg
@@ -12,6 +16,3 @@ assets/before-4elements.jpg
 Thumbs.db
 *.log
 .vercel
-
-assets/before-accufab-try.png
-assets/before-4elements.jpg
