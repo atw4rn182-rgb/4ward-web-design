@@ -1392,27 +1392,37 @@ a.ba-frame:hover img {
     padding: calc(var(--header-h) + 0.45rem) 0 0.85rem;
   }
 
+  .hero-copy {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
+
   .hero-logo {
     width: min(84px, 26%);
-    margin-bottom: 0.35rem;
+    margin: 0 auto 0.35rem;
     border-radius: 10px;
+    object-position: center;
   }
 
   .hero h1 {
     font-size: clamp(1.35rem, 5.8vw, 1.65rem);
     max-width: 15ch;
-    margin-bottom: 0.28rem;
+    margin: 0 auto 0.28rem;
+    text-align: center;
   }
 
   .hero-lead {
     font-size: 0.88rem;
     max-width: 34ch;
-    margin-bottom: 0.55rem;
+    margin: 0 auto 0.55rem;
     line-height: 1.35;
+    text-align: center;
   }
 
   .hero-actions {
     gap: 0.4rem;
+    justify-content: center;
   }
 
   .hero-actions .btn {
@@ -1422,18 +1432,6 @@ a.ba-frame:hover img {
 
   .hero-actions .btn-ghost {
     min-height: 48px;
-  }
-
-  .hero-logo {
-    margin-left: auto;
-    margin-right: auto;
-    object-position: center;
-  }
-
-  .hero-lead {
-    margin-left: auto;
-    margin-right: auto;
-    text-align: center;
   }
 
   .hero-atmosphere {
