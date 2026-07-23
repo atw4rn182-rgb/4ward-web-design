@@ -200,25 +200,24 @@ p {
   display: inline-flex;
   align-items: center;
   flex-shrink: 0;
+  margin-right: 0.35rem;
 }
 
 .brand img {
-  height: 58px;
+  height: 56px;
   width: auto;
-  max-width: 140px;
-  border-radius: 10px;
-  background: #020617;
-  box-shadow:
-    0 0 0 1px rgba(59, 130, 246, 0.28),
-    0 8px 24px rgba(2, 6, 23, 0.45);
+  max-width: 60px;
+  border-radius: 8px;
+  background: transparent;
+  box-shadow: none;
+  filter: none;
   object-fit: contain;
   object-position: center;
-  image-rendering: -webkit-optimize-contrast;
 }
 
 .brand-footer img {
-  height: 66px;
-  max-width: 150px;
+  height: 56px;
+  max-width: 60px;
 }
 
 .site-nav {
@@ -352,16 +351,14 @@ p {
 
 .hero-logo {
   display: block;
-  width: min(168px, 42%);
+  width: min(148px, 38%);
   height: auto;
   margin: 0 0 0.75rem;
-  border-radius: 14px;
-  background: #0c0a09;
-  box-shadow:
-    0 12px 32px rgba(28, 25, 23, 0.5),
-    0 0 0 1px rgba(251, 191, 36, 0.22);
+  border-radius: 12px;
+  background: transparent;
+  box-shadow: none;
+  filter: none;
   object-fit: contain;
-  image-rendering: -webkit-optimize-contrast;
 }
 
 .hero h1 {
@@ -1331,8 +1328,8 @@ a.ba-frame:hover img {
   }
 
   .brand img {
-    height: 44px;
-    max-width: 104px;
+    height: 42px;
+    max-width: 46px;
   }
 
   .hero {
@@ -1342,7 +1339,7 @@ a.ba-frame:hover img {
   }
 
   .hero-logo {
-    width: min(96px, 30%);
+    width: min(92px, 28%);
     margin-bottom: 0.4rem;
     border-radius: 10px;
   }
