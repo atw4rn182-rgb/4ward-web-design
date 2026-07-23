@@ -1396,6 +1396,18 @@ a.ba-frame:hover img {
     min-height: 48px;
   }
 
+  .hero-logo {
+    margin-left: auto;
+    margin-right: auto;
+    object-position: center;
+  }
+
+  .hero-lead {
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
+
   .hero-atmosphere {
     mix-blend-mode: screen;
     opacity: 0.55;
