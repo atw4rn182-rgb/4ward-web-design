@@ -201,20 +201,22 @@ p {
 }
 
 .brand img {
-  height: 62px;
+  height: 58px;
   width: auto;
-  border-radius: 12px;
+  max-width: 140px;
+  border-radius: 10px;
   background: #020617;
   box-shadow:
     0 0 0 1px rgba(59, 130, 246, 0.28),
     0 8px 24px rgba(2, 6, 23, 0.45);
-  object-fit: cover;
-  object-position: center top;
+  object-fit: contain;
+  object-position: center;
   image-rendering: -webkit-optimize-contrast;
 }
 
 .brand-footer img {
-  height: 72px;
+  height: 66px;
+  max-width: 150px;
 }
 
 .site-nav {
@@ -330,15 +332,16 @@ p {
 
 .hero-logo {
   display: block;
-  width: min(200px, 52%);
+  width: min(220px, 56%);
   height: auto;
   margin: 0 0 1rem;
-  border-radius: 18px;
+  border-radius: 16px;
   background: #020617;
   box-shadow:
     0 18px 44px rgba(2, 6, 23, 0.5),
     0 0 0 1px rgba(59, 130, 246, 0.28),
     0 0 36px rgba(228, 155, 63, 0.12);
+  object-fit: contain;
   image-rendering: -webkit-optimize-contrast;
 }
 
