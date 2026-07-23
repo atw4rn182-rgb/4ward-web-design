@@ -1386,8 +1386,8 @@ a.ba-frame:hover img {
 
   .hero-overlay {
     background:
-      linear-gradient(180deg, rgba(255, 249, 240, 0.72) 0%, rgba(255, 246, 232, 0.5) 38%, rgba(255, 246, 232, 0.28) 100%),
-      linear-gradient(90deg, rgba(255, 249, 240, 0.55) 0%, transparent 70%);
+      linear-gradient(180deg, rgba(255, 250, 242, 0.5) 0%, rgba(255, 248, 236, 0.28) 45%, rgba(255, 248, 236, 0.16) 100%),
+      linear-gradient(90deg, rgba(255, 250, 242, 0.35) 0%, transparent 72%);
   }
 
   .service-item {
