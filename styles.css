@@ -199,8 +199,52 @@ p {
 .brand {
   display: inline-flex;
   align-items: center;
-  flex-shrink: 0;
-  margin-right: 0.35rem;
+  flex-shrink: 1;
+  min-width: 0;
+  margin-right: 0.5rem;
+  text-decoration: none;
+}
+
+.brand-wordmark {
+  display: inline-flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(0.95rem, 1.5vw, 1.2rem);
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.brand-mark {
+  background: linear-gradient(135deg, #1d4ed8 0%, #3b82f6 28%, #93c5fd 48%, #eab308 72%, #f5d76e 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 800;
+}
+
+.brand-text {
+  background: linear-gradient(180deg, #f8fafc 0%, #cbd5e1 55%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 600;
+}
+
+.brand-llc {
+  background: linear-gradient(180deg, #e2e8f0 0%, #94a3b8 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.brand:hover .brand-mark {
+  filter: brightness(1.08);
 }
 
 .brand img {
@@ -1351,6 +1395,13 @@ a.ba-frame:hover img {
 
   .brand {
     min-width: 0;
+    max-width: calc(100% - 3.5rem);
+  }
+
+  .brand-wordmark {
+    font-size: 0.92rem;
+    white-space: normal;
+    line-height: 1.2;
   }
 
   .brand img {
