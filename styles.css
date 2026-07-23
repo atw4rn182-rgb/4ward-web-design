@@ -275,11 +275,12 @@ p {
   min-height: 0;
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   padding: calc(var(--header-h) + 1.15rem) 0 1.6rem;
   color: #1c1917;
   overflow: hidden;
   isolation: isolate;
-  background: #d6c4a8;
+  background: #e4d2b3;
 }
 
 .hero-stage {
@@ -288,7 +289,7 @@ p {
   z-index: 0;
   overflow: hidden;
   background:
-    linear-gradient(180deg, #7eb6e0 0%, #e8c48a 52%, #c4a484 100%);
+    linear-gradient(180deg, #8ec5ea 0%, #f0d29a 52%, #d7b894 100%);
 }
 
 .hero-slideshow {
@@ -300,7 +301,7 @@ p {
 .hero-slide {
   position: absolute;
   inset: 0;
-  background-color: #cbb89a;
+  background-color: #dcc5a4;
   background-position: center center;
   background-size: cover;
   background-repeat: no-repeat;
@@ -310,7 +311,7 @@ p {
     opacity 1.4s ease,
     transform 7s ease;
   will-change: opacity, transform;
-  filter: saturate(1.18) contrast(1.05) brightness(1.14);
+  filter: saturate(1.22) contrast(1.04) brightness(1.22);
 }
 
 .hero-slide.is-active {
@@ -325,12 +326,12 @@ p {
   z-index: 2;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 75% 60% at 82% 22%, rgba(255, 236, 179, 0.45), transparent 62%),
-    radial-gradient(ellipse 55% 50% at 12% 70%, rgba(251, 191, 36, 0.2), transparent 58%),
-    radial-gradient(ellipse 45% 40% at 88% 78%, rgba(125, 168, 140, 0.18), transparent 55%),
-    linear-gradient(180deg, rgba(125, 182, 224, 0.28) 0%, transparent 38%, rgba(232, 196, 138, 0.22) 100%);
+    radial-gradient(ellipse 75% 60% at 84% 18%, rgba(255, 244, 196, 0.5), transparent 62%),
+    radial-gradient(ellipse 55% 50% at 10% 72%, rgba(251, 191, 36, 0.18), transparent 58%),
+    radial-gradient(ellipse 45% 40% at 90% 80%, rgba(140, 180, 150, 0.16), transparent 55%),
+    linear-gradient(180deg, rgba(142, 197, 234, 0.22) 0%, transparent 40%, rgba(240, 210, 154, 0.18) 100%);
   mix-blend-mode: soft-light;
-  opacity: 0.95;
+  opacity: 1;
 }
 
 .hero-overlay {
@@ -339,19 +340,28 @@ p {
   z-index: 3;
   pointer-events: none;
   background:
-    linear-gradient(90deg, rgba(255, 249, 240, 0.78) 0%, rgba(255, 246, 232, 0.42) 28%, rgba(255, 246, 232, 0.12) 48%, transparent 64%),
-    linear-gradient(180deg, rgba(126, 182, 224, 0.14) 0%, transparent 40%, rgba(232, 196, 138, 0.14) 100%);
+    linear-gradient(90deg, rgba(255, 250, 242, 0.55) 0%, rgba(255, 248, 236, 0.22) 22%, transparent 46%),
+    linear-gradient(180deg, rgba(142, 197, 234, 0.1) 0%, transparent 42%, rgba(232, 196, 138, 0.1) 100%);
 }
 
+.hero-content.container,
 .hero-content {
   position: relative;
   z-index: 4;
   display: block;
-  max-width: 640px;
+  width: min(1140px, calc(100% - 2.75rem));
+  max-width: none;
+  margin-inline: auto;
+  text-align: left;
 }
 
 .hero-copy {
-  max-width: 34rem;
+  display: block;
+  width: min(100%, 36rem);
+  max-width: 36rem;
+  margin: 0;
+  margin-inline: 0 auto 0 0;
+  text-align: left;
 }
 
 .hero-logo {
@@ -359,6 +369,7 @@ p {
   width: min(132px, 36%);
   height: auto;
   margin: 0 0 0.7rem;
+  margin-inline: 0;
   border-radius: 12px;
   background: transparent;
   box-shadow: none;
@@ -370,33 +381,36 @@ p {
   font-size: clamp(1.75rem, 3.4vw, 2.55rem);
   font-weight: 800;
   max-width: 16ch;
-  margin-bottom: 0.5rem;
+  margin: 0 0 0.5rem;
   color: #1c1917;
+  text-align: left;
   text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.85),
-    0 2px 18px rgba(255, 248, 235, 0.95);
+    0 1px 0 rgba(255, 255, 255, 0.9),
+    0 2px 16px rgba(255, 250, 242, 0.95);
   line-height: 1.08;
 }
 
 .hero-lead {
   font-size: clamp(0.95rem, 1.2vw, 1.05rem);
   color: #292524;
-  max-width: 38ch;
-  margin-bottom: 1rem;
+  max-width: 40ch;
+  margin: 0 0 1rem;
   line-height: 1.45;
+  text-align: left;
   text-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.75),
-    0 2px 14px rgba(255, 248, 235, 0.9);
+    0 1px 0 rgba(255, 255, 255, 0.85),
+    0 2px 12px rgba(255, 250, 242, 0.9);
 }
 
 .hero-actions {
   display: flex;
   flex-wrap: wrap;
+  justify-content: flex-start;
   gap: 0.6rem;
 }
 
 .hero .btn-ghost {
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.65);
   border-color: rgba(68, 64, 60, 0.28);
   color: #1c1917;
 }
