@@ -39,7 +39,14 @@
   window.addEventListener("scroll", onScroll, { passive: true });
 
   if (toggle && nav) {
-    toggle.addEventListener("click", () => {
+    const closeNav = () => {
+      toggle.setAttribute("aria-expanded", "false");
+      toggle.setAttribute("aria-label", "Open menu");
+      nav.classList.remove("is-open");
+    };
+
+    toggle.addEventListener("click", (event) => {
+      event.stopPropagation();
       const open = toggle.getAttribute("aria-expanded") === "true";
       toggle.setAttribute("aria-expanded", String(!open));
       toggle.setAttribute("aria-label", open ? "Open menu" : "Close menu");
@@ -47,11 +54,17 @@
     });
 
     nav.querySelectorAll("a").forEach((link) => {
-      link.addEventListener("click", () => {
-        toggle.setAttribute("aria-expanded", "false");
-        toggle.setAttribute("aria-label", "Open menu");
-        nav.classList.remove("is-open");
-      });
+      link.addEventListener("click", closeNav);
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!nav.classList.contains("is-open")) return;
+      if (nav.contains(event.target) || toggle.contains(event.target)) return;
+      closeNav();
+    });
+
+    window.addEventListener("resize", () => {
+      if (window.innerWidth > 760) closeNav();
     });
   }
 
