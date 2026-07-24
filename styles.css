@@ -208,7 +208,7 @@ p {
 
 .brand-wordmark {
   display: block;
-  width: min(268px, 58vw);
+  width: min(286px, 62vw);
   height: auto;
   max-height: 28px;
   overflow: visible;
@@ -216,18 +216,6 @@ p {
 
 .brand:hover .brand-wordmark {
   opacity: 0.92;
-}
-
-.visually-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
 }
 
 .brand img {
@@ -1382,7 +1370,7 @@ a.ba-frame:hover img {
   }
 
   .brand-wordmark {
-    width: min(220px, 70vw);
+    width: min(240px, 72vw);
     max-height: 24px;
   }
 
