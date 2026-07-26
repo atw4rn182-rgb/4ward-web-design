@@ -5,9 +5,6 @@
   const year = document.getElementById("year");
   const form = document.getElementById("quote-form");
   const status = document.getElementById("form-status");
-  const monthly = document.getElementById("monthly-plans");
-  const buyout = document.getElementById("buyout-plans");
-  const planButtons = document.querySelectorAll("[data-plan-view]");
 
   if (year) {
     year.textContent = String(new Date().getFullYear());
@@ -68,29 +65,6 @@
     });
   }
 
-  planButtons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const view = button.getAttribute("data-plan-view");
-      planButtons.forEach((btn) => {
-        const active = btn === button;
-        btn.classList.toggle("is-active", active);
-        btn.setAttribute("aria-selected", String(active));
-      });
-
-      if (view === "monthly") {
-        monthly?.classList.remove("is-hidden");
-        monthly?.removeAttribute("hidden");
-        buyout?.classList.add("is-hidden");
-        buyout?.setAttribute("hidden", "");
-      } else {
-        buyout?.classList.remove("is-hidden");
-        buyout?.removeAttribute("hidden");
-        monthly?.classList.add("is-hidden");
-        monthly?.setAttribute("hidden", "");
-      }
-    });
-  });
-
   const reveals = document.querySelectorAll(".reveal");
 
   if (prefersReduced) {
@@ -129,10 +103,10 @@
       const name = data.get("name");
 
       const planLabels = {
-        basic: "Basic Monthly",
-        standard: "Standard Professional",
-        premium: "Premium",
-        buyout: "Buy-Out Option",
+        tier1: "Tier 1 — Single-Page Online Brochure",
+        tier2: "Tier 2 — Two-Page Customized Site",
+        tier3: "Tier 3 — Multi-Page Multi-Department Website",
+        buyout: "Tier 4 — Buy-Out Option",
         unsure: "Not sure yet",
       };
       const planLabel = planLabels[plan] || "a plan";
