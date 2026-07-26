@@ -102,9 +102,11 @@
   const resumeBtn = document.getElementById("resume-onboarding");
   const year = document.getElementById("year");
   const payBtn = document.getElementById("pay-btn");
+  const completeStatus = document.getElementById("complete-status");
 
   let currentStep = 1;
   let logoData = { name: "", type: "", dataUrl: "" };
+  const notifiedSteps = new Set();
 
   if (year) year.textContent = String(new Date().getFullYear());
   if (signDate) {
@@ -125,6 +127,78 @@
     "buyout-tier2": "buyout-tier2",
     "buyout-tier3": "buyout-tier3",
   };
+
+  function collectFields() {
+    if (!form) return {};
+    const data = new FormData(form);
+    return {
+      companyName: data.get("companyName") || "",
+      contactName: data.get("contactName") || "",
+      email: data.get("email") || "",
+      phone: data.get("phone") || "",
+      address: data.get("address") || "",
+      existingLinks: data.get("existingLinks") || "",
+      signerName: data.get("signerName") || "",
+      agreementVersion: AGREEMENT_VERSION,
+      signedAt: new Date().toISOString(),
+      tier: data.get("tier") || tierSelect?.value || "",
+      logoName: logoData.name,
+      logoType: logoData.type,
+      logoDataUrl: logoData.dataUrl,
+    };
+  }
+
+  function notifyBusiness(event, fields) {
+    const payload = Object.assign({ event }, fields || collectFields());
+    return fetch("/api/onboarding-notify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    })
+      .then((res) => res.json().catch(() => ({})))
+      .catch((error) => {
+        console.error("Onboarding notify failed:", error);
+        return { error: true };
+      });
+  }
+
+  async function finalizeCompletionEmails() {
+    const sessionId = params.get("session_id");
+    if (!sessionId || !completeStatus) return;
+
+    completeStatus.textContent = "Sending your confirmation email…";
+    const saved = loadState();
+    try {
+      const response = await fetch("/api/onboarding-complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          sessionId,
+          email: saved.email || "",
+          companyName: saved.companyName || "",
+          contactName: saved.contactName || "",
+          phone: saved.phone || "",
+          address: saved.address || "",
+          existingLinks: saved.existingLinks || "",
+          signerName: saved.signerName || "",
+          tier: saved.tier || "",
+          logoName: saved.logo && saved.logo.name,
+          logoDataUrl: saved.logo && saved.logo.dataUrl,
+        }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(result.error || "Confirmation email could not be sent.");
+      }
+      completeStatus.textContent =
+        "Confirmation sent to your inbox. Our team was also notified at 4wardwebdesigns@gmail.com.";
+    } catch (error) {
+      completeStatus.classList.add("is-error");
+      completeStatus.textContent =
+        error.message ||
+        "Payment succeeded, but the confirmation email could not be sent automatically. Contact 4wardwebdesigns@gmail.com if you need help.";
+    }
+  }
 
   function loadState() {
     try {
@@ -295,8 +369,21 @@
   }
 
   form?.querySelectorAll("[data-next]").forEach((btn) => {
-    btn.addEventListener("click", () => {
+    btn.addEventListener("click", async () => {
       if (!validateStep(currentStep)) return;
+
+      const leaving = currentStep;
+      const eventByStep = {
+        1: "agreement_signed",
+        2: "tier_selected",
+        3: "company_submitted",
+      };
+      const eventName = eventByStep[leaving];
+      if (eventName && !notifiedSteps.has(leaving)) {
+        notifiedSteps.add(leaving);
+        await notifyBusiness(eventName);
+      }
+
       setStep(Math.min(4, currentStep + 1));
     });
   });
@@ -359,7 +446,9 @@
       form.hidden = true;
       progress.hidden = true;
       successPanel.hidden = false;
-      sessionStorage.removeItem(STORAGE_KEY);
+      finalizeCompletionEmails().finally(() => {
+        sessionStorage.removeItem(STORAGE_KEY);
+      });
       return true;
     }
     if (params.get("canceled") === "1") {

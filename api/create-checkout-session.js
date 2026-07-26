@@ -1,3 +1,9 @@
+const {
+  BUSINESS_INBOX,
+  submitWeb3Forms,
+  formatOnboardingMessage,
+} = require("./lib/web3forms");
+
 const TIERS = {
   tier1: {
     id: "tier1",
@@ -154,6 +160,46 @@ function metadataParams(prefix, metadata) {
   return out;
 }
 
+async function notifyBusinessCheckoutStarted(payload) {
+  const message = formatOnboardingMessage({
+    event: "checkout_started",
+    fields: {
+      companyName: payload.companyName,
+      contactName: payload.contactName,
+      email: payload.email,
+      phone: payload.phone,
+      address: payload.address,
+      existingLinks: payload.existingLinks,
+      signerName: payload.signerName,
+      agreementVersion: payload.agreementVersion,
+      signedAt: new Date().toISOString(),
+      tier: payload.tier,
+      logoName: payload.logoName,
+      logoType: payload.logoType,
+      stripeSessionId: payload.stripeSessionId,
+      stripeCustomerId: payload.stripeCustomerId,
+      paymentStatus: "checkout_created",
+    },
+    tierLabel: payload.tierName,
+    includes: [],
+  });
+
+  await submitWeb3Forms({
+    subject: `Onboarding: Stripe checkout started — ${payload.companyName}`,
+    message,
+    replyTo: payload.email,
+    email: payload.email,
+    logoDataUrl: payload.logoDataUrl,
+    logoName: payload.logoName,
+    logoType: payload.logoType,
+    extraFields: {
+      event: "checkout_started",
+      company: payload.companyName,
+      tier: payload.tier,
+    },
+  });
+}
+
 async function notifyWebhook(payload) {
   const url = process.env.ONBOARDING_WEBHOOK_URL;
   if (!url) return;
@@ -271,9 +317,10 @@ module.exports = async function handler(req, res) {
 
     const session = await stripeRequest(secret, "/checkout/sessions", sessionParams);
 
-    await notifyWebhook({
+    const notifyPayload = {
       event: "onboarding.checkout_created",
       tier: tier.id,
+      tierName: tier.name,
       companyName,
       contactName,
       email,
@@ -287,8 +334,17 @@ module.exports = async function handler(req, res) {
       logoDataUrl: logoDataUrl || null,
       stripeCustomerId: customer.id,
       stripeSessionId: session.id,
+      businessInbox: BUSINESS_INBOX,
       createdAt: new Date().toISOString(),
-    });
+    };
+
+    try {
+      await notifyBusinessCheckoutStarted(notifyPayload);
+    } catch (emailError) {
+      console.error("Business checkout email failed:", emailError.message);
+    }
+
+    await notifyWebhook(notifyPayload);
 
     return json(res, 200, { url: session.url, sessionId: session.id });
   } catch (error) {
