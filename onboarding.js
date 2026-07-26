@@ -58,7 +58,7 @@
         "Everything in Tier 1 for two years paid upfront",
         "Full hosting, development/creation, local SEO, and maintenance",
         "No monthly fee after purchase",
-        "Updates after buy-out: $150 each",
+        "Updates after buy-out: $99 each",
       ],
     },
     "buyout-tier2": {
@@ -69,7 +69,7 @@
         "Everything in Tier 2 for two years paid upfront",
         "Full hosting, development/creation, local SEO, and maintenance",
         "No monthly fee after purchase",
-        "Updates after buy-out: $150 each",
+        "Updates after buy-out: $99 each",
       ],
     },
     "buyout-tier3": {
@@ -80,7 +80,7 @@
         "Everything in Tier 3 for two years paid upfront",
         "Full hosting, development/creation, local SEO, and maintenance",
         "No monthly fee after purchase",
-        "Updates after buy-out: $150 each",
+        "Updates after buy-out: $99 each",
       ],
     },
   };

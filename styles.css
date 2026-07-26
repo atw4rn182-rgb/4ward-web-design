@@ -549,10 +549,12 @@ p {
 .nm-motif {
   position: absolute;
   display: block;
-  width: clamp(72px, 11vw, 128px);
-  height: clamp(72px, 11vw, 128px);
-  opacity: 0.09;
-  background-color: #0f172a;
+  width: clamp(64px, 9vw, 112px);
+  height: clamp(64px, 9vw, 112px);
+  opacity: 0.1;
+  background-color: #64748b;
+  -webkit-mask-image: url("assets/nm-icons/zia.svg");
+  mask-image: url("assets/nm-icons/zia.svg");
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
   -webkit-mask-position: center;
@@ -562,40 +564,9 @@ p {
 }
 
 .nm-motif--sm {
-  width: clamp(56px, 8vw, 96px);
-  height: clamp(56px, 8vw, 96px);
-  opacity: 0.075;
-}
-
-.nm-motif--zia {
-  -webkit-mask-image: url("assets/nm-icons/zia.svg");
-  mask-image: url("assets/nm-icons/zia.svg");
-}
-
-.nm-motif--roadrunner {
-  width: clamp(88px, 13vw, 150px);
-  height: clamp(52px, 8vw, 90px);
-  -webkit-mask-image: url("assets/nm-icons/roadrunner.svg");
-  mask-image: url("assets/nm-icons/roadrunner.svg");
-}
-
-.nm-motif--ram {
-  -webkit-mask-image: url("assets/nm-icons/ram.svg");
-  mask-image: url("assets/nm-icons/ram.svg");
-}
-
-.nm-motif--mule-deer {
-  width: clamp(80px, 12vw, 140px);
-  height: clamp(70px, 10vw, 124px);
-  -webkit-mask-image: url("assets/nm-icons/mule-deer.svg");
-  mask-image: url("assets/nm-icons/mule-deer.svg");
-}
-
-.nm-motif--bull {
-  width: clamp(80px, 12vw, 140px);
-  height: clamp(62px, 9vw, 110px);
-  -webkit-mask-image: url("assets/nm-icons/bull.svg");
-  mask-image: url("assets/nm-icons/bull.svg");
+  width: clamp(48px, 7vw, 80px);
+  height: clamp(48px, 7vw, 80px);
+  opacity: 0.08;
 }
 
 .nm-motif--tl { top: 8%; left: 3%; }
@@ -603,22 +574,22 @@ p {
 .nm-motif--bl { bottom: 10%; left: 5%; }
 .nm-motif--br { bottom: 8%; right: 4%; }
 .nm-motif--mr { top: 42%; right: 6%; }
+.nm-motif--ml { top: 38%; left: 4%; }
 
-.nm-motif--tr.nm-motif--zia { transform: rotate(12deg); }
-.nm-motif--br.nm-motif--zia { transform: rotate(-8deg); }
-.nm-motif--bl.nm-motif--roadrunner { transform: scaleX(-1); }
-.nm-motif--tl.nm-motif--ram { transform: rotate(-6deg); }
-.nm-motif--br.nm-motif--bull { transform: scaleX(-1) rotate(3deg); }
-.nm-motif--tl.nm-motif--bull { transform: rotate(-4deg); }
-.nm-motif--mr.nm-motif--bull { transform: scaleX(-1) rotate(6deg); opacity: 0.07; }
+.nm-motif--tr { transform: rotate(8deg); }
+.nm-motif--bl { transform: rotate(-6deg); }
+.nm-motif--br { transform: rotate(-10deg); }
+.nm-motif--tl { transform: rotate(4deg); }
+.nm-motif--mr { transform: rotate(-4deg); opacity: 0.085; }
+.nm-motif--ml { transform: rotate(12deg); opacity: 0.085; }
 
 @media (max-width: 760px) {
   .nm-motif {
-    opacity: 0.07;
+    opacity: 0.08;
   }
 
   .nm-motif--sm {
-    opacity: 0.06;
+    opacity: 0.065;
   }
 }
 
