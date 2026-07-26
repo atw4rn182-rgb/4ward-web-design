@@ -1,7 +1,7 @@
 (function () {
-  const AGREEMENT_VERSION = "service-agreement-v1";
   const STORAGE_KEY = "4ward-onboarding-v1";
   const MAX_LOGO_BYTES = 1.2 * 1024 * 1024;
+  const STATIC_FORMS_URL = "https://api.staticforms.dev/submit";
 
   const TIERS = {
     tier1: {
@@ -102,11 +102,9 @@
   const resumeBtn = document.getElementById("resume-onboarding");
   const year = document.getElementById("year");
   const payBtn = document.getElementById("pay-btn");
-  const completeStatus = document.getElementById("complete-status");
 
   let currentStep = 1;
-  let logoData = { name: "", type: "", dataUrl: "" };
-  const notifiedSteps = new Set();
+  let logoMeta = { name: "", type: "" };
 
   if (year) year.textContent = String(new Date().getFullYear());
   if (signDate) {
@@ -128,78 +126,6 @@
     "buyout-tier3": "buyout-tier3",
   };
 
-  function collectFields() {
-    if (!form) return {};
-    const data = new FormData(form);
-    return {
-      companyName: data.get("companyName") || "",
-      contactName: data.get("contactName") || "",
-      email: data.get("email") || "",
-      phone: data.get("phone") || "",
-      address: data.get("address") || "",
-      existingLinks: data.get("existingLinks") || "",
-      signerName: data.get("signerName") || "",
-      agreementVersion: AGREEMENT_VERSION,
-      signedAt: new Date().toISOString(),
-      tier: data.get("tier") || tierSelect?.value || "",
-      logoName: logoData.name,
-      logoType: logoData.type,
-      logoDataUrl: logoData.dataUrl,
-    };
-  }
-
-  function notifyBusiness(event, fields) {
-    const payload = Object.assign({ event }, fields || collectFields());
-    return fetch("/api/onboarding-notify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    })
-      .then((res) => res.json().catch(() => ({})))
-      .catch((error) => {
-        console.error("Onboarding notify failed:", error);
-        return { error: true };
-      });
-  }
-
-  async function finalizeCompletionEmails() {
-    const sessionId = params.get("session_id");
-    if (!sessionId || !completeStatus) return;
-
-    completeStatus.textContent = "Sending your confirmation email…";
-    const saved = loadState();
-    try {
-      const response = await fetch("/api/onboarding-complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          sessionId,
-          email: saved.email || "",
-          companyName: saved.companyName || "",
-          contactName: saved.contactName || "",
-          phone: saved.phone || "",
-          address: saved.address || "",
-          existingLinks: saved.existingLinks || "",
-          signerName: saved.signerName || "",
-          tier: saved.tier || "",
-          logoName: saved.logo && saved.logo.name,
-          logoDataUrl: saved.logo && saved.logo.dataUrl,
-        }),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        throw new Error(result.error || "Confirmation email could not be sent.");
-      }
-      completeStatus.textContent =
-        "Confirmation sent to your inbox. Our team was also notified at 4wardwebdesigns@gmail.com.";
-    } catch (error) {
-      completeStatus.classList.add("is-error");
-      completeStatus.textContent =
-        error.message ||
-        "Payment succeeded, but the confirmation email could not be sent automatically. Contact 4wardwebdesigns@gmail.com if you need help.";
-    }
-  }
-
   function loadState() {
     try {
       return JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "{}");
@@ -213,40 +139,31 @@
     const data = new FormData(form);
     const state = {
       step: currentStep,
-      signerName: data.get("signerName") || "",
-      agree: document.getElementById("agree")?.checked || false,
-      tier: data.get("tier") || "tier2",
-      companyName: data.get("companyName") || "",
-      contactName: data.get("contactName") || "",
+      name: data.get("name") || "",
+      signedAgreement: document.getElementById("signed-agreement")?.checked || false,
+      chosenTier: data.get("chosenTier") || "tier2",
       email: data.get("email") || "",
-      phone: data.get("phone") || "",
-      address: data.get("address") || "",
-      existingLinks: data.get("existingLinks") || "",
-      logo: logoData,
+      companyInformation: data.get("companyInformation") || "",
+      existingOnlinePresence: data.get("existingOnlinePresence") || "",
+      logoMeta,
     };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
 
   function applyState(state) {
     if (!form || !state) return;
-    if (state.signerName) form.signerName.value = state.signerName;
-    if (state.agree) document.getElementById("agree").checked = true;
-    if (state.tier && TIERS[state.tier]) tierSelect.value = state.tier;
-    if (state.companyName) form.companyName.value = state.companyName;
-    if (state.contactName) form.contactName.value = state.contactName;
+    if (state.name) form.name.value = state.name;
+    if (state.signedAgreement) document.getElementById("signed-agreement").checked = true;
+    if (state.chosenTier && TIERS[state.chosenTier]) tierSelect.value = state.chosenTier;
     if (state.email) form.email.value = state.email;
-    if (state.phone) form.phone.value = state.phone;
-    if (state.address) form.address.value = state.address;
-    if (state.existingLinks) form.existingLinks.value = state.existingLinks;
-    if (state.logo && state.logo.dataUrl) {
-      logoData = state.logo;
-      logoPreviewImg.src = state.logo.dataUrl;
-      logoPreview.hidden = false;
-    }
+    if (state.companyInformation) form.companyInformation.value = state.companyInformation;
+    if (state.existingOnlinePresence) form.existingOnlinePresence.value = state.existingOnlinePresence;
+    if (state.logoMeta) logoMeta = state.logoMeta;
   }
 
   function renderTier() {
-    const tier = TIERS[tierSelect.value] || TIERS.tier2;
+    const tierKey = tierSelect.value;
+    const tier = TIERS[tierKey] || TIERS.tier2;
     tierBreakdown.innerHTML =
       "<header><p class=\"plan-tier\">Selected package</p><h3>" +
       tier.label +
@@ -269,20 +186,17 @@
       "<div><dt>Billing</dt><dd>" +
       tier.billing +
       "</dd></div>" +
-      "<div><dt>Company</dt><dd>" +
-      (form.companyName.value || "—") +
-      "</dd></div>" +
-      "<div><dt>Contact</dt><dd>" +
-      (form.contactName.value || "—") +
+      "<div><dt>Name</dt><dd>" +
+      (form.name.value || "—") +
       "</dd></div>" +
       "<div><dt>Email</dt><dd>" +
       (form.email.value || "—") +
       "</dd></div>" +
-      "<div><dt>Agreement</dt><dd>Signed by " +
-      (form.signerName.value || "—") +
+      "<div><dt>Agreement</dt><dd>" +
+      (document.getElementById("signed-agreement")?.checked ? "Signed" : "Not signed") +
       "</dd></div>" +
       "<div><dt>Logo</dt><dd>" +
-      (logoData.name || "Not uploaded") +
+      (logoMeta.name || (logoInput && logoInput.files && logoInput.files[0] && logoInput.files[0].name) || "Not uploaded") +
       "</dd></div>" +
       "</dl>";
   }
@@ -309,7 +223,7 @@
     const section = steps.find((s) => Number(s.dataset.step) === step);
     if (!section) return false;
     const fields = Array.from(section.querySelectorAll("input, select, textarea")).filter(
-      (el) => el.type !== "file"
+      (el) => el.type !== "file" && el.name !== "honeypot"
     );
     for (const field of fields) {
       if (!field.checkValidity()) {
@@ -320,47 +234,104 @@
     return true;
   }
 
-  function readLogo(file) {
-    return new Promise((resolve, reject) => {
-      if (!file) return resolve(null);
-      if (file.size > MAX_LOGO_BYTES) {
-        reject(new Error("Logo must be 1.2MB or smaller."));
-        return;
-      }
-      const reader = new FileReader();
-      reader.onload = () =>
-        resolve({
-          name: file.name,
-          type: file.type,
-          dataUrl: String(reader.result || ""),
-        });
-      reader.onerror = () => reject(new Error("Could not read logo file."));
-      reader.readAsDataURL(file);
+  function companyLabelFromInfo(text) {
+    const firstLine = String(text || "")
+      .split(/\n|,/)
+      .map((part) => part.trim())
+      .find(Boolean);
+    return firstLine || "New client";
+  }
+
+  async function submitStaticForms() {
+    const formData = new FormData(form);
+    // Ensure chosen tier text is readable in the email
+    const tier = TIERS[tierSelect.value];
+    if (tier) {
+      formData.set("chosenTier", tierSelect.value + " — " + tier.label + " (" + tier.priceLabel + ")");
+    }
+
+    const response = await fetch(STATIC_FORMS_URL, {
+      method: "POST",
+      body: formData,
+      headers: { Accept: "application/json" },
     });
+
+    let result = {};
+    try {
+      result = await response.json();
+    } catch {
+      result = {};
+    }
+
+    if (!response.ok) {
+      throw new Error(result.message || result.error || "Static Forms submission failed.");
+    }
+
+    // Some Static Forms responses use success flags; others return 200 with HTML/redirect.
+    if (result.success === false) {
+      throw new Error(result.message || "Static Forms rejected the submission.");
+    }
+
+    return result;
+  }
+
+  async function startStripeCheckout() {
+    const data = new FormData(form);
+    const companyInformation = String(data.get("companyInformation") || "");
+    const payload = {
+      tier: tierSelect.value,
+      companyName: companyLabelFromInfo(companyInformation),
+      contactName: data.get("name") || "",
+      email: data.get("email") || "",
+      phone: "",
+      address: "",
+      existingLinks: data.get("existingOnlinePresence") || "",
+      signerName: data.get("name") || "",
+      agreementVersion: "service-agreement-v1",
+      logoName: (logoInput && logoInput.files && logoInput.files[0] && logoInput.files[0].name) || logoMeta.name || "",
+      logoType: (logoInput && logoInput.files && logoInput.files[0] && logoInput.files[0].type) || logoMeta.type || "",
+      companyInformation,
+      signedAgreement: document.getElementById("signed-agreement")?.checked ? "yes" : "no",
+    };
+
+    const response = await fetch("/api/create-checkout-session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    const result = await response.json().catch(() => ({}));
+    if (!response.ok || !result.url) {
+      throw new Error(result.error || "Unable to start Stripe Checkout.");
+    }
+    window.location.href = result.url;
   }
 
   if (logoInput) {
-    logoInput.addEventListener("change", async () => {
+    logoInput.addEventListener("change", () => {
       statusEl.textContent = "";
       statusEl.classList.remove("is-error");
-      try {
-        const next = await readLogo(logoInput.files && logoInput.files[0]);
-        if (!next) return;
-        logoData = next;
-        logoPreviewImg.src = next.dataUrl;
-        logoPreview.hidden = false;
-        saveState();
-      } catch (error) {
+      const file = logoInput.files && logoInput.files[0];
+      if (!file) return;
+      if (file.size > MAX_LOGO_BYTES) {
         logoInput.value = "";
         statusEl.classList.add("is-error");
-        statusEl.textContent = error.message;
+        statusEl.textContent = "Logo must be 1.2MB or smaller.";
+        return;
       }
+      logoMeta = { name: file.name, type: file.type };
+      const reader = new FileReader();
+      reader.onload = () => {
+        logoPreviewImg.src = String(reader.result || "");
+        logoPreview.hidden = false;
+        saveState();
+      };
+      reader.readAsDataURL(file);
     });
   }
 
   if (logoClear) {
     logoClear.addEventListener("click", () => {
-      logoData = { name: "", type: "", dataUrl: "" };
+      logoMeta = { name: "", type: "" };
       logoInput.value = "";
       logoPreview.hidden = true;
       logoPreviewImg.removeAttribute("src");
@@ -369,21 +340,8 @@
   }
 
   form?.querySelectorAll("[data-next]").forEach((btn) => {
-    btn.addEventListener("click", async () => {
+    btn.addEventListener("click", () => {
       if (!validateStep(currentStep)) return;
-
-      const leaving = currentStep;
-      const eventByStep = {
-        1: "agreement_signed",
-        2: "tier_selected",
-        3: "company_submitted",
-      };
-      const eventName = eventByStep[leaving];
-      if (eventName && !notifiedSteps.has(leaving)) {
-        notifiedSteps.add(leaving);
-        await notifyBusiness(eventName);
-      }
-
       setStep(Math.min(4, currentStep + 1));
     });
   });
@@ -401,42 +359,21 @@
 
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
-    if (!validateStep(4)) return;
+    if (!validateStep(1) || !validateStep(2) || !validateStep(3) || !validateStep(4)) {
+      return;
+    }
 
     statusEl.classList.remove("is-error");
-    statusEl.textContent = "Creating secure Stripe Checkout session…";
+    statusEl.textContent = "Submitting onboarding details…";
     payBtn.disabled = true;
 
-    const data = new FormData(form);
-    const payload = {
-      tier: data.get("tier"),
-      companyName: data.get("companyName"),
-      contactName: data.get("contactName"),
-      email: data.get("email"),
-      phone: data.get("phone"),
-      address: data.get("address"),
-      existingLinks: data.get("existingLinks"),
-      signerName: data.get("signerName"),
-      agreementVersion: AGREEMENT_VERSION,
-      logoName: logoData.name,
-      logoType: logoData.type,
-      logoDataUrl: logoData.dataUrl,
-    };
-
     try {
-      const response = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const result = await response.json().catch(() => ({}));
-      if (!response.ok || !result.url) {
-        throw new Error(result.error || "Unable to start Stripe Checkout.");
-      }
-      window.location.href = result.url;
+      await submitStaticForms();
+      statusEl.textContent = "Details sent. Opening secure Stripe Checkout…";
+      await startStripeCheckout();
     } catch (error) {
       statusEl.classList.add("is-error");
-      statusEl.textContent = error.message || "Payment setup failed. Please try again.";
+      statusEl.textContent = error.message || "Submission failed. Please try again.";
       payBtn.disabled = false;
     }
   });
@@ -446,9 +383,7 @@
       form.hidden = true;
       progress.hidden = true;
       successPanel.hidden = false;
-      finalizeCompletionEmails().finally(() => {
-        sessionStorage.removeItem(STORAGE_KEY);
-      });
+      sessionStorage.removeItem(STORAGE_KEY);
       return true;
     }
     if (params.get("canceled") === "1") {
@@ -472,8 +407,8 @@
   const tierParam = params.get("tier");
   if (tierParam && initialTier[tierParam]) {
     tierSelect.value = initialTier[tierParam];
-  } else if (saved.tier && TIERS[saved.tier]) {
-    tierSelect.value = saved.tier;
+  } else if (saved.chosenTier && TIERS[saved.chosenTier]) {
+    tierSelect.value = saved.chosenTier;
   } else {
     tierSelect.value = "tier2";
   }

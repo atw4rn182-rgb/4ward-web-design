@@ -71,8 +71,7 @@
       <div class="onboard-panel" id="onboard-success" hidden>
         <p class="eyebrow">You’re all set</p>
         <h2>Payment started successfully</h2>
-        <p class="section-lead">Thanks for completing onboarding. A confirmation email with next steps is on its way to the address you provided, and our team has been notified at 4wardwebdesigns@gmail.com.</p>
-        <p class="form-status" id="complete-status" role="status" aria-live="polite"></p>
+        <p class="section-lead">Thanks for completing onboarding. Your details were sent to our team, and Stripe confirms your billing setup. We’ll follow up by email shortly.</p>
         <div class="onboard-actions">
           <a class="btn btn-accent" href="/">Return home</a>
           <a class="btn btn-outline" href="mailto:4wardwebdesigns@gmail.com">Email us</a>
@@ -89,7 +88,19 @@
         </div>
       </div>
 
-      <form class="onboard-form" id="onboard-form" novalidate>
+      <form
+        class="onboard-form"
+        id="onboard-form"
+        action="https://api.staticforms.dev/submit"
+        method="POST"
+        enctype="multipart/form-data"
+        novalidate
+      >
+        <input type="hidden" name="apiKey" value="sf_664e6d9a082c77e340ae36b6" />
+        <input type="hidden" name="subject" value="4wardwebdesignonboarding submission" />
+        <input type="hidden" name="replyTo" value="@" />
+        <input type="text" name="honeypot" class="sf-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
         <section class="onboard-step is-active" data-step="1" aria-labelledby="step1-heading">
           <h2 id="step1-heading">Service agreement</h2>
           <p class="onboard-step-lead">Please review the agreement carefully, then sign below to continue.</p>
@@ -115,11 +126,11 @@
           </article>
 
           <div class="form-row">
-            <label for="signer-name">Full legal name (signature)</label>
-            <input id="signer-name" name="signerName" type="text" autocomplete="name" required placeholder="Type your full name to sign" />
+            <label for="name">Full legal name (signature)</label>
+            <input id="name" name="name" type="text" autocomplete="name" required placeholder="Type your full name to sign" />
           </div>
           <label class="onboard-check">
-            <input id="agree" name="agree" type="checkbox" required />
+            <input id="signed-agreement" name="signedAgreement" type="checkbox" value="Yes — I agree to the service agreement" required />
             <span>I have read and agree to the 4Ward Web Design, LLC Service Agreement.</span>
           </label>
           <p class="onboard-meta">Signed electronically on <time id="sign-date"></time></p>
@@ -134,8 +145,8 @@
           <p class="onboard-step-lead">Confirm the tier you want. You’ll see a full breakdown before payment.</p>
 
           <div class="form-row">
-            <label for="tier-select">Selected plan</label>
-            <select id="tier-select" name="tier" required>
+            <label for="tier-select">Chosen tier</label>
+            <select id="tier-select" name="chosenTier" required>
               <option value="tier1">Tier 1 — Single-Page Online Brochure ($99/mo)</option>
               <option value="tier2">Tier 2 — Two-Page Customized Site ($225/mo)</option>
               <option value="tier3">Tier 3 — Multi-Page Multi-Department (from $399/mo)</option>
@@ -155,34 +166,26 @@
 
         <section class="onboard-step" data-step="3" aria-labelledby="step3-heading" hidden>
           <h2 id="step3-heading">Company information</h2>
-          <p class="onboard-step-lead">Upload your logo and tell us about your business so we can begin design with the right details.</p>
+          <p class="onboard-step-lead">Share your contact email, company details, logo, and any existing online presence.</p>
 
-          <div class="onboard-grid">
-            <div class="form-row">
-              <label for="company-name">Company name</label>
-              <input id="company-name" name="companyName" type="text" autocomplete="organization" required placeholder="Your company LLC" />
-            </div>
-            <div class="form-row">
-              <label for="contact-name">Primary contact</label>
-              <input id="contact-name" name="contactName" type="text" autocomplete="name" required placeholder="Jane Smith" />
-            </div>
-            <div class="form-row">
-              <label for="email">Work email</label>
-              <input id="email" name="email" type="email" autocomplete="email" required placeholder="you@business.com" />
-            </div>
-            <div class="form-row">
-              <label for="phone">Phone</label>
-              <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="(575) 555-0100" />
-            </div>
+          <div class="form-row">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" autocomplete="email" required placeholder="you@business.com" />
           </div>
 
           <div class="form-row">
-            <label for="address">Business address</label>
-            <input id="address" name="address" type="text" autocomplete="street-address" placeholder="City, NM" />
+            <label for="company-information">Company information</label>
+            <textarea
+              id="company-information"
+              name="companyInformation"
+              rows="6"
+              required
+              placeholder="Company name, phone, business address, and anything else we should know about your business."
+            ></textarea>
           </div>
 
           <div class="form-row">
-            <label for="logo">Company logo</label>
+            <label for="logo">Logo file upload</label>
             <input id="logo" name="logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" />
             <p class="onboard-hint">PNG, JPG, WebP, or SVG · max 1.2MB</p>
             <div class="logo-preview" id="logo-preview" hidden>
@@ -192,8 +195,13 @@
           </div>
 
           <div class="form-row">
-            <label for="existing-links">Existing online presence <span class="optional">(optional)</span></label>
-            <textarea id="existing-links" name="existingLinks" rows="4" placeholder="Paste any current website, Google Business Profile, Facebook page, or other links—one per line."></textarea>
+            <label for="existing-online-presence">Existing online presence links <span class="optional">(optional)</span></label>
+            <textarea
+              id="existing-online-presence"
+              name="existingOnlinePresence"
+              rows="4"
+              placeholder="Paste any current website, Google Business Profile, Facebook page, or other links—one per line."
+            ></textarea>
           </div>
 
           <div class="onboard-actions">
@@ -204,21 +212,21 @@
 
         <section class="onboard-step" data-step="4" aria-labelledby="step4-heading" hidden>
           <h2 id="step4-heading">Secure payment with Stripe</h2>
-          <p class="onboard-step-lead">Review your summary, then continue to Stripe Checkout to set up billing. Card details never touch this website.</p>
+          <p class="onboard-step-lead">We’ll email your onboarding details first, then open Stripe Checkout to set up billing. Card details never touch this website.</p>
 
           <article class="payment-summary" id="payment-summary"></article>
 
           <ul class="payment-points">
+            <li>Onboarding details sent via Static Forms</li>
             <li>Encrypted checkout hosted by Stripe</li>
             <li>Monthly subscriptions renew automatically until canceled</li>
-            <li>Buy-out plans are charged once for two years upfront</li>
           </ul>
 
           <p class="form-status" id="onboard-status" role="status" aria-live="polite"></p>
 
           <div class="onboard-actions">
             <button class="btn btn-outline" type="button" data-back>Back</button>
-            <button class="btn btn-accent" type="submit" id="pay-btn">Continue to Stripe</button>
+            <button class="btn btn-accent" type="submit" id="pay-btn">Submit &amp; continue to Stripe</button>
           </div>
         </section>
       </form>

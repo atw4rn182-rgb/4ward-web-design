@@ -1,9 +1,3 @@
-const {
-  BUSINESS_INBOX,
-  submitWeb3Forms,
-  formatOnboardingMessage,
-} = require("./lib/web3forms");
-
 const TIERS = {
   tier1: {
     id: "tier1",
@@ -109,9 +103,10 @@ async function stripeRequest(secret, path, params) {
   });
   const data = await response.json();
   if (!response.ok) {
-    const message = data && data.error && data.error.message
-      ? data.error.message
-      : "Stripe request failed";
+    const message =
+      data && data.error && data.error.message
+        ? data.error.message
+        : "Stripe request failed";
     const error = new Error(message);
     error.status = response.status;
     throw error;
@@ -147,7 +142,8 @@ function buildLineItemParams(tier) {
     "line_items[0][price_data][unit_amount]": tier.amount,
     "line_items[0][price_data][product_data][name]": tier.name,
     "line_items[0][price_data][product_data][metadata][tier]": tier.id,
-    "line_items[0][price_data][product_data][metadata][baseTier]": tier.baseTier || "",
+    "line_items[0][price_data][product_data][metadata][baseTier]":
+      tier.baseTier || "",
   };
 }
 
@@ -158,60 +154,6 @@ function metadataParams(prefix, metadata) {
     out[`${prefix}[${key}]`] = String(value).slice(0, 500);
   });
   return out;
-}
-
-async function notifyBusinessCheckoutStarted(payload) {
-  const message = formatOnboardingMessage({
-    event: "checkout_started",
-    fields: {
-      companyName: payload.companyName,
-      contactName: payload.contactName,
-      email: payload.email,
-      phone: payload.phone,
-      address: payload.address,
-      existingLinks: payload.existingLinks,
-      signerName: payload.signerName,
-      agreementVersion: payload.agreementVersion,
-      signedAt: new Date().toISOString(),
-      tier: payload.tier,
-      logoName: payload.logoName,
-      logoType: payload.logoType,
-      stripeSessionId: payload.stripeSessionId,
-      stripeCustomerId: payload.stripeCustomerId,
-      paymentStatus: "checkout_created",
-    },
-    tierLabel: payload.tierName,
-    includes: [],
-  });
-
-  await submitWeb3Forms({
-    subject: `Onboarding: Stripe checkout started — ${payload.companyName}`,
-    message,
-    replyTo: payload.email,
-    email: payload.email,
-    logoDataUrl: payload.logoDataUrl,
-    logoName: payload.logoName,
-    logoType: payload.logoType,
-    extraFields: {
-      event: "checkout_started",
-      company: payload.companyName,
-      tier: payload.tier,
-    },
-  });
-}
-
-async function notifyWebhook(payload) {
-  const url = process.env.ONBOARDING_WEBHOOK_URL;
-  if (!url) return;
-  try {
-    await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-  } catch (error) {
-    console.error("Onboarding webhook failed:", error.message);
-  }
 }
 
 module.exports = async function handler(req, res) {
@@ -254,10 +196,11 @@ module.exports = async function handler(req, res) {
   const address = sanitize(body.address, 240);
   const existingLinks = sanitize(body.existingLinks, 1000);
   const signerName = sanitize(body.signerName, 120);
-  const agreementVersion = sanitize(body.agreementVersion, 80) || "service-agreement-v1";
+  const agreementVersion =
+    sanitize(body.agreementVersion, 80) || "service-agreement-v1";
+  const companyInformation = sanitize(body.companyInformation, 2000);
   const logoName = sanitize(body.logoName, 160);
-  const logoType = sanitize(body.logoType, 80);
-  const logoDataUrl = typeof body.logoDataUrl === "string" ? body.logoDataUrl : "";
+  const signedAgreement = sanitize(body.signedAgreement, 20);
 
   if (!companyName || !contactName || !email || !signerName) {
     return json(res, 400, { error: "Missing required onboarding fields" });
@@ -265,12 +208,6 @@ module.exports = async function handler(req, res) {
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return json(res, 400, { error: "Invalid email address" });
-  }
-
-  if (logoDataUrl && logoDataUrl.length > 1_800_000) {
-    return json(res, 400, {
-      error: "Logo file is too large. Please upload an image under 1.2MB.",
-    });
   }
 
   const origin = siteOrigin(req);
@@ -284,9 +221,11 @@ module.exports = async function handler(req, res) {
     signer_name: signerName,
     agreement_version: agreementVersion,
     agreement_signed_at: new Date().toISOString(),
+    signed_agreement: signedAgreement || "yes",
+    company_information: companyInformation.slice(0, 450),
     logo_name: logoName,
-    logo_type: logoType,
-    logo_provided: logoDataUrl ? "yes" : "no",
+    logo_provided: logoName ? "yes" : "no",
+    form_handler: "staticforms",
   };
 
   try {
@@ -316,36 +255,6 @@ module.exports = async function handler(req, res) {
     }
 
     const session = await stripeRequest(secret, "/checkout/sessions", sessionParams);
-
-    const notifyPayload = {
-      event: "onboarding.checkout_created",
-      tier: tier.id,
-      tierName: tier.name,
-      companyName,
-      contactName,
-      email,
-      phone,
-      address,
-      existingLinks,
-      signerName,
-      agreementVersion,
-      logoName,
-      logoType,
-      logoDataUrl: logoDataUrl || null,
-      stripeCustomerId: customer.id,
-      stripeSessionId: session.id,
-      businessInbox: BUSINESS_INBOX,
-      createdAt: new Date().toISOString(),
-    };
-
-    try {
-      await notifyBusinessCheckoutStarted(notifyPayload);
-    } catch (emailError) {
-      console.error("Business checkout email failed:", emailError.message);
-    }
-
-    await notifyWebhook(notifyPayload);
-
     return json(res, 200, { url: session.url, sessionId: session.id });
   } catch (error) {
     console.error("Stripe checkout error:", error);
