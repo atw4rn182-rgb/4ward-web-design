@@ -16,3 +16,7 @@ assets/before-4elements.jpg
 Thumbs.db
 *.log
 .vercel
+.env
+.env.*
+!.env.example
+node_modules/

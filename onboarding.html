@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Client Onboarding | 4ward Web Design</title>
+  <meta name="description" content="Start your 4ward Web Design project: review the service agreement, confirm your plan, share company details, and set up secure monthly billing with Stripe." />
+  <meta name="robots" content="noindex, follow" />
+  <link rel="canonical" href="https://4wardwebdesign.com/onboarding.html" />
+  <meta name="theme-color" content="#F8F9FA" />
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-B2NNE9XPW9"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-B2NNE9XPW9');
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="assets/favicon.png?v=5" type="image/png" sizes="64x64" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=5" />
+</head>
+<body class="onboard-page">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a class="brand" href="/" aria-label="4Ward Web Design, LLC home — Carlsbad, New Mexico">
+        <svg class="brand-wordmark" viewBox="0 0 286 28" width="286" height="28" role="img" aria-label="4Ward Web Design, LLC" focusable="false">
+          <defs>
+            <linearGradient id="brandWordmarkGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#0b3d91" />
+              <stop offset="22%" stop-color="#1d4ed8" />
+              <stop offset="42%" stop-color="#e8eef7" />
+              <stop offset="58%" stop-color="#f8fafc" />
+              <stop offset="78%" stop-color="#c8792a" />
+              <stop offset="100%" stop-color="#b45309" />
+            </linearGradient>
+          </defs>
+          <text x="0" y="21" fill="url(#brandWordmarkGrad)" font-family="Outfit, Figtree, system-ui, sans-serif" font-size="18" font-weight="700" letter-spacing="-0.4">4Ward Web Design, LLC</text>
+        </svg>
+      </a>
+      <nav class="site-nav onboard-nav" aria-label="Primary">
+        <a href="/#pricing">Pricing</a>
+        <a href="/#contact">Contact</a>
+        <a class="btn btn-outline btn-sm" href="/">Back to site</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="onboard">
+    <div class="container onboard-shell">
+      <header class="onboard-intro">
+        <p class="eyebrow">Client onboarding</p>
+        <h1>Get your project started</h1>
+        <p class="section-lead">Four clear steps: agreement, plan details, company info, then secure Stripe billing.</p>
+      </header>
+
+      <ol class="onboard-progress" id="onboard-progress" aria-label="Onboarding progress">
+        <li class="is-active" data-step="1"><span class="onboard-progress-num">1</span><span class="onboard-progress-label">Agreement</span></li>
+        <li data-step="2"><span class="onboard-progress-num">2</span><span class="onboard-progress-label">Your plan</span></li>
+        <li data-step="3"><span class="onboard-progress-num">3</span><span class="onboard-progress-label">Company</span></li>
+        <li data-step="4"><span class="onboard-progress-num">4</span><span class="onboard-progress-label">Payment</span></li>
+      </ol>
+
+      <div class="onboard-panel" id="onboard-success" hidden>
+        <p class="eyebrow">You’re all set</p>
+        <h2>Payment started successfully</h2>
+        <p class="section-lead">Thanks for completing onboarding. Stripe confirms your billing setup. We’ll begin building with the details you shared and follow up by email shortly.</p>
+        <div class="onboard-actions">
+          <a class="btn btn-accent" href="/">Return home</a>
+          <a class="btn btn-outline" href="/#contact">Questions? Contact us</a>
+        </div>
+      </div>
+
+      <div class="onboard-panel" id="onboard-canceled" hidden>
+        <p class="eyebrow">Checkout canceled</p>
+        <h2>No charge was made</h2>
+        <p class="section-lead">You can resume onboarding whenever you’re ready. Your progress on this device is saved until you finish payment.</p>
+        <div class="onboard-actions">
+          <button class="btn btn-accent" type="button" id="resume-onboarding">Resume onboarding</button>
+          <a class="btn btn-outline" href="/#pricing">Review pricing</a>
+        </div>
+      </div>
+
+      <form class="onboard-form" id="onboard-form" novalidate>
+        <section class="onboard-step is-active" data-step="1" aria-labelledby="step1-heading">
+          <h2 id="step1-heading">Service agreement</h2>
+          <p class="onboard-step-lead">Please review the agreement carefully, then sign below to continue.</p>
+
+          <article class="agreement-box" tabindex="0" aria-label="Service agreement text">
+            <h3>4Ward Web Design, LLC — Website Service Agreement</h3>
+            <p><strong>Effective version:</strong> service-agreement-v1 · Carlsbad, New Mexico</p>
+            <p>This Service Agreement (“Agreement”) is between <strong>4Ward Web Design, LLC</strong> (“Provider”) and the client identified during onboarding (“Client”).</p>
+            <h4>1. Services</h4>
+            <p>Provider will design, develop, host, and maintain a website according to the Client’s selected tier. Every paid monthly tier includes website hosting, development/creation, local SEO setup, and ongoing maintenance within the included monthly update allowance.</p>
+            <h4>2. Fees &amp; billing</h4>
+            <p>Client authorizes recurring monthly charges for the selected subscription tier, or a one-time buy-out payment when Tier 4 is selected. Fees are billed through Stripe. Extra updates beyond the included monthly allowance are billed separately at the rates listed for that tier.</p>
+            <h4>3. Client responsibilities</h4>
+            <p>Client will provide accurate business information, logos, photos, copy, and timely feedback. Delays in Client materials may extend delivery timelines.</p>
+            <h4>4. Intellectual property</h4>
+            <p>Until all amounts due are paid, Provider retains rights in unfinished work product. After payment of amounts due under a buy-out, ownership of the delivered website design/content created specifically for Client transfers as described for that package. Subscription clients receive a license to use the live site while their account remains in good standing.</p>
+            <h4>5. Term &amp; cancellation</h4>
+            <p>Monthly subscriptions continue until canceled. Client may cancel future billing through Provider with notice before the next renewal. Fees already processed are non-refundable except where required by law.</p>
+            <h4>6. Limitation of liability</h4>
+            <p>Services are provided professionally and in good faith. Provider is not liable for indirect or consequential damages. Total liability under this Agreement is limited to fees paid by Client to Provider in the three (3) months preceding a claim.</p>
+            <h4>7. Acceptance</h4>
+            <p>By typing their name below and checking the acceptance box, Client agrees to these terms electronically with the same effect as a handwritten signature.</p>
+          </article>
+
+          <div class="form-row">
+            <label for="signer-name">Full legal name (signature)</label>
+            <input id="signer-name" name="signerName" type="text" autocomplete="name" required placeholder="Type your full name to sign" />
+          </div>
+          <label class="onboard-check">
+            <input id="agree" name="agree" type="checkbox" required />
+            <span>I have read and agree to the 4Ward Web Design, LLC Service Agreement.</span>
+          </label>
+          <p class="onboard-meta">Signed electronically on <time id="sign-date"></time></p>
+
+          <div class="onboard-actions">
+            <button class="btn btn-accent" type="button" data-next>Continue to plan</button>
+          </div>
+        </section>
+
+        <section class="onboard-step" data-step="2" aria-labelledby="step2-heading" hidden>
+          <h2 id="step2-heading">What’s included in your plan</h2>
+          <p class="onboard-step-lead">Confirm the tier you want. You’ll see a full breakdown before payment.</p>
+
+          <div class="form-row">
+            <label for="tier-select">Selected plan</label>
+            <select id="tier-select" name="tier" required>
+              <option value="tier1">Tier 1 — Single-Page Online Brochure ($99/mo)</option>
+              <option value="tier2">Tier 2 — Two-Page Customized Site ($225/mo)</option>
+              <option value="tier3">Tier 3 — Multi-Page Multi-Department (from $399/mo)</option>
+              <option value="buyout-tier1">Tier 4 Buy-Out — 2 years of Tier 1 ($2,376)</option>
+              <option value="buyout-tier2">Tier 4 Buy-Out — 2 years of Tier 2 ($5,400)</option>
+              <option value="buyout-tier3">Tier 4 Buy-Out — 2 years of Tier 3 ($9,576)</option>
+            </select>
+          </div>
+
+          <article class="tier-breakdown" id="tier-breakdown" aria-live="polite"></article>
+
+          <div class="onboard-actions">
+            <button class="btn btn-outline" type="button" data-back>Back</button>
+            <button class="btn btn-accent" type="button" data-next>Continue to company info</button>
+          </div>
+        </section>
+
+        <section class="onboard-step" data-step="3" aria-labelledby="step3-heading" hidden>
+          <h2 id="step3-heading">Company information</h2>
+          <p class="onboard-step-lead">Upload your logo and tell us about your business so we can begin design with the right details.</p>
+
+          <div class="onboard-grid">
+            <div class="form-row">
+              <label for="company-name">Company name</label>
+              <input id="company-name" name="companyName" type="text" autocomplete="organization" required placeholder="Your company LLC" />
+            </div>
+            <div class="form-row">
+              <label for="contact-name">Primary contact</label>
+              <input id="contact-name" name="contactName" type="text" autocomplete="name" required placeholder="Jane Smith" />
+            </div>
+            <div class="form-row">
+              <label for="email">Work email</label>
+              <input id="email" name="email" type="email" autocomplete="email" required placeholder="you@business.com" />
+            </div>
+            <div class="form-row">
+              <label for="phone">Phone</label>
+              <input id="phone" name="phone" type="tel" autocomplete="tel" placeholder="(575) 555-0100" />
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="address">Business address</label>
+            <input id="address" name="address" type="text" autocomplete="street-address" placeholder="City, NM" />
+          </div>
+
+          <div class="form-row">
+            <label for="logo">Company logo</label>
+            <input id="logo" name="logo" type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml" />
+            <p class="onboard-hint">PNG, JPG, WebP, or SVG · max 1.2MB</p>
+            <div class="logo-preview" id="logo-preview" hidden>
+              <img id="logo-preview-img" alt="Uploaded logo preview" />
+              <button class="btn btn-outline btn-sm" type="button" id="logo-clear">Remove logo</button>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <label for="existing-links">Existing online presence <span class="optional">(optional)</span></label>
+            <textarea id="existing-links" name="existingLinks" rows="4" placeholder="Paste any current website, Google Business Profile, Facebook page, or other links—one per line."></textarea>
+          </div>
+
+          <div class="onboard-actions">
+            <button class="btn btn-outline" type="button" data-back>Back</button>
+            <button class="btn btn-accent" type="button" data-next>Continue to payment</button>
+          </div>
+        </section>
+
+        <section class="onboard-step" data-step="4" aria-labelledby="step4-heading" hidden>
+          <h2 id="step4-heading">Secure payment with Stripe</h2>
+          <p class="onboard-step-lead">Review your summary, then continue to Stripe Checkout to set up billing. Card details never touch this website.</p>
+
+          <article class="payment-summary" id="payment-summary"></article>
+
+          <ul class="payment-points">
+            <li>Encrypted checkout hosted by Stripe</li>
+            <li>Monthly subscriptions renew automatically until canceled</li>
+            <li>Buy-out plans are charged once for two years upfront</li>
+          </ul>
+
+          <p class="form-status" id="onboard-status" role="status" aria-live="polite"></p>
+
+          <div class="onboard-actions">
+            <button class="btn btn-outline" type="button" data-back>Back</button>
+            <button class="btn btn-accent" type="submit" id="pay-btn">Continue to Stripe</button>
+          </div>
+        </section>
+      </form>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <a class="brand brand-footer" href="/">
+        <img src="assets/4ward-logo-header.png?v=5" alt="4ward Web Design logo" width="110" height="118" />
+      </a>
+      <div class="footer-meta">
+        <p>&copy; <span id="year"></span> 4ward Web Design. All rights reserved.</p>
+        <p class="footer-locale">Secure onboarding · Carlsbad, New Mexico</p>
+      </div>
+      <a class="footer-top" href="#top">Back to top</a>
+    </div>
+  </footer>
+
+  <script src="onboarding.js"></script>
+</body>
+</html>

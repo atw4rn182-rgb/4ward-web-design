@@ -3,8 +3,6 @@
   const toggle = document.querySelector(".nav-toggle");
   const nav = document.querySelector(".site-nav");
   const year = document.getElementById("year");
-  const form = document.getElementById("quote-form");
-  const status = document.getElementById("form-status");
 
   if (year) {
     year.textContent = String(new Date().getFullYear());
@@ -82,40 +80,5 @@
     reveals.forEach((el) => observer.observe(el));
   } else {
     reveals.forEach((el) => el.classList.add("is-visible"));
-  }
-
-  if (form && status) {
-    form.addEventListener("submit", (event) => {
-      event.preventDefault();
-      status.classList.remove("is-error");
-
-      if (!form.checkValidity()) {
-        status.classList.add("is-error");
-        status.textContent = "Please fill in the required fields.";
-        form.reportValidity();
-        return;
-      }
-
-      const data = new FormData(form);
-      const plan = data.get("plan") || "not specified";
-      const name = data.get("name");
-
-      const planLabels = {
-        tier1: "Tier 1 — Single-Page Online Brochure",
-        tier2: "Tier 2 — Two-Page Customized Site",
-        tier3: "Tier 3 — Multi-Page Multi-Department Website",
-        buyout: "Tier 4 — Buy-Out Option",
-        unsure: "Not sure yet",
-      };
-      const planLabel = planLabels[plan] || "a plan";
-
-      status.textContent =
-        "Thanks, " +
-        name +
-        "! We’ve received your interest in " +
-        planLabel +
-        ". We’ll follow up shortly.";
-      form.reset();
-    });
   }
 })();
