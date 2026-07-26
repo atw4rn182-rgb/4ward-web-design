@@ -1581,62 +1581,98 @@ a.ba-frame:hover img {
   }
 
   .hero {
-    min-height: 0;
-    align-items: flex-start;
-    padding: calc(var(--header-h) + 0.45rem) 0 0.85rem;
+    min-height: min(82vh, 620px);
+    align-items: center;
+    justify-content: center;
+    padding: calc(var(--header-h) + 0.85rem) 0 1.35rem;
   }
 
-  .hero-video.is-active {
-    opacity: 0.9;
+  .hero-content.container,
+  .hero-content {
+    width: min(1140px, calc(100% - 1.75rem));
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .hero-video {
-    transform: scale(0.88);
+    object-fit: contain;
+    object-position: center center;
+    transform: scale(0.72);
+    width: 100%;
+    height: 100%;
+  }
+
+  .hero-video.is-active {
+    opacity: 0.88;
   }
 
   .hero-slide.is-active {
-    opacity: 0.65;
+    opacity: 0.58;
   }
 
   .hero-overlay {
     background:
-      linear-gradient(180deg, rgba(8, 14, 26, 0.42) 0%, rgba(8, 14, 26, 0.2) 45%, rgba(8, 14, 26, 0.45) 100%),
-      linear-gradient(90deg, rgba(8, 14, 26, 0.35) 0%, transparent 70%);
+      linear-gradient(180deg, rgba(8, 14, 26, 0.55) 0%, rgba(8, 14, 26, 0.28) 42%, rgba(8, 14, 26, 0.58) 100%),
+      linear-gradient(90deg, rgba(8, 14, 26, 0.4) 0%, rgba(8, 14, 26, 0.18) 55%, rgba(8, 14, 26, 0.35) 100%);
   }
 
   .hero-copy {
-    margin-left: auto;
-    margin-right: auto;
+    width: 100%;
+    max-width: 22rem;
+    margin: 0 auto;
+    padding: 0.35rem 0.15rem 0.25rem;
     text-align: center;
   }
 
   .hero h1 {
-    font-size: clamp(1.5rem, 6.2vw, 1.85rem);
-    max-width: 14ch;
-    margin: 0 auto 0.35rem;
+    font-size: clamp(1.75rem, 7.2vw, 2.15rem);
+    max-width: 12ch;
+    margin: 0 auto 0.55rem;
     text-align: center;
+    line-height: 1.12;
+    text-shadow:
+      0 1px 2px rgba(0, 0, 0, 1),
+      0 4px 20px rgba(0, 0, 0, 0.9),
+      0 0 32px rgba(0, 0, 0, 0.65);
+  }
+
+  .hero-4ward {
+    color: #bfdbfe;
+    text-shadow:
+      0 1px 2px rgba(0, 0, 0, 1),
+      0 0 20px rgba(96, 165, 250, 0.7);
   }
 
   .hero-lead {
-    font-size: clamp(1rem, 4vw, 1.12rem);
-    max-width: 28ch;
-    margin: 0 auto 0.7rem;
-    line-height: 1.35;
+    font-size: clamp(1.08rem, 4.4vw, 1.22rem);
+    max-width: 22ch;
+    margin: 0 auto 1rem;
+    line-height: 1.4;
     text-align: center;
+    text-shadow:
+      0 1px 2px rgba(0, 0, 0, 1),
+      0 4px 18px rgba(0, 0, 0, 0.88),
+      0 0 28px rgba(0, 0, 0, 0.6);
   }
 
   .hero-actions {
-    gap: 0.4rem;
+    gap: 0.55rem;
     justify-content: center;
+    width: 100%;
   }
 
   .hero-actions .btn {
-    flex: 1 1 auto;
-    min-width: min(100%, 9.5rem);
+    flex: 1 1 100%;
+    width: 100%;
+    min-width: 0;
+    min-height: 50px;
   }
 
   .hero-actions .btn-ghost {
-    min-height: 48px;
+    min-height: 50px;
+    background: rgba(255, 255, 255, 0.22);
+    border-color: rgba(255, 255, 255, 0.85);
   }
 
   .service-item {
