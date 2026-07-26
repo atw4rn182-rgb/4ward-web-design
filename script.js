@@ -10,11 +10,11 @@
 
   const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* Hero: one logo spin → design montage → loop back to logo */
+  /* Hero: one full logo spin → full-bleed design slides → back to logo */
   const heroVideo = document.getElementById("hero-logo-video") || document.querySelector(".hero-video");
   const heroMontage = document.getElementById("hero-montage");
   const heroSlides = heroMontage ? Array.from(heroMontage.querySelectorAll(".hero-slide")) : [];
-  const SLIDE_MS = 3200;
+  const SLIDE_MS = 3400;
   const FADE_MS = 1100;
 
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -32,7 +32,7 @@
     heroMontage.classList.add("is-active");
   }
 
-  function playVideoOnce() {
+  function playOneSpin() {
     return new Promise((resolve) => {
       if (!heroVideo) {
         resolve();
@@ -52,8 +52,14 @@
       heroVideo.addEventListener("ended", onEnded);
 
       const startPlayback = () => {
-        heroVideo.muted = true;
-        heroVideo.currentTime = 0;
+        try {
+          heroVideo.loop = false;
+          heroVideo.muted = true;
+          heroVideo.playsInline = true;
+          if (heroVideo.currentTime !== 0) heroVideo.currentTime = 0;
+        } catch (_) {
+          /* ignore seek errors while loading */
+        }
         const playPromise = heroVideo.play();
         if (playPromise && typeof playPromise.catch === "function") {
           playPromise.catch(() => finish());
@@ -67,10 +73,10 @@
         startPlayback();
       }
 
-      // Fallback if ended never fires (approx one spin / clip length)
-      const durationMs = Number.isFinite(heroVideo.duration) && heroVideo.duration > 0
-        ? Math.min(heroVideo.duration * 1000 + 200, 12000)
-        : 6500;
+      const durationMs =
+        Number.isFinite(heroVideo.duration) && heroVideo.duration > 0
+          ? Math.min(Math.max(heroVideo.duration * 1000, 1200) + 150, 14000)
+          : 7000;
       const fallback = setTimeout(finish, durationMs);
     });
   }
@@ -80,33 +86,37 @@
 
     while (true) {
       showLogoVideo();
-      await playVideoOnce();
-      await wait(200);
+      await playOneSpin();
+      await wait(150);
 
-      showMontage();
-      await wait(FADE_MS);
+      if (heroSlides.length) {
+        showMontage();
+        await wait(FADE_MS);
 
-      for (let i = 0; i < heroSlides.length; i += 1) {
-        heroSlides.forEach((slide, index) => {
-          slide.classList.toggle("is-active", index === i);
-        });
-        await wait(SLIDE_MS);
+        for (let i = 0; i < heroSlides.length; i += 1) {
+          heroSlides.forEach((slide, index) => {
+            slide.classList.toggle("is-active", index === i);
+          });
+          await wait(SLIDE_MS);
+        }
+
+        heroSlides.forEach((slide) => slide.classList.remove("is-active"));
       }
 
-      heroSlides.forEach((slide) => slide.classList.remove("is-active"));
       showLogoVideo();
       await wait(FADE_MS);
     }
   }
 
   if (heroVideo) {
+    heroVideo.setAttribute("playsinline", "");
+    heroVideo.muted = true;
     if (prefersReduced) {
       heroVideo.removeAttribute("autoplay");
       heroVideo.pause();
       showLogoVideo();
     } else {
       heroVideo.loop = false;
-      heroVideo.muted = true;
       runHeroSequence();
     }
   }
