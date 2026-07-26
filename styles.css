@@ -330,17 +330,18 @@ p {
 }
 
 .hero-video {
-  object-fit: cover;
+  object-fit: contain;
   object-position: center center;
   opacity: 0;
   filter: none;
   transition: opacity 1.1s var(--ease);
   z-index: 1;
-  transform: none;
+  transform: scale(0.92);
+  transform-origin: center center;
 }
 
 .hero-video.is-active {
-  opacity: 0.88;
+  opacity: 0.92;
 }
 
 .hero-montage {
@@ -418,7 +419,7 @@ p {
 .hero h1 {
   font-size: clamp(1.65rem, 3.2vw, 2.4rem);
   font-weight: 800;
-  max-width: 18ch;
+  max-width: 16ch;
   margin: 0 0 0.5rem;
   color: #ffffff;
   text-align: left;
@@ -433,7 +434,7 @@ p {
 .hero-lead {
   font-size: clamp(1.05rem, 1.5vw, 1.25rem);
   color: #ffffff;
-  max-width: 28ch;
+  max-width: 32ch;
   margin: 0 0 1rem;
   line-height: 1.35;
   text-align: left;
@@ -1507,7 +1508,11 @@ a.ba-frame:hover img {
   }
 
   .hero-video.is-active {
-    opacity: 0.82;
+    opacity: 0.9;
+  }
+
+  .hero-video {
+    transform: scale(0.88);
   }
 
   .hero-slide.is-active {
@@ -1533,16 +1538,16 @@ a.ba-frame:hover img {
 
   .hero h1 {
     font-size: clamp(1.35rem, 5.8vw, 1.65rem);
-    max-width: 16ch;
+    max-width: 14ch;
     margin: 0 auto 0.28rem;
     text-align: center;
   }
 
   .hero-lead {
-    font-size: clamp(1rem, 4.2vw, 1.15rem);
-    max-width: 18ch;
+    font-size: clamp(0.95rem, 3.8vw, 1.05rem);
+    max-width: 28ch;
     margin: 0 auto 0.55rem;
-    line-height: 1.3;
+    line-height: 1.35;
     text-align: center;
   }
 
