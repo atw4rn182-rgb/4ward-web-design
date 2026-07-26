@@ -1,7 +1,7 @@
 const TIERS = {
   tier1: {
     id: "tier1",
-    name: "Tier 1 — Single-Page Online Brochure",
+    name: "Tier 1 — Single Page Website",
     amount: 9900,
     mode: "subscription",
   },

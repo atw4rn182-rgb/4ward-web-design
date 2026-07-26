@@ -5,7 +5,7 @@
 
   const TIERS = {
     tier1: {
-      label: "Tier 1 — Single-Page Online Brochure",
+      label: "Tier 1 — Single Page Website",
       priceLabel: "$99/month",
       billing: "Recurring monthly via Stripe",
       includes: [
