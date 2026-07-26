@@ -358,12 +358,12 @@ p {
   font-weight: 800;
   letter-spacing: 0.08em;
   line-height: 1;
-  background: linear-gradient(90deg, #1e3a8a 0%, #3b82f6 40%, #f59e0b 78%, #ea580c 100%);
+  color: #60a5fa;
+  background: linear-gradient(90deg, #93c5fd 0%, #3b82f6 35%, #f59e0b 75%, #fb923c 100%);
   -webkit-background-clip: text;
   background-clip: text;
-  color: transparent;
   -webkit-text-fill-color: transparent;
-  filter: drop-shadow(0 2px 12px rgba(2, 6, 23, 0.55));
+  text-shadow: none;
 }
 
 .hero h1 {
