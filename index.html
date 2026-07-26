@@ -162,19 +162,22 @@
 
   <main id="main">
     <section class="hero" aria-labelledby="hero-heading">
-      <div class="hero-stage" aria-hidden="true">
-        <div class="hero-slideshow">
-          <div class="hero-slide is-active" style="background-image: url('assets/hero-carlsbad-bright-1.png')"></div>
-          <div class="hero-slide" style="background-image: url('assets/hero-carlsbad-bright-2.png')"></div>
-          <div class="hero-slide" style="background-image: url('assets/hero-carlsbad-bright-3.png')"></div>
-        </div>
-        <div class="hero-atmosphere"></div>
-        <div class="hero-overlay"></div>
-      </div>
       <div class="container hero-content">
         <div class="hero-copy reveal">
-          <img class="hero-logo" src="assets/4ward-logo.png?v=5" alt="4ward Web Design - professional web design in Carlsbad, New Mexico" width="280" height="300" fetchpriority="high" />
-          <h1 id="hero-heading">Websites That Move Your Business 4ward</h1>
+          <div class="hero-video-wrap">
+            <video
+              class="hero-video"
+              autoplay
+              muted
+              loop
+              playsinline
+              preload="auto"
+              aria-label="4WARD logo spinning animation transitioning into website design examples"
+            >
+              <source src="assets/4wardweblogospinning.mp4" type="video/mp4" />
+            </video>
+          </div>
+          <h1 id="hero-heading">Send your company 4ward in the digital era</h1>
           <p class="hero-lead">When Carlsbad and New Mexico customers search Google for what you offer, a real website helps you show up first—before the competition.</p>
           <div class="hero-actions">
             <a class="btn btn-accent" href="#pricing">View Pricing</a>

@@ -12,20 +12,18 @@
 
   const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  const slides = Array.from(document.querySelectorAll(".hero-slide"));
-  if (slides.length > 1 && !prefersReduced) {
-    let current = slides.findIndex((slide) => slide.classList.contains("is-active"));
-    if (current < 0) {
-      current = 0;
-      slides[0].classList.add("is-active");
+  const heroVideo = document.querySelector(".hero-video");
+  if (heroVideo) {
+    if (prefersReduced) {
+      heroVideo.removeAttribute("autoplay");
+      heroVideo.pause();
+    } else {
+      heroVideo.muted = true;
+      const playPromise = heroVideo.play();
+      if (playPromise && typeof playPromise.catch === "function") {
+        playPromise.catch(() => {});
+      }
     }
-
-    window.setInterval(() => {
-      const next = (current + 1) % slides.length;
-      slides[current].classList.remove("is-active");
-      slides[next].classList.add("is-active");
-      current = next;
-    }, 5000);
   }
 
   const onScroll = () => {
