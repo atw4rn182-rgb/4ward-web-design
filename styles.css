@@ -520,7 +520,7 @@ p {
   display: block;
   width: clamp(72px, 11vw, 128px);
   height: clamp(72px, 11vw, 128px);
-  opacity: 0.055;
+  opacity: 0.045;
   background-color: #0f172a;
   -webkit-mask-repeat: no-repeat;
   mask-repeat: no-repeat;
@@ -533,7 +533,7 @@ p {
 .nm-motif--sm {
   width: clamp(56px, 8vw, 96px);
   height: clamp(56px, 8vw, 96px);
-  opacity: 0.045;
+  opacity: 0.038;
 }
 
 .nm-motif--zia {
@@ -560,11 +560,11 @@ p {
   mask-image: url("assets/nm-icons/mule-deer.svg");
 }
 
-.nm-motif--elk {
+.nm-motif--bull {
   width: clamp(80px, 12vw, 140px);
-  height: clamp(70px, 10vw, 124px);
-  -webkit-mask-image: url("assets/nm-icons/elk.svg");
-  mask-image: url("assets/nm-icons/elk.svg");
+  height: clamp(62px, 9vw, 110px);
+  -webkit-mask-image: url("assets/nm-icons/bull.svg");
+  mask-image: url("assets/nm-icons/bull.svg");
 }
 
 .nm-motif--tl { top: 8%; left: 3%; }
@@ -576,15 +576,16 @@ p {
 .nm-motif--br.nm-motif--zia { transform: rotate(-8deg); }
 .nm-motif--bl.nm-motif--roadrunner { transform: scaleX(-1); }
 .nm-motif--tl.nm-motif--ram { transform: rotate(-6deg); }
-.nm-motif--br.nm-motif--elk { transform: scaleX(-1) rotate(4deg); }
+.nm-motif--br.nm-motif--bull { transform: scaleX(-1) rotate(3deg); }
+.nm-motif--tl.nm-motif--bull { transform: rotate(-4deg); }
 
 @media (max-width: 760px) {
   .nm-motif {
-    opacity: 0.04;
+    opacity: 0.035;
   }
 
   .nm-motif--sm {
-    opacity: 0.035;
+    opacity: 0.03;
   }
 }
 
