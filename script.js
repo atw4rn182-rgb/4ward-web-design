@@ -10,7 +10,7 @@
 
   const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  /* Hero: one full logo spin → full-bleed design slides → back to logo */
+  /* Hero: one logo spin → full-bleed Carlsbad landscapes → back to logo */
   const heroVideo = document.getElementById("hero-logo-video") || document.querySelector(".hero-video");
   const heroMontage = document.getElementById("hero-montage");
   const heroSlides = heroMontage ? Array.from(heroMontage.querySelectorAll(".hero-slide")) : [];
