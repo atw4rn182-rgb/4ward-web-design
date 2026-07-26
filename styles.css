@@ -502,7 +502,8 @@ p {
   overflow: hidden;
 }
 
-.has-motifs > .container {
+.has-motifs > .container,
+.has-motifs > .onboard-shell {
   position: relative;
   z-index: 1;
 }
@@ -571,6 +572,7 @@ p {
 .nm-motif--tr { top: 10%; right: 4%; }
 .nm-motif--bl { bottom: 10%; left: 5%; }
 .nm-motif--br { bottom: 8%; right: 4%; }
+.nm-motif--mr { top: 42%; right: 6%; }
 
 .nm-motif--tr.nm-motif--zia { transform: rotate(12deg); }
 .nm-motif--br.nm-motif--zia { transform: rotate(-8deg); }
@@ -578,6 +580,7 @@ p {
 .nm-motif--tl.nm-motif--ram { transform: rotate(-6deg); }
 .nm-motif--br.nm-motif--bull { transform: scaleX(-1) rotate(3deg); }
 .nm-motif--tl.nm-motif--bull { transform: rotate(-4deg); }
+.nm-motif--mr.nm-motif--bull { transform: scaleX(-1) rotate(6deg); opacity: 0.034; }
 
 @media (max-width: 760px) {
   .nm-motif {
@@ -1692,6 +1695,14 @@ a.ba-frame:hover img {
 
 .onboard-shell {
   max-width: 760px;
+}
+
+.onboard-intro,
+.onboard-progress,
+.onboard-form,
+.onboard-panel {
+  position: relative;
+  z-index: 1;
 }
 
 .onboard-intro {
