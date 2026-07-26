@@ -1,28 +1,36 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" fill="#0f172a" aria-hidden="true">
-  <!-- Refined New Mexico Zia — smooth capsule rays, authentic 4×4 cardinal layout -->
-  <circle cx="100" cy="100" r="15.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" fill="#0f172a" aria-hidden="true">
+  <!-- High-quality Zia: hollow ring + 4 groups of 4 rays; inner rays longer -->
+  <!-- Center ring -->
+  <path fill-rule="evenodd" d="
+    M120 88
+    a32 32 0 1 1 0 64
+    a32 32 0 1 1 0 -64
+    M120 100
+    a20 20 0 1 0 0 40
+    a20 20 0 1 0 0 -40
+    Z"/>
 
-  <!-- North -->
-  <rect x="65.5" y="16" width="11" height="54" rx="5.5"/>
-  <rect x="84.5" y="16" width="11" height="54" rx="5.5"/>
-  <rect x="104.5" y="16" width="11" height="54" rx="5.5"/>
-  <rect x="123.5" y="16" width="11" height="54" rx="5.5"/>
+  <!-- North: outer shorter, inner longer -->
+  <rect x="83" y="28" width="10" height="48" rx="5"/>
+  <rect x="103" y="18" width="10" height="58" rx="5"/>
+  <rect x="127" y="18" width="10" height="58" rx="5"/>
+  <rect x="147" y="28" width="10" height="48" rx="5"/>
 
   <!-- South -->
-  <rect x="65.5" y="130" width="11" height="54" rx="5.5"/>
-  <rect x="84.5" y="130" width="11" height="54" rx="5.5"/>
-  <rect x="104.5" y="130" width="11" height="54" rx="5.5"/>
-  <rect x="123.5" y="130" width="11" height="54" rx="5.5"/>
+  <rect x="83" y="164" width="10" height="48" rx="5"/>
+  <rect x="103" y="164" width="10" height="58" rx="5"/>
+  <rect x="127" y="164" width="10" height="58" rx="5"/>
+  <rect x="147" y="164" width="10" height="48" rx="5"/>
 
   <!-- West -->
-  <rect x="16" y="65.5" width="54" height="11" rx="5.5"/>
-  <rect x="16" y="84.5" width="54" height="11" rx="5.5"/>
-  <rect x="16" y="104.5" width="54" height="11" rx="5.5"/>
-  <rect x="16" y="123.5" width="54" height="11" rx="5.5"/>
+  <rect x="28" y="83" width="48" height="10" rx="5"/>
+  <rect x="18" y="103" width="58" height="10" rx="5"/>
+  <rect x="18" y="127" width="58" height="10" rx="5"/>
+  <rect x="28" y="147" width="48" height="10" rx="5"/>
 
   <!-- East -->
-  <rect x="130" y="65.5" width="54" height="11" rx="5.5"/>
-  <rect x="130" y="84.5" width="54" height="11" rx="5.5"/>
-  <rect x="130" y="104.5" width="54" height="11" rx="5.5"/>
-  <rect x="130" y="123.5" width="54" height="11" rx="5.5"/>
+  <rect x="164" y="83" width="48" height="10" rx="5"/>
+  <rect x="164" y="103" width="58" height="10" rx="5"/>
+  <rect x="164" y="127" width="58" height="10" rx="5"/>
+  <rect x="164" y="147" width="48" height="10" rx="5"/>
 </svg>

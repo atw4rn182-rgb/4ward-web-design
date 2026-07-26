@@ -565,8 +565,8 @@ p {
   display: block;
   width: clamp(120px, 17vw, 210px);
   height: clamp(120px, 17vw, 210px);
-  opacity: 0.2;
-  background-color: #5b6572;
+  opacity: 0.16;
+  background-color: #64748b;
   -webkit-mask-image: url("assets/nm-icons/zia.svg");
   mask-image: url("assets/nm-icons/zia.svg");
   -webkit-mask-repeat: no-repeat;
@@ -580,28 +580,21 @@ p {
 .nm-motif--sm {
   width: clamp(88px, 12vw, 150px);
   height: clamp(88px, 12vw, 150px);
-  opacity: 0.16;
+  opacity: 0.13;
 }
 
-.nm-motif--mule-deer {
+.nm-motif--bighorn {
+  width: clamp(150px, 22vw, 260px);
+  height: clamp(120px, 17vw, 210px);
+  -webkit-mask-image: url("assets/nm-icons/bighorn.png");
+  mask-image: url("assets/nm-icons/bighorn.png");
+}
+
+.nm-motif--bird {
   width: clamp(140px, 20vw, 240px);
-  height: clamp(104px, 15vw, 178px);
-  -webkit-mask-image: url("assets/nm-icons/mule-deer.svg");
-  mask-image: url("assets/nm-icons/mule-deer.svg");
-}
-
-.nm-motif--roadrunner {
-  width: clamp(150px, 21vw, 250px);
-  height: clamp(74px, 11vw, 124px);
-  -webkit-mask-image: url("assets/nm-icons/roadrunner.svg");
-  mask-image: url("assets/nm-icons/roadrunner.svg");
-}
-
-.nm-motif--ram {
-  width: clamp(128px, 18vw, 220px);
-  height: clamp(112px, 15vw, 190px);
-  -webkit-mask-image: url("assets/nm-icons/ram.svg");
-  mask-image: url("assets/nm-icons/ram.svg");
+  height: clamp(110px, 16vw, 200px);
+  -webkit-mask-image: url("assets/nm-icons/bird.png");
+  mask-image: url("assets/nm-icons/bird.png");
 }
 
 .nm-motif--tl { top: 8%; left: 3%; }
@@ -615,20 +608,20 @@ p {
 .nm-motif--bl { transform: rotate(-6deg); }
 .nm-motif--br { transform: rotate(-10deg); }
 .nm-motif--tl { transform: rotate(4deg); }
-.nm-motif--mr { transform: rotate(-4deg); opacity: 0.17; }
-.nm-motif--ml { transform: rotate(12deg); opacity: 0.17; }
+.nm-motif--mr { transform: rotate(-4deg); opacity: 0.14; }
+.nm-motif--ml { transform: rotate(12deg); opacity: 0.14; }
 
-.nm-motif--bl.nm-motif--roadrunner { transform: scaleX(-1) rotate(-4deg); }
-.nm-motif--br.nm-motif--mule-deer { transform: scaleX(-1) rotate(-6deg); }
-.nm-motif--tl.nm-motif--ram { transform: rotate(-5deg); }
+.nm-motif--bl.nm-motif--bird { transform: scaleX(-1) rotate(-4deg); }
+.nm-motif--br.nm-motif--bighorn { transform: scaleX(-1) rotate(-4deg); }
+.nm-motif--tl.nm-motif--bighorn { transform: rotate(-3deg); }
 
 @media (max-width: 760px) {
   .nm-motif {
-    opacity: 0.16;
+    opacity: 0.13;
   }
 
   .nm-motif--sm {
-    opacity: 0.13;
+    opacity: 0.11;
   }
 }
 
