@@ -431,6 +431,10 @@ p {
   letter-spacing: -0.035em;
 }
 
+.hero-4ward {
+  color: #60a5fa;
+}
+
 .hero-lead {
   font-size: clamp(1.05rem, 1.5vw, 1.25rem);
   color: #ffffff;
