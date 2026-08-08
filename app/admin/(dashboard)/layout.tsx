@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getAdminUser } from "@/lib/supabase/admin";
 import { logoutAction } from "../actions";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 
@@ -8,13 +9,12 @@ export default async function AdminDashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getAdminUser();
 
   if (!user) {
-    redirect("/admin/login");
+    const supabase = await createClient();
+    await supabase.auth.signOut();
+    redirect("/admin/login?error=unauthorized");
   }
 
   return (

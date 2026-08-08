@@ -6,7 +6,7 @@ export const metadata = {
 };
 
 type Props = {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; error?: string }>;
 };
 
 export default async function AdminLoginPage({ searchParams }: Props) {
@@ -15,6 +15,7 @@ export default async function AdminLoginPage({ searchParams }: Props) {
     params.next?.startsWith("/admin") && params.next !== "/admin/login"
       ? params.next
       : "/admin/dashboard";
+  const unauthorized = params.error === "unauthorized";
 
   return (
     <main className="grid min-h-screen place-items-center bg-sand px-4 py-8">
@@ -28,6 +29,11 @@ export default async function AdminLoginPage({ searchParams }: Props) {
         <p className="mt-2 mb-5 text-sm leading-relaxed text-muted">
           Enter your email and password to open the secure admin dashboard.
         </p>
+        {unauthorized ? (
+          <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">
+            This account is not authorized for admin access.
+          </p>
+        ) : null}
         <LoginForm nextPath={nextPath} />
       </section>
     </main>

@@ -30,10 +30,24 @@ export async function loginAction(
   }
 
   const supabase = await createClient();
-  const { error } = await supabase.auth.signInWithPassword({ email, password });
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password,
+  });
 
-  if (error) {
+  if (error || !data.user) {
     return { error: "Invalid email or password." };
+  }
+
+  const { data: adminRow } = await supabase
+    .from("admin_users")
+    .select("user_id")
+    .eq("user_id", data.user.id)
+    .maybeSingle();
+
+  if (!adminRow) {
+    await supabase.auth.signOut();
+    return { error: "This account is not authorized for admin access." };
   }
 
   const safeNext =
