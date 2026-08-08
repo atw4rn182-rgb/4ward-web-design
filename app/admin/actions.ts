@@ -19,6 +19,16 @@ export async function loginAction(
     return { error: "Email and password are required." };
   }
 
+  if (
+    !process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    !process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  ) {
+    return {
+      error:
+        "Admin login is not configured yet. Add Supabase environment variables in Vercel.",
+    };
+  }
+
   const supabase = await createClient();
   const { error } = await supabase.auth.signInWithPassword({ email, password });
 

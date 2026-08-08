@@ -8,6 +8,13 @@ export async function updateSession(request: NextRequest) {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
   if (!url || !key) {
+    const pathname = request.nextUrl.pathname;
+    if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/admin/login";
+      redirectUrl.searchParams.set("next", pathname);
+      return NextResponse.redirect(redirectUrl);
+    }
     return supabaseResponse;
   }
 
