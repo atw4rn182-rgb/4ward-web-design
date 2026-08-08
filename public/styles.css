@@ -1,4 +1,4 @@
-/* 4ward Web Design — premium digital one-page */
+/* 4Ward Web Design — premium digital one-page */
 
 :root {
   --bg: #eeebe7;
@@ -597,6 +597,13 @@ p {
   mask-image: url("assets/nm-icons/bird.png");
 }
 
+.nm-motif--roadrunner {
+  width: clamp(150px, 21vw, 250px);
+  height: clamp(110px, 15vw, 190px);
+  -webkit-mask-image: url("assets/nm-icons/roadrunner.png");
+  mask-image: url("assets/nm-icons/roadrunner.png");
+}
+
 .nm-motif--tl { top: 8%; left: 3%; }
 .nm-motif--tr { top: 10%; right: 4%; }
 .nm-motif--bl { bottom: 10%; left: 5%; }
@@ -612,8 +619,10 @@ p {
 .nm-motif--ml { transform: rotate(12deg); opacity: 0.14; }
 
 .nm-motif--bl.nm-motif--bird { transform: scaleX(-1) rotate(-4deg); }
+.nm-motif--bl.nm-motif--roadrunner { transform: scaleX(-1) rotate(-3deg); }
 .nm-motif--br.nm-motif--bighorn { transform: scaleX(-1) rotate(-4deg); }
 .nm-motif--tl.nm-motif--bighorn { transform: rotate(-3deg); }
+.nm-motif--tr.nm-motif--roadrunner { transform: rotate(5deg); }
 
 @media (max-width: 760px) {
   .nm-motif {

@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="4ward">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="4Ward">
   <rect width="64" height="64" rx="12" fill="#080c18"/>
   <path d="M12 40 L28 18 L34 28 L40 14 L52 40 Z" fill="#1d4ed8"/>
   <path d="M34 28 L40 14 L52 40 L40 34 Z" fill="#d4a017"/>
