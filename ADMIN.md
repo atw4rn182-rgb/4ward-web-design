@@ -37,6 +37,6 @@ npm run dev
 ## Notes
 
 - Marketing pages remain static under `public/` (`/`, `/onboarding.html`).
-- Existing Stripe API stays in `/api/create-checkout-session.js`.
+- Stripe checkout API lives at `/api/create-checkout-session` (Next.js route).
 - Dashboard section pages currently show clean placeholder data for UI.
 - RLS allows only rows in `admin_users` to read/write admin tables.

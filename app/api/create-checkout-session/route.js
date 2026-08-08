@@ -1,3 +1,5 @@
+import { NextResponse } from "next/server";
+
 const TIERS = {
   tier1: {
     id: "tier1",
@@ -45,38 +47,6 @@ const PRICE_ENV = {
   tier2: "STRIPE_PRICE_TIER2",
   tier3: "STRIPE_PRICE_TIER3",
 };
-
-function json(res, status, body) {
-  res.statusCode = status;
-  res.setHeader("Content-Type", "application/json");
-  res.setHeader("Cache-Control", "no-store");
-  res.end(JSON.stringify(body));
-}
-
-function readBody(req) {
-  return new Promise((resolve, reject) => {
-    const chunks = [];
-    req.on("data", (chunk) => chunks.push(chunk));
-    req.on("end", () => {
-      try {
-        const raw = Buffer.concat(chunks).toString("utf8");
-        resolve(raw ? JSON.parse(raw) : {});
-      } catch (error) {
-        reject(error);
-      }
-    });
-    req.on("error", reject);
-  });
-}
-
-function siteOrigin(req) {
-  if (process.env.SITE_URL) {
-    return process.env.SITE_URL.replace(/\/$/, "");
-  }
-  const proto = req.headers["x-forwarded-proto"] || "https";
-  const host = req.headers["x-forwarded-host"] || req.headers.host;
-  return `${proto}://${host}`;
-}
 
 function sanitize(value, max = 500) {
   if (typeof value !== "string") return "";
@@ -156,37 +126,53 @@ function metadataParams(prefix, metadata) {
   return out;
 }
 
-module.exports = async function handler(req, res) {
-  if (req.method === "OPTIONS") {
-    res.statusCode = 204;
-    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-    res.end();
-    return;
+function siteOrigin(request) {
+  if (process.env.SITE_URL) {
+    return process.env.SITE_URL.replace(/\/$/, "");
   }
+  const proto = request.headers.get("x-forwarded-proto") || "https";
+  const host =
+    request.headers.get("x-forwarded-host") || request.headers.get("host");
+  return `${proto}://${host}`;
+}
 
-  if (req.method !== "POST") {
-    return json(res, 405, { error: "Method not allowed" });
-  }
+function json(status, body) {
+  return NextResponse.json(body, {
+    status,
+    headers: { "Cache-Control": "no-store" },
+  });
+}
 
+export async function OPTIONS() {
+  return new NextResponse(null, {
+    status: 204,
+    headers: {
+      "Access-Control-Allow-Methods": "POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type",
+    },
+  });
+}
+
+export async function POST(request) {
   const secret = process.env.STRIPE_SECRET_KEY;
   if (!secret) {
-    return json(res, 503, {
-      error: "Stripe is not configured yet. Add STRIPE_SECRET_KEY in your hosting environment.",
+    return json(503, {
+      error:
+        "Stripe is not configured yet. Add STRIPE_SECRET_KEY in your hosting environment.",
     });
   }
 
   let body;
   try {
-    body = await readBody(req);
+    body = await request.json();
   } catch {
-    return json(res, 400, { error: "Invalid JSON body" });
+    return json(400, { error: "Invalid JSON body" });
   }
 
   const tierKey = sanitize(body.tier, 40);
   const tier = TIERS[tierKey];
   if (!tier) {
-    return json(res, 400, { error: "Invalid plan selection" });
+    return json(400, { error: "Invalid plan selection" });
   }
 
   const companyName = sanitize(body.companyName, 120);
@@ -203,14 +189,14 @@ module.exports = async function handler(req, res) {
   const signedAgreement = sanitize(body.signedAgreement, 20);
 
   if (!companyName || !contactName || !email || !signerName) {
-    return json(res, 400, { error: "Missing required onboarding fields" });
+    return json(400, { error: "Missing required onboarding fields" });
   }
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return json(res, 400, { error: "Invalid email address" });
+    return json(400, { error: "Invalid email address" });
   }
 
-  const origin = siteOrigin(req);
+  const origin = siteOrigin(request);
   const metadata = {
     tier: tier.id,
     company_name: companyName,
@@ -249,17 +235,27 @@ module.exports = async function handler(req, res) {
     };
 
     if (tier.mode === "subscription") {
-      Object.assign(sessionParams, metadataParams("subscription_data[metadata]", metadata));
+      Object.assign(
+        sessionParams,
+        metadataParams("subscription_data[metadata]", metadata)
+      );
     } else {
-      Object.assign(sessionParams, metadataParams("payment_intent_data[metadata]", metadata));
+      Object.assign(
+        sessionParams,
+        metadataParams("payment_intent_data[metadata]", metadata)
+      );
     }
 
-    const session = await stripeRequest(secret, "/checkout/sessions", sessionParams);
-    return json(res, 200, { url: session.url, sessionId: session.id });
+    const session = await stripeRequest(
+      secret,
+      "/checkout/sessions",
+      sessionParams
+    );
+    return json(200, { url: session.url, sessionId: session.id });
   } catch (error) {
     console.error("Stripe checkout error:", error);
-    return json(res, error.status || 500, {
+    return json(error.status || 500, {
       error: error.message || "Unable to start Stripe Checkout",
     });
   }
-};
+}
