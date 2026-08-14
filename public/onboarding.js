@@ -2,38 +2,43 @@
   const STORAGE_KEY = "4ward-onboarding-v1";
   const MAX_LOGO_BYTES = 1.2 * 1024 * 1024;
   const STATIC_FORMS_URL = "https://api.staticforms.dev/submit";
+  const LAUNCH_FEE_CENTS = 20000;
+
+  function money(cents) {
+    return "$" + (cents / 100).toLocaleString("en-US", { minimumFractionDigits: 0 });
+  }
 
   const TIERS = {
     tier1: {
       label: "Tier 1 — Single Page Website",
-      priceLabel: "$99/month",
-      billing: "Recurring monthly via Stripe",
+      priceLabel: "$99/month starting",
+      monthlyCents: 9900,
+      mode: "subscription",
+      billing: "Recurring monthly via Stripe, plus a $200 one-time Launch Fee",
       includes: [
-        "Full website hosting",
-        "Complete website development and creation",
-        "One-page site with contact information, address, phone, and a photo section",
-        "Local SEO (Search Engine Optimization) setup",
-        "Website submitted and crawled by Google to improve search results",
-        "Google Business Profile setup: $50 one-time",
-        "Ongoing maintenance",
+        "$200 one-time Launch Fee (consultation, design/setup, domain/DNS if needed, on-page SEO, Analytics, forms, mobile optimization, testing, onboarding)",
+        "Full online overhaul: professional website + Google Business Profile + local SEO foundation",
+        "One-page site with contact information, address, phone, and photos",
+        "Hosting, development, and ongoing maintenance",
+        "Website submitted and crawled by Google",
         "2 free updates per month",
         "Additional updates: $99 each",
       ],
     },
     tier2: {
       label: "Tier 2 — Two-Page Customized Site",
-      priceLabel: "$225/month",
-      billing: "Recurring monthly via Stripe",
+      priceLabel: "$225/month starting",
+      monthlyCents: 22500,
+      mode: "subscription",
+      billing: "Recurring monthly via Stripe, plus a $200 one-time Launch Fee",
       includes: [
-        "Full website hosting",
-        "Complete website development and creation",
+        "$200 one-time Launch Fee (consultation, design/setup, domain/DNS if needed, on-page SEO, Analytics, forms, mobile optimization, testing, onboarding)",
+        "Full online overhaul: professional website + Google Business Profile + local SEO foundation",
         "Two-page site customized to the business",
         "Photo gallery",
         "One request-a-quote form that sends directly to your email",
-        "Local SEO (Search Engine Optimization)",
-        "Website submitted and crawled by Google to improve search results",
-        "Google Business Profile setup: $50 one-time",
-        "Ongoing maintenance",
+        "Hosting, development, and ongoing maintenance",
+        "Website submitted and crawled by Google",
         "4 free updates per month",
         "Additional updates: $99 each",
       ],
@@ -41,17 +46,17 @@
     tier3: {
       label: "Tier 3 — Multi-Page Multi-Department Website",
       priceLabel: "From $399/month",
-      billing: "Recurring monthly via Stripe",
+      monthlyCents: 39900,
+      mode: "subscription",
+      billing: "Recurring monthly via Stripe, plus a $200 one-time Launch Fee",
       includes: [
-        "Full website hosting",
-        "Complete website development and creation",
+        "$200 one-time Launch Fee (consultation, design/setup, domain/DNS if needed, on-page SEO, Analytics, forms, mobile optimization, testing, onboarding)",
+        "Full online overhaul: professional website + Google Business Profile + local SEO foundation",
         "Multi-page site with separate sections for different departments",
-        "Multiple request-a-quote forms routing to different emails",
-        "Local SEO (Search Engine Optimization)",
-        "Website submitted and crawled by Google to improve search results",
+        "Multiple request-a-quote forms routed to the right team",
+        "Hosting, development, and ongoing maintenance",
+        "Website submitted and crawled by Google",
         "Google Business Profile setup included free",
-        "Ongoing maintenance",
-        "AI chatbot available as an add-on ($399–$500/month)",
         "4 free updates per month",
         "Additional updates: $99 each",
       ],
@@ -59,12 +64,14 @@
     "buyout-tier1": {
       label: "Tier 4 Buy-Out — 2 years of Tier 1",
       priceLabel: "$2,376 one-time",
-      billing: "One-time Stripe payment (no monthly fee after)",
+      monthlyCents: 0,
+      dueCents: 2376 * 100 + 20000,
+      mode: "payment",
+      billing: "One-time Stripe payment (no monthly fee after), plus a $200 Launch Fee",
       includes: [
+        "$200 one-time Launch Fee at kickoff",
         "Everything in Tier 1 for two years paid upfront",
-        "Full hosting, development/creation, local SEO (Search Engine Optimization), and maintenance",
-        "Website submitted and crawled by Google to improve search results",
-        "Google Business Profile setup: $50 one-time",
+        "Full overhaul: website, Google Business Profile, and local SEO",
         "No monthly fee after purchase",
         "Updates after buy-out: $99 each",
       ],
@@ -72,12 +79,14 @@
     "buyout-tier2": {
       label: "Tier 4 Buy-Out — 2 years of Tier 2",
       priceLabel: "$5,400 one-time",
-      billing: "One-time Stripe payment (no monthly fee after)",
+      monthlyCents: 0,
+      dueCents: 5400 * 100 + 20000,
+      mode: "payment",
+      billing: "One-time Stripe payment (no monthly fee after), plus a $200 Launch Fee",
       includes: [
+        "$200 one-time Launch Fee at kickoff",
         "Everything in Tier 2 for two years paid upfront",
-        "Full hosting, development/creation, local SEO (Search Engine Optimization), and maintenance",
-        "Website submitted and crawled by Google to improve search results",
-        "Google Business Profile setup: $50 one-time",
+        "Full overhaul: website, Google Business Profile, and local SEO",
         "No monthly fee after purchase",
         "Updates after buy-out: $99 each",
       ],
@@ -85,12 +94,14 @@
     "buyout-tier3": {
       label: "Tier 4 Buy-Out — 2 years of Tier 3",
       priceLabel: "$9,576 one-time",
-      billing: "One-time Stripe payment (no monthly fee after)",
+      monthlyCents: 0,
+      dueCents: 9576 * 100 + 20000,
+      mode: "payment",
+      billing: "One-time Stripe payment (no monthly fee after), plus a $200 Launch Fee",
       includes: [
+        "$200 one-time Launch Fee at kickoff",
         "Everything in Tier 3 for two years paid upfront",
-        "Full hosting, development/creation, local SEO (Search Engine Optimization), and maintenance",
-        "Website submitted and crawled by Google to improve search results",
-        "Google Business Profile setup included free",
+        "Full overhaul: website, Google Business Profile, and local SEO",
         "No monthly fee after purchase",
         "Updates after buy-out: $99 each",
       ],
@@ -176,6 +187,15 @@
   function renderTier() {
     const tierKey = tierSelect.value;
     const tier = TIERS[tierKey] || TIERS.tier2;
+    const dueToday =
+      tier.mode === "subscription"
+        ? LAUNCH_FEE_CENTS + (tier.monthlyCents || 0)
+        : tier.dueCents || LAUNCH_FEE_CENTS;
+    const dueLabel =
+      tier.mode === "subscription"
+        ? money(dueToday) + " today (" + money(LAUNCH_FEE_CENTS) + " launch + " + money(tier.monthlyCents) + " first month)"
+        : money(dueToday) + " today (buy-out + " + money(LAUNCH_FEE_CENTS) + " launch fee)";
+
     tierBreakdown.innerHTML =
       "<header><p class=\"plan-tier\">Selected package</p><h3>" +
       tier.label +
@@ -192,11 +212,15 @@
       "<div><dt>Plan</dt><dd>" +
       tier.label +
       "</dd></div>" +
-      "<div><dt>Amount</dt><dd>" +
-      tier.priceLabel +
+      "<div><dt>Launch Fee</dt><dd>$200 one-time</dd></div>" +
+      "<div><dt>First month</dt><dd>" +
+      (tier.mode === "subscription" ? money(tier.monthlyCents) : "Included in buy-out") +
       "</dd></div>" +
-      "<div><dt>Billing</dt><dd>" +
-      tier.billing +
+      "<div><dt>Due today</dt><dd>" +
+      dueLabel +
+      "</dd></div>" +
+      "<div><dt>Then</dt><dd>" +
+      (tier.mode === "subscription" ? tier.priceLabel + " until canceled" : "No monthly fee") +
       "</dd></div>" +
       "<div><dt>Name</dt><dd>" +
       (form.name.value || "—") +
@@ -312,10 +336,23 @@
       body: JSON.stringify(payload),
     });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok || !result.url) {
+    if (!response.ok || (!result.url && !result.sessionId)) {
       throw new Error(result.error || "Unable to start Stripe Checkout.");
     }
-    window.location.href = result.url;
+
+    if (window.Stripe && result.publishableKey && result.sessionId) {
+      const stripe = window.Stripe(result.publishableKey);
+      const { error } = await stripe.redirectToCheckout({ sessionId: result.sessionId });
+      if (error) throw new Error(error.message || "Stripe redirect failed.");
+      return;
+    }
+
+    if (result.url) {
+      window.location.href = result.url;
+      return;
+    }
+
+    throw new Error("Stripe Checkout did not return a session.");
   }
 
   if (logoInput) {

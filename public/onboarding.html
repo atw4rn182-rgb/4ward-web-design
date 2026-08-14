@@ -115,9 +115,9 @@
             <p><strong>Effective version:</strong> service-agreement-v1 · Carlsbad, New Mexico</p>
             <p>This Service Agreement (“Agreement”) is between <strong>4Ward Web Design, LLC</strong> (“Provider”) and the client identified during onboarding (“Client”).</p>
             <h4>1. Services</h4>
-            <p>Provider will design, develop, host, and maintain a website according to the Client’s selected tier. Every paid monthly tier includes website hosting, development/creation, local SEO (Search Engine Optimization) setup, and ongoing maintenance within the included monthly update allowance.</p>
+            <p>Provider will design, develop, host, and maintain a website according to the Client’s selected tier. Every paid monthly tier is a full online overhaul: professional website, Google Business Profile setup, and a local SEO (Search Engine Optimization) foundation, plus hosting, development/creation, and ongoing maintenance within the included monthly update allowance.</p>
             <h4>2. Fees &amp; billing</h4>
-            <p>Client authorizes recurring monthly charges for the selected subscription tier, or a one-time buy-out payment when Tier 4 is selected. Fees are billed through Stripe. Extra updates beyond the included monthly allowance are billed separately at the rates listed for that tier.</p>
+            <p>A one-time <strong>$200 Launch Fee</strong> applies to all tiers and covers initial consultation, custom design/setup, domain/DNS if needed, basic on-page SEO, Google Analytics, contact forms, mobile optimization, testing, and onboarding. Client also authorizes recurring monthly charges for the selected subscription tier, or a one-time buy-out payment when Tier 4 is selected. Fees are billed through Stripe. Extra updates beyond the included monthly allowance are billed separately at the rates listed for that tier. Optional add-ons selected during onboarding are billed according to the running total shown before payment.</p>
             <h4>3. Client responsibilities</h4>
             <p>Client will provide accurate business information, logos, photos, copy, and timely feedback. Delays in Client materials may extend delivery timelines.</p>
             <h4>4. Intellectual property</h4>
@@ -147,7 +147,7 @@
 
         <section class="onboard-step" data-step="2" aria-labelledby="step2-heading" hidden>
           <h2 id="step2-heading">What’s included in your plan</h2>
-          <p class="onboard-step-lead">Confirm the tier you want. You’ll see a full breakdown before payment.</p>
+          <p class="onboard-step-lead">Confirm the tier you want. Every plan includes a $200 one-time Launch Fee. You’ll see a full breakdown before payment. Optional add-ons can be added next and will show in a live running total.</p>
 
           <div class="form-row">
             <label for="tier-select">Chosen tier</label>
@@ -217,21 +217,21 @@
 
         <section class="onboard-step" data-step="4" aria-labelledby="step4-heading" hidden>
           <h2 id="step4-heading">Secure payment with Stripe</h2>
-          <p class="onboard-step-lead">We’ll email your onboarding details first, then open Stripe Checkout to set up billing. Card details never touch this website.</p>
+          <p class="onboard-step-lead">We’ll email your onboarding details first, then open Stripe Checkout. Today you pay the $200 Launch Fee plus the first month. Card details never touch this website.</p>
 
           <article class="payment-summary" id="payment-summary"></article>
 
           <ul class="payment-points">
-            <li>Onboarding details sent via Static Forms</li>
+            <li>Due today: $200 Launch Fee + first month</li>
             <li>Encrypted checkout hosted by Stripe</li>
-            <li>Monthly subscriptions renew automatically until canceled</li>
+            <li>Monthly plans renew automatically until canceled</li>
           </ul>
 
           <p class="form-status" id="onboard-status" role="status" aria-live="polite"></p>
 
           <div class="onboard-actions">
             <button class="btn btn-outline" type="button" data-back>Back</button>
-            <button class="btn btn-accent" type="submit" id="pay-btn">Submit &amp; continue to Stripe</button>
+            <button class="btn btn-accent" type="submit" id="pay-btn">Pay with Stripe</button>
           </div>
         </section>
       </form>
@@ -251,6 +251,7 @@
     </div>
   </footer>
 
+  <script src="https://js.stripe.com/v3/"></script>
   <script src="onboarding.js"></script>
 </body>
 </html>

@@ -178,4 +178,28 @@
   } else {
     reveals.forEach((el) => el.classList.add("is-visible"));
   }
+
+  const addonsPanel = document.getElementById("pricing-addons");
+  const addonToggles = Array.from(document.querySelectorAll("[data-addons-toggle]"));
+
+  function setAddonsOpen(open) {
+    if (!addonsPanel) return;
+    addonsPanel.hidden = !open;
+    addonToggles.forEach((btn) => {
+      btn.setAttribute("aria-expanded", String(open));
+      if (btn.closest(".pricing-addons-header")) {
+        btn.textContent = open ? "Hide add-ons" : "View add-ons";
+      }
+    });
+    if (open) {
+      addonsPanel.scrollIntoView({ behavior: prefersReduced ? "auto" : "smooth", block: "nearest" });
+    }
+  }
+
+  addonToggles.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const open = addonsPanel && !addonsPanel.hidden;
+      setAddonsOpen(!open);
+    });
+  });
 })();

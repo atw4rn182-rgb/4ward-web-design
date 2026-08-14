@@ -42,6 +42,11 @@ const TIERS = {
   },
 };
 
+const LAUNCH_FEE_CENTS = 20000;
+const LAUNCH_FEE_NAME = "Launch Fee";
+const LAUNCH_FEE_DESCRIPTION =
+  "One-time kickoff: consultation, custom design/setup, domain/DNS if needed, basic on-page SEO, Google Analytics, contact forms, mobile optimization, testing, and onboarding.";
+
 const PRICE_ENV = {
   tier1: "STRIPE_PRICE_TIER1",
   tier2: "STRIPE_PRICE_TIER2",
@@ -84,36 +89,57 @@ async function stripeRequest(secret, path, params) {
   return data;
 }
 
+function launchFeeLineItem(index) {
+  return {
+    [`line_items[${index}][quantity]`]: 1,
+    [`line_items[${index}][price_data][currency]`]: "usd",
+    [`line_items[${index}][price_data][unit_amount]`]: LAUNCH_FEE_CENTS,
+    [`line_items[${index}][price_data][product_data][name]`]:
+      "Launch Fee (one-time $200)",
+    [`line_items[${index}][price_data][product_data][description]`]:
+      LAUNCH_FEE_DESCRIPTION,
+    [`line_items[${index}][price_data][product_data][metadata][kind]`]:
+      "launch_fee",
+  };
+}
+
 function buildLineItemParams(tier) {
   const priceEnvKey = PRICE_ENV[tier.id];
   const priceId = priceEnvKey ? process.env[priceEnvKey] : null;
+  let items;
 
   if (tier.mode === "subscription" && priceId) {
-    return {
+    items = {
       "line_items[0][price]": priceId,
       "line_items[0][quantity]": 1,
     };
-  }
-
-  if (tier.mode === "subscription") {
-    return {
+  } else if (tier.mode === "subscription") {
+    items = {
       "line_items[0][quantity]": 1,
       "line_items[0][price_data][currency]": "usd",
       "line_items[0][price_data][unit_amount]": tier.amount,
       "line_items[0][price_data][recurring][interval]": "month",
+      "line_items[0][price_data][product_data][name]":
+        `${tier.name} — first month`,
+      "line_items[0][price_data][product_data][description]":
+        `Due today with the $200 Launch Fee. Then $${Math.round(tier.amount / 100)}/month until canceled.`,
+      "line_items[0][price_data][product_data][metadata][tier]": tier.id,
+    };
+  } else {
+    items = {
+      "line_items[0][quantity]": 1,
+      "line_items[0][price_data][currency]": "usd",
+      "line_items[0][price_data][unit_amount]": tier.amount,
       "line_items[0][price_data][product_data][name]": tier.name,
       "line_items[0][price_data][product_data][metadata][tier]": tier.id,
+      "line_items[0][price_data][product_data][metadata][baseTier]":
+        tier.baseTier || "",
     };
   }
 
   return {
-    "line_items[0][quantity]": 1,
-    "line_items[0][price_data][currency]": "usd",
-    "line_items[0][price_data][unit_amount]": tier.amount,
-    "line_items[0][price_data][product_data][name]": tier.name,
-    "line_items[0][price_data][product_data][metadata][tier]": tier.id,
-    "line_items[0][price_data][product_data][metadata][baseTier]":
-      tier.baseTier || "",
+    ...items,
+    ...launchFeeLineItem(1),
   };
 }
 
@@ -212,6 +238,7 @@ export async function POST(request) {
     logo_name: logoName,
     logo_provided: logoName ? "yes" : "no",
     form_handler: "staticforms",
+    launch_fee_cents: String(LAUNCH_FEE_CENTS),
   };
 
   try {
@@ -230,6 +257,10 @@ export async function POST(request) {
       cancel_url: `${origin}/onboarding.html?canceled=1&tier=${encodeURIComponent(tierKey)}`,
       billing_address_collection: "required",
       allow_promotion_codes: "true",
+      "custom_text[submit][message]":
+        tier.mode === "subscription"
+          ? "Today you pay the $200 Launch Fee plus the first month of your plan."
+          : "Today you pay the $200 Launch Fee plus two years of your chosen tier.",
       ...buildLineItemParams(tier),
       ...metadataParams("metadata", metadata),
     };
@@ -251,7 +282,11 @@ export async function POST(request) {
       "/checkout/sessions",
       sessionParams
     );
-    return json(200, { url: session.url, sessionId: session.id });
+    return json(200, {
+      url: session.url,
+      sessionId: session.id,
+      publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "",
+    });
   } catch (error) {
     console.error("Stripe checkout error:", error);
     return json(error.status || 500, {
