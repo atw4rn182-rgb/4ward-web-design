@@ -162,7 +162,11 @@ function siteOrigin(request) {
   return `${proto}://${host}`;
 }
 
-function json(status, body) {
+function stripeLiveMode(secret, publishableKey) {
+  const secretLive = String(secret || "").startsWith("sk_live_");
+  const pubLive = String(publishableKey || "").startsWith("pk_live_");
+  return secretLive && pubLive;
+}
   return NextResponse.json(body, {
     status,
     headers: { "Cache-Control": "no-store" },
@@ -181,10 +185,18 @@ export async function OPTIONS() {
 
 export async function POST(request) {
   const secret = process.env.STRIPE_SECRET_KEY;
+  const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
   if (!secret) {
     return json(503, {
       error:
         "Stripe is not configured yet. Add STRIPE_SECRET_KEY in your hosting environment.",
+    });
+  }
+
+  if (!stripeLiveMode(secret, publishableKey)) {
+    return json(503, {
+      error:
+        "Stripe is not in live mode. Set STRIPE_SECRET_KEY and NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY to sk_live_ / pk_live_ keys.",
     });
   }
 
@@ -285,7 +297,8 @@ export async function POST(request) {
     return json(200, {
       url: session.url,
       sessionId: session.id,
-      publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "",
+      publishableKey,
+      liveMode: true,
     });
   } catch (error) {
     console.error("Stripe checkout error:", error);
