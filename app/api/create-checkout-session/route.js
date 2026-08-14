@@ -167,6 +167,8 @@ function stripeLiveMode(secret, publishableKey) {
   const pubLive = String(publishableKey || "").startsWith("pk_live_");
   return secretLive && pubLive;
 }
+
+function json(status, body) {
   return NextResponse.json(body, {
     status,
     headers: { "Cache-Control": "no-store" },
