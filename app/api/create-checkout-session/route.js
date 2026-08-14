@@ -43,7 +43,6 @@ const TIERS = {
 };
 
 const LAUNCH_FEE_CENTS = 20000;
-const LAUNCH_FEE_NAME = "Launch Fee";
 const LAUNCH_FEE_DESCRIPTION =
   "One-time kickoff: consultation, custom design/setup, domain/DNS if needed, basic on-page SEO, Google Analytics, contact forms, mobile optimization, testing, and onboarding.";
 
