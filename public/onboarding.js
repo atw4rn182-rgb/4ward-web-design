@@ -224,7 +224,7 @@
       );
     }
     if (ids.includes("reports")) {
-      lines.push("Monthly reports — +$49/month");
+      lines.push("Monthly Updates – $49/mo");
     }
     return lines;
   }
