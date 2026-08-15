@@ -174,7 +174,6 @@
       chosenTier: data.get("chosenTier") || "tier2",
       email: data.get("email") || "",
       phone: data.get("phone") || "",
-      confirmationMethod: data.get("confirmationMethod") || "",
       companyInformation: data.get("companyInformation") || "",
       existingOnlinePresence: data.get("existingOnlinePresence") || "",
       logoMeta,
@@ -191,12 +190,6 @@
     if (state.chosenTier && TIERS[state.chosenTier]) tierSelect.value = state.chosenTier;
     if (state.email) form.email.value = state.email;
     if (state.phone && form.phone) form.phone.value = state.phone;
-    if (state.confirmationMethod) {
-      const methodInput = form.querySelector(
-        'input[name="confirmationMethod"][value="' + state.confirmationMethod + '"]'
-      );
-      if (methodInput) methodInput.checked = true;
-    }
     if (state.companyInformation) form.companyInformation.value = state.companyInformation;
     if (state.existingOnlinePresence) form.existingOnlinePresence.value = state.existingOnlinePresence;
     if (state.logoMeta) logoMeta = state.logoMeta;
@@ -313,9 +306,6 @@
       "<div><dt>Phone</dt><dd>" +
       (formatUsPhone(form.phone && form.phone.value) || form.phone.value || "—") +
       "</dd></div>" +
-      "<div><dt>Confirm by</dt><dd>" +
-      confirmationMethodLabel() +
-      "</dd></div>" +
       "<div><dt>Agreement</dt><dd>" +
       (document.getElementById("signed-agreement")?.checked ? "Signed" : "Not signed") +
       "</dd></div>" +
@@ -348,18 +338,6 @@
     if (digits.length === 11 && digits.startsWith("1")) digits = digits.slice(1);
     if (digits.length !== 10) return "";
     return "(" + digits.slice(0, 3) + ") " + digits.slice(3, 6) + "-" + digits.slice(6);
-  }
-
-  function confirmationMethodValue() {
-    const checked = form.querySelector('input[name="confirmationMethod"]:checked');
-    return checked ? checked.value : "";
-  }
-
-  function confirmationMethodLabel() {
-    const method = confirmationMethodValue();
-    if (method === "sms") return "Text Message (SMS)";
-    if (method === "email") return "Email";
-    return "Not selected";
   }
 
   function validateStep(step) {
@@ -413,7 +391,6 @@
     const formattedPhone = formatUsPhone(form.phone && form.phone.value);
     if (formattedPhone && form.phone) form.phone.value = formattedPhone;
     formData.set("phone", formattedPhone || (form.phone && form.phone.value) || "");
-    formData.set("confirmationMethod", confirmationMethodLabel());
     formData.set(
       "bilingualRequested",
       bilingualInput && bilingualInput.checked ? "Yes" : "No"
@@ -453,7 +430,6 @@
       contactName: data.get("name") || "",
       email: data.get("email") || "",
       phone: formatUsPhone(data.get("phone") || "") || data.get("phone") || "",
-      confirmationMethod: confirmationMethodValue(),
       address: "",
       existingLinks: data.get("existingOnlinePresence") || "",
       signerName: data.get("name") || "",

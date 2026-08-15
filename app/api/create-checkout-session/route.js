@@ -91,12 +91,6 @@ function formatUsPhone(value) {
   return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
 }
 
-function confirmationMethodFromBody(value) {
-  const method = sanitize(String(value || ""), 20).toLowerCase();
-  if (method === "email" || method === "sms") return method;
-  return "";
-}
-
 function sanitize(value, max = 500) {
   if (typeof value !== "string") return "";
   return value.trim().slice(0, max);
@@ -244,6 +238,62 @@ function json(status, body) {
   });
 }
 
+async function supabaseInsert(table, row) {
+  const base = String(process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(
+    /\/$/,
+    ""
+  );
+  const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!base || !service) return null;
+  const response = await fetch(`${base}/rest/v1/${table}`, {
+    method: "POST",
+    headers: {
+      apikey: service,
+      Authorization: `Bearer ${service}`,
+      "Content-Type": "application/json",
+      Prefer: "return=representation",
+    },
+    body: JSON.stringify(row),
+  });
+  if (!response.ok) {
+    throw new Error("Supabase insert failed");
+  }
+  const data = await response.json();
+  return Array.isArray(data) ? data[0] : data;
+}
+
+async function saveOnboardingRecord(record) {
+  try {
+    const customer = await supabaseInsert("customers", {
+      company_name: record.companyName,
+      contact_name: record.contactName,
+      email: record.email,
+      phone: record.phone,
+      status: "lead",
+    });
+    await supabaseInsert("onboarding_submissions", {
+      customer_id: customer && customer.id ? customer.id : null,
+      tier: record.tier,
+      company_name: record.companyName,
+      contact_name: record.contactName,
+      email: record.email,
+      phone: record.phone,
+      notes: record.companyInformation || null,
+      agreement_accepted: record.signedAgreement === "yes",
+      status: "received",
+      payload: {
+        addons: record.addOnIds,
+        bilingual_requested: record.addOnIds.includes("bilingual"),
+        reports_requested: record.addOnIds.includes("reports"),
+        existing_links: record.existingLinks,
+        logo_name: record.logoName,
+      },
+    });
+  } catch (error) {
+    console.error("Onboarding record save failed");
+  }
+}
+
 export async function OPTIONS() {
   return new NextResponse(null, {
     status: 204,
@@ -281,7 +331,6 @@ export async function POST(request) {
   const contactName = sanitize(body.contactName, 120);
   const email = sanitize(body.email, 160).toLowerCase();
   const phone = formatUsPhone(body.phone);
-  const confirmationMethod = confirmationMethodFromBody(body.confirmationMethod);
   const address = sanitize(body.address, 240);
   const existingLinks = sanitize(body.existingLinks, 1000);
   const signerName = sanitize(body.signerName, 120);
@@ -292,7 +341,7 @@ export async function POST(request) {
   const signedAgreement = sanitize(body.signedAgreement, 20);
   const addOnIds = normalizeAddOns(body.addOns, tier);
 
-  if (!companyName || !contactName || !email || !signerName || !phone || !confirmationMethod) {
+  if (!companyName || !contactName || !email || !signerName || !phone) {
     return json(400, { error: "Missing required onboarding fields" });
   }
 
@@ -306,7 +355,6 @@ export async function POST(request) {
     company_name: companyName,
     contact_name: contactName,
     phone,
-    confirmation_method: confirmationMethod,
     address,
     existing_links: existingLinks.slice(0, 450),
     signer_name: signerName,
@@ -322,6 +370,19 @@ export async function POST(request) {
     bilingual_requested: addOnIds.includes("bilingual") ? "yes" : "no",
     reports_requested: addOnIds.includes("reports") ? "yes" : "no",
   };
+
+  await saveOnboardingRecord({
+    companyName,
+    contactName,
+    email,
+    phone,
+    tier: tier.id,
+    companyInformation,
+    signedAgreement: signedAgreement || "yes",
+    addOnIds,
+    existingLinks,
+    logoName,
+  });
 
   try {
     const customer = await stripeRequest(secret, "/customers", {
