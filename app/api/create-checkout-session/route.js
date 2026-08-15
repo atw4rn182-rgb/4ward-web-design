@@ -84,6 +84,19 @@ function recurringAddonLineItem(index, { id, name, amount }) {
   };
 }
 
+function formatUsPhone(value) {
+  let digits = String(value || "").replace(/\D/g, "");
+  if (digits.length === 11 && digits.startsWith("1")) digits = digits.slice(1);
+  if (digits.length !== 10) return "";
+  return `(${digits.slice(0, 3)}) ${digits.slice(3, 6)}-${digits.slice(6)}`;
+}
+
+function confirmationMethodFromBody(value) {
+  const method = sanitize(String(value || ""), 20).toLowerCase();
+  if (method === "email" || method === "sms") return method;
+  return "";
+}
+
 function sanitize(value, max = 500) {
   if (typeof value !== "string") return "";
   return value.trim().slice(0, max);
@@ -267,7 +280,8 @@ export async function POST(request) {
   const companyName = sanitize(body.companyName, 120);
   const contactName = sanitize(body.contactName, 120);
   const email = sanitize(body.email, 160).toLowerCase();
-  const phone = sanitize(body.phone, 40);
+  const phone = formatUsPhone(body.phone);
+  const confirmationMethod = confirmationMethodFromBody(body.confirmationMethod);
   const address = sanitize(body.address, 240);
   const existingLinks = sanitize(body.existingLinks, 1000);
   const signerName = sanitize(body.signerName, 120);
@@ -278,7 +292,7 @@ export async function POST(request) {
   const signedAgreement = sanitize(body.signedAgreement, 20);
   const addOnIds = normalizeAddOns(body.addOns, tier);
 
-  if (!companyName || !contactName || !email || !signerName) {
+  if (!companyName || !contactName || !email || !signerName || !phone || !confirmationMethod) {
     return json(400, { error: "Missing required onboarding fields" });
   }
 
@@ -292,6 +306,7 @@ export async function POST(request) {
     company_name: companyName,
     contact_name: contactName,
     phone,
+    confirmation_method: confirmationMethod,
     address,
     existing_links: existingLinks.slice(0, 450),
     signer_name: signerName,

@@ -186,12 +186,32 @@
 
         <section class="onboard-step" data-step="3" aria-labelledby="step3-heading" hidden>
           <h2 id="step3-heading">Company information</h2>
-          <p class="onboard-step-lead">Share your contact email, company details, logo, and any existing online presence.</p>
+          <p class="onboard-step-lead">Share your email, phone, company details, logo, and any existing online presence. Choose how you’d like us to reach you if we have questions.</p>
 
           <div class="form-row">
             <label for="email">Email</label>
             <input id="email" name="email" type="email" autocomplete="email" required placeholder="you@business.com" />
           </div>
+
+          <div class="form-row">
+            <label for="phone">Phone number</label>
+            <input id="phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required placeholder="(575) 555-1234" />
+            <p class="onboard-hint">U.S. number so we can call or text about your project.</p>
+          </div>
+
+          <fieldset class="onboard-addons onboard-confirm-method">
+            <legend>Confirmation method</legend>
+            <p class="onboard-hint">Choose one. Onboarding details are always emailed to 4Ward Web Design.</p>
+            <label class="onboard-check">
+              <input id="confirm-email" name="confirmationMethod" type="radio" value="email" required />
+              <span>Confirm by Email</span>
+            </label>
+            <label class="onboard-check">
+              <input id="confirm-sms" name="confirmationMethod" type="radio" value="sms" required />
+              <span>Confirm by Text Message (SMS)</span>
+            </label>
+            <p class="onboard-hint" id="sms-provider-note">Automated SMS codes are not enabled yet (no text-message provider is configured). Selecting SMS records your preference and phone number so we can reach you. Email confirmation to our team still runs as usual.</p>
+          </fieldset>
 
           <div class="form-row">
             <label for="company-information">Company information</label>
@@ -200,7 +220,7 @@
               name="companyInformation"
               rows="6"
               required
-              placeholder="Company name, phone, business address, and anything else we should know about your business."
+              placeholder="Company name, business address, and anything else we should know about your business."
             ></textarea>
           </div>
 

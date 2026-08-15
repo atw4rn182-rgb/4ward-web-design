@@ -173,6 +173,8 @@
       signedAgreement: document.getElementById("signed-agreement")?.checked || false,
       chosenTier: data.get("chosenTier") || "tier2",
       email: data.get("email") || "",
+      phone: data.get("phone") || "",
+      confirmationMethod: data.get("confirmationMethod") || "",
       companyInformation: data.get("companyInformation") || "",
       existingOnlinePresence: data.get("existingOnlinePresence") || "",
       logoMeta,
@@ -188,6 +190,13 @@
     if (state.signedAgreement) document.getElementById("signed-agreement").checked = true;
     if (state.chosenTier && TIERS[state.chosenTier]) tierSelect.value = state.chosenTier;
     if (state.email) form.email.value = state.email;
+    if (state.phone && form.phone) form.phone.value = state.phone;
+    if (state.confirmationMethod) {
+      const methodInput = form.querySelector(
+        'input[name="confirmationMethod"][value="' + state.confirmationMethod + '"]'
+      );
+      if (methodInput) methodInput.checked = true;
+    }
     if (state.companyInformation) form.companyInformation.value = state.companyInformation;
     if (state.existingOnlinePresence) form.existingOnlinePresence.value = state.existingOnlinePresence;
     if (state.logoMeta) logoMeta = state.logoMeta;
@@ -301,6 +310,12 @@
       "<div><dt>Email</dt><dd>" +
       (form.email.value || "—") +
       "</dd></div>" +
+      "<div><dt>Phone</dt><dd>" +
+      (formatUsPhone(form.phone && form.phone.value) || form.phone.value || "—") +
+      "</dd></div>" +
+      "<div><dt>Confirm by</dt><dd>" +
+      confirmationMethodLabel() +
+      "</dd></div>" +
       "<div><dt>Agreement</dt><dd>" +
       (document.getElementById("signed-agreement")?.checked ? "Signed" : "Not signed") +
       "</dd></div>" +
@@ -328,6 +343,25 @@
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  function formatUsPhone(value) {
+    let digits = String(value || "").replace(/\D/g, "");
+    if (digits.length === 11 && digits.startsWith("1")) digits = digits.slice(1);
+    if (digits.length !== 10) return "";
+    return "(" + digits.slice(0, 3) + ") " + digits.slice(3, 6) + "-" + digits.slice(6);
+  }
+
+  function confirmationMethodValue() {
+    const checked = form.querySelector('input[name="confirmationMethod"]:checked');
+    return checked ? checked.value : "";
+  }
+
+  function confirmationMethodLabel() {
+    const method = confirmationMethodValue();
+    if (method === "sms") return "Text Message (SMS)";
+    if (method === "email") return "Email";
+    return "Not selected";
+  }
+
   function validateStep(step) {
     const section = steps.find((s) => Number(s.dataset.step) === step);
     if (!section) return false;
@@ -335,6 +369,18 @@
       (el) => el.type !== "file" && el.name !== "honeypot"
     );
     for (const field of fields) {
+      if (field.name === "phone") {
+        const formatted = formatUsPhone(field.value);
+        if (!formatted) {
+          field.setCustomValidity("Enter a 10-digit U.S. phone number.");
+          field.reportValidity();
+          return false;
+        }
+        field.setCustomValidity("");
+        field.value = formatted;
+      } else if (field.setCustomValidity) {
+        field.setCustomValidity("");
+      }
       if (!field.checkValidity()) {
         field.reportValidity();
         return false;
@@ -362,6 +408,15 @@
     formData.set(
       "recurringAddOns",
       addOnSummaryLines(tierSelect.value, addOnIds).join("; ") || "None selected"
+    );
+    formData.set("companyName", companyLabelFromInfo(form.companyInformation.value));
+    const formattedPhone = formatUsPhone(form.phone && form.phone.value);
+    if (formattedPhone && form.phone) form.phone.value = formattedPhone;
+    formData.set("phone", formattedPhone || (form.phone && form.phone.value) || "");
+    formData.set("confirmationMethod", confirmationMethodLabel());
+    formData.set(
+      "bilingualRequested",
+      bilingualInput && bilingualInput.checked ? "Yes" : "No"
     );
 
     const response = await fetch(STATIC_FORMS_URL, {
@@ -397,7 +452,8 @@
       companyName: companyLabelFromInfo(companyInformation),
       contactName: data.get("name") || "",
       email: data.get("email") || "",
-      phone: "",
+      phone: formatUsPhone(data.get("phone") || "") || data.get("phone") || "",
+      confirmationMethod: confirmationMethodValue(),
       address: "",
       existingLinks: data.get("existingOnlinePresence") || "",
       signerName: data.get("name") || "",
@@ -480,6 +536,12 @@
 
   tierSelect?.addEventListener("change", () => {
     renderTier();
+    saveState();
+  });
+
+  form?.phone?.addEventListener("blur", () => {
+    const formatted = formatUsPhone(form.phone.value);
+    if (formatted) form.phone.value = formatted;
     saveState();
   });
 
