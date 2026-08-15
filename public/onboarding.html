@@ -45,6 +45,7 @@
       </a>
       <nav class="site-nav onboard-nav" aria-label="Primary">
         <a href="/#pricing">Pricing</a>
+        <a href="quote.html">Request a Quote</a>
         <a href="/#contact">Contact</a>
         <a class="btn btn-outline btn-sm" href="/">Back to site</a>
       </nav>
@@ -117,7 +118,7 @@
             <h4>1. Services</h4>
             <p>Provider will design, develop, host, and maintain a website according to the Client’s selected tier. Every paid monthly tier is a full online overhaul: professional website, Google Business Profile setup, and a local SEO (Search Engine Optimization) foundation, plus hosting, development/creation, and ongoing maintenance within the included monthly update allowance.</p>
             <h4>2. Fees &amp; billing</h4>
-            <p>A one-time <strong>$200 Launch Fee</strong> applies to all tiers and covers initial consultation, custom design/setup, domain/DNS if needed, basic on-page SEO, Google Analytics, contact forms, mobile optimization, testing, and onboarding. Client also authorizes recurring monthly charges for the selected subscription tier, or a one-time buy-out payment when Tier 4 is selected. Fees are billed through Stripe. Extra updates beyond the included monthly allowance are billed separately at the rates listed for that tier. Optional add-ons selected during onboarding are billed according to the running total shown before payment.</p>
+            <p>A one-time <strong>$200 Launch Fee</strong> applies to all tiers and covers initial consultation, custom design/setup, domain/DNS if needed, basic on-page SEO, Google Analytics, contact forms, mobile optimization, testing, and onboarding. Client also authorizes recurring monthly charges for the selected subscription tier, or a one-time buy-out payment when Tier 4 is selected. Fees are billed through Stripe. Optional recurring website add-ons selected during onboarding (such as bilingual site or monthly reports) are added to the monthly subscription shown before payment. One-time or custom services (logo, print, chatbot, extra pages, extra updates) are quoted separately and billed with a Stripe payment link. Extra updates beyond the included monthly allowance that are not purchased as a quote are billed separately at the rates listed for that tier.</p>
             <h4>3. Client responsibilities</h4>
             <p>Client will provide accurate business information, logos, photos, copy, and timely feedback. Delays in Client materials may extend delivery timelines.</p>
             <h4>4. Intellectual property</h4>
@@ -147,7 +148,7 @@
 
         <section class="onboard-step" data-step="2" aria-labelledby="step2-heading" hidden>
           <h2 id="step2-heading">What’s included in your plan</h2>
-          <p class="onboard-step-lead">Confirm the tier you want. Every plan includes a $200 one-time Launch Fee. You’ll see a full breakdown before payment. Optional add-ons can be added next and will show in a live running total.</p>
+          <p class="onboard-step-lead">Confirm the tier you want. Every plan includes a $200 one-time Launch Fee. Monthly plans can add optional recurring website features below. You’ll see the updated monthly total and first payment before checkout.</p>
 
           <div class="form-row">
             <label for="tier-select">Chosen tier</label>
@@ -160,6 +161,20 @@
               <option value="buyout-tier3">Tier 4 Buy-Out — 2 years of Tier 3 ($9,576)</option>
             </select>
           </div>
+
+          <fieldset class="onboard-addons" id="recurring-addons">
+            <legend>Optional recurring website add-ons</legend>
+            <p class="onboard-hint">These are added to your monthly Stripe subscription. One-time services use <a href="quote.html">Request a Quote</a>.</p>
+            <input type="hidden" name="recurringAddOns" id="recurring-addons-hidden" value="None selected" />
+            <label class="onboard-check">
+              <input id="addon-bilingual" name="addonBilingual" type="checkbox" value="bilingual" />
+              <span id="addon-bilingual-label">Bilingual Website — +$5/month</span>
+            </label>
+            <label class="onboard-check">
+              <input id="addon-reports" name="addonReports" type="checkbox" value="reports" />
+              <span>Monthly reports — +$49/month</span>
+            </label>
+          </fieldset>
 
           <article class="tier-breakdown" id="tier-breakdown" aria-live="polite"></article>
 
@@ -217,12 +232,12 @@
 
         <section class="onboard-step" data-step="4" aria-labelledby="step4-heading" hidden>
           <h2 id="step4-heading">Secure payment with Stripe</h2>
-          <p class="onboard-step-lead">We’ll email your onboarding details first, then open Stripe Checkout. Today you pay the $200 Launch Fee plus the first month. Card details never touch this website.</p>
+          <p class="onboard-step-lead">We’ll email your onboarding details first, then open Stripe Checkout. Today you pay the $200 Launch Fee plus the first month of your plan and any selected recurring add-ons. Card details never touch this website.</p>
 
           <article class="payment-summary" id="payment-summary"></article>
 
           <ul class="payment-points">
-            <li>Due today: $200 Launch Fee + first month</li>
+            <li>Due today: $200 Launch Fee + first month (including selected recurring add-ons)</li>
             <li>Encrypted checkout hosted by Stripe</li>
             <li>Monthly plans renew automatically until canceled</li>
           </ul>

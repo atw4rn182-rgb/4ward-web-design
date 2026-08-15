@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Request a Quote | 4Ward Web Design</title>
+  <meta name="description" content="Request a quote from 4Ward Web Design for one-time services such as logo work, business cards, stickers, extra pages, or an AI chatbot." />
+  <meta name="robots" content="noindex, follow" />
+  <link rel="canonical" href="https://4wardwebdesign.com/quote.html" />
+  <meta name="theme-color" content="#F8F9FA" />
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-B2NNE9XPW9"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-B2NNE9XPW9');
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="icon" href="assets/favicon.png?v=5" type="image/png" sizes="64x64" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=5" />
+</head>
+<body class="onboard-page">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a class="brand" href="/" aria-label="4Ward Web Design, LLC home — Carlsbad, New Mexico">
+        <svg class="brand-wordmark" viewBox="0 0 286 28" width="286" height="28" role="img" aria-label="4Ward Web Design, LLC" focusable="false">
+          <defs>
+            <linearGradient id="brandWordmarkGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#0b3d91" />
+              <stop offset="32%" stop-color="#1d4ed8" />
+              <stop offset="62%" stop-color="#c8792a" />
+              <stop offset="100%" stop-color="#b45309" />
+            </linearGradient>
+          </defs>
+          <text x="0" y="21" fill="url(#brandWordmarkGrad)" font-family="Outfit, Figtree, system-ui, sans-serif" font-size="18" font-weight="700" letter-spacing="-0.4">4Ward Web Design, LLC</text>
+        </svg>
+      </a>
+      <nav class="site-nav onboard-nav" aria-label="Primary">
+        <a href="/#pricing">Pricing</a>
+        <a href="onboarding.html">Start Project</a>
+        <a class="btn btn-outline btn-sm" href="/">Back to site</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="onboard has-motifs">
+    <div class="section-motifs" aria-hidden="true">
+      <span class="nm-motif nm-motif--tr"></span>
+      <span class="nm-motif nm-motif--roadrunner nm-motif--bl nm-motif--sm"></span>
+    </div>
+    <div class="container onboard-shell">
+      <header class="onboard-intro">
+        <p class="eyebrow">Custom &amp; one-time work</p>
+        <h1>Request a Quote</h1>
+        <p class="section-lead">Website plans check out separately with Stripe. Use this form for print, branding, chatbot, extra pages, and other custom work. We’ll review your request, set a price, and email you a Stripe payment link.</p>
+      </header>
+
+      <div class="onboard-panel" id="quote-success" hidden>
+        <p class="eyebrow">Request received</p>
+        <h2>Thanks — we’ll follow up by email</h2>
+        <p class="section-lead">Your quote request was sent to 4Ward Web Design. We’ll review the details and send a Stripe payment link if the work is a fit.</p>
+        <div class="onboard-actions">
+          <a class="btn btn-accent" href="/">Return home</a>
+          <a class="btn btn-outline" href="onboarding.html">Start a website plan</a>
+        </div>
+      </div>
+
+      <form class="onboard-form quote-form" id="quote-form" action="https://api.staticforms.dev/submit" method="POST" novalidate>
+        <input type="hidden" name="apiKey" value="sf_664e6d9a082c77e340ae36b6" />
+        <input type="hidden" name="subject" value="4wardwebdesign quote request" />
+        <input type="hidden" name="replyTo" value="@" />
+        <input type="text" name="honeypot" class="sf-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" />
+
+        <div class="form-row">
+          <label for="quote-name">Your name</label>
+          <input id="quote-name" name="name" type="text" autocomplete="name" required placeholder="Full name" />
+        </div>
+        <div class="form-row">
+          <label for="quote-email">Email</label>
+          <input id="quote-email" name="email" type="email" autocomplete="email" required placeholder="you@business.com" />
+        </div>
+        <div class="form-row">
+          <label for="quote-phone">Phone <span class="optional">(optional)</span></label>
+          <input id="quote-phone" name="phone" type="tel" autocomplete="tel" placeholder="(575) 555-1234" />
+        </div>
+        <div class="form-row">
+          <label for="quote-company">Company <span class="optional">(optional)</span></label>
+          <input id="quote-company" name="company" type="text" autocomplete="organization" placeholder="Business name" />
+        </div>
+        <div class="form-row">
+          <label for="quote-service">Service</label>
+          <select id="quote-service" name="service" required>
+            <option value="">Select a service</option>
+            <option value="AI chatbot">AI chatbot</option>
+            <option value="Business cards">Business cards</option>
+            <option value="Stickers">Stickers</option>
+            <option value="Logo / branding">Logo / branding</option>
+            <option value="Extra pages">Extra pages</option>
+            <option value="Extra updates">Extra updates</option>
+            <option value="Extra revisions">Extra revisions</option>
+            <option value="Other custom services">Other custom services</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <label for="quote-message">Project details</label>
+          <textarea id="quote-message" name="message" rows="6" required placeholder="Tell us what you need, quantities, deadlines, and any examples."></textarea>
+        </div>
+
+        <p class="onboard-hint">This form does not charge a card. Website subscriptions use <a href="onboarding.html">client onboarding</a>.</p>
+        <p class="form-status" id="quote-status" role="status" aria-live="polite"></p>
+        <div class="onboard-actions">
+          <button class="btn btn-accent" type="submit" id="quote-submit">Send quote request</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <a class="brand brand-footer" href="/">
+        <img src="assets/4ward-logo-header.png?v=5" alt="4Ward Web Design logo" width="110" height="118" />
+      </a>
+      <div class="footer-meta">
+        <p>&copy; <span id="quote-year"></span> 4Ward Web Design. All rights reserved.</p>
+        <p class="footer-locale">Quote requests · Carlsbad, New Mexico</p>
+      </div>
+      <a class="footer-top" href="#top">Back to top</a>
+    </div>
+  </footer>
+
+  <script src="quote.js"></script>
+</body>
+</html>

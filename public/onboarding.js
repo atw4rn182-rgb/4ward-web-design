@@ -3,6 +3,8 @@
   const MAX_LOGO_BYTES = 1.2 * 1024 * 1024;
   const STATIC_FORMS_URL = "https://api.staticforms.dev/submit";
   const LAUNCH_FEE_CENTS = 20000;
+  const REPORTS_CENTS = 4900;
+  const BILINGUAL_CENTS = 500;
 
   function money(cents) {
     return "$" + (cents / 100).toLocaleString("en-US", { minimumFractionDigits: 0 });
@@ -125,6 +127,11 @@
   const resumeBtn = document.getElementById("resume-onboarding");
   const year = document.getElementById("year");
   const payBtn = document.getElementById("pay-btn");
+  const addonsField = document.getElementById("recurring-addons");
+  const bilingualInput = document.getElementById("addon-bilingual");
+  const bilingualLabel = document.getElementById("addon-bilingual-label");
+  const reportsInput = document.getElementById("addon-reports");
+  const addonsHidden = document.getElementById("recurring-addons-hidden");
 
   let currentStep = 1;
   let logoMeta = { name: "", type: "" };
@@ -169,6 +176,8 @@
       companyInformation: data.get("companyInformation") || "",
       existingOnlinePresence: data.get("existingOnlinePresence") || "",
       logoMeta,
+      addonBilingual: Boolean(bilingualInput && bilingualInput.checked),
+      addonReports: Boolean(reportsInput && reportsInput.checked),
     };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
@@ -182,19 +191,78 @@
     if (state.companyInformation) form.companyInformation.value = state.companyInformation;
     if (state.existingOnlinePresence) form.existingOnlinePresence.value = state.existingOnlinePresence;
     if (state.logoMeta) logoMeta = state.logoMeta;
+    if (bilingualInput) bilingualInput.checked = Boolean(state.addonBilingual);
+    if (reportsInput) reportsInput.checked = Boolean(state.addonReports);
+  }
+
+  function selectedAddOnIds(tier) {
+    if (!tier || tier.mode !== "subscription") return [];
+    const ids = [];
+    if (bilingualInput && bilingualInput.checked) ids.push("bilingual");
+    if (reportsInput && reportsInput.checked) ids.push("reports");
+    return ids;
+  }
+
+  function addOnMonthlyCents(tierKey, ids) {
+    let cents = 0;
+    if (ids.includes("bilingual") && (tierKey === "tier1" || tierKey === "tier2")) {
+      cents += BILINGUAL_CENTS;
+    }
+    if (ids.includes("reports")) cents += REPORTS_CENTS;
+    return cents;
+  }
+
+  function addOnSummaryLines(tierKey, ids) {
+    const lines = [];
+    if (ids.includes("bilingual")) {
+      lines.push(
+        tierKey === "tier3"
+          ? "Bilingual Website — Included"
+          : "Bilingual Website — +$5/month"
+      );
+    }
+    if (ids.includes("reports")) {
+      lines.push("Monthly reports — +$49/month");
+    }
+    return lines;
   }
 
   function renderTier() {
     const tierKey = tierSelect.value;
     const tier = TIERS[tierKey] || TIERS.tier2;
-    const dueToday =
-      tier.mode === "subscription"
-        ? LAUNCH_FEE_CENTS + (tier.monthlyCents || 0)
-        : tier.dueCents || LAUNCH_FEE_CENTS;
-    const dueLabel =
-      tier.mode === "subscription"
-        ? money(dueToday) + " today (" + money(LAUNCH_FEE_CENTS) + " launch + " + money(tier.monthlyCents) + " first month)"
-        : money(dueToday) + " today (buy-out + " + money(LAUNCH_FEE_CENTS) + " launch fee)";
+    const isMonthly = tier.mode === "subscription";
+    if (addonsField) addonsField.hidden = !isMonthly;
+    if (bilingualLabel) {
+      bilingualLabel.textContent =
+        tierKey === "tier3"
+          ? "Bilingual Website — Included"
+          : "Bilingual Website — +$5/month";
+    }
+
+    const addOnIds = selectedAddOnIds(tier);
+    const addonCents = addOnMonthlyCents(tierKey, addOnIds);
+    const addonLines = addOnSummaryLines(tierKey, addOnIds);
+    if (addonsHidden) {
+      addonsHidden.value = isMonthly
+        ? addonLines.join("; ") || "None selected"
+        : "Not applicable on buy-out";
+    }
+
+    const monthlyTotal = (tier.monthlyCents || 0) + addonCents;
+    const dueToday = isMonthly
+      ? LAUNCH_FEE_CENTS + monthlyTotal
+      : tier.dueCents || LAUNCH_FEE_CENTS;
+    const dueLabel = isMonthly
+      ? money(dueToday) +
+        " today (" +
+        money(LAUNCH_FEE_CENTS) +
+        " launch + " +
+        money(monthlyTotal) +
+        " first month)"
+      : money(dueToday) + " today (buy-out + " + money(LAUNCH_FEE_CENTS) + " launch fee)";
+    const thenLabel = isMonthly
+      ? money(monthlyTotal) + "/month until canceled"
+      : "No monthly fee";
 
     tierBreakdown.innerHTML =
       "<header><p class=\"plan-tier\">Selected package</p><h3>" +
@@ -207,6 +275,10 @@
       tier.includes.map((item) => "<li>" + item + "</li>").join("") +
       "</ul>";
 
+    const addonDl = addonLines
+      .map((line) => "<div><dt>Add-on</dt><dd>" + line + "</dd></div>")
+      .join("");
+
     paymentSummary.innerHTML =
       "<h3>Order summary</h3><dl>" +
       "<div><dt>Plan</dt><dd>" +
@@ -214,13 +286,14 @@
       "</dd></div>" +
       "<div><dt>Launch Fee</dt><dd>$200 one-time</dd></div>" +
       "<div><dt>First month</dt><dd>" +
-      (tier.mode === "subscription" ? money(tier.monthlyCents) : "Included in buy-out") +
+      (isMonthly ? money(monthlyTotal) : "Included in buy-out") +
       "</dd></div>" +
+      addonDl +
       "<div><dt>Due today</dt><dd>" +
       dueLabel +
       "</dd></div>" +
       "<div><dt>Then</dt><dd>" +
-      (tier.mode === "subscription" ? tier.priceLabel + " until canceled" : "No monthly fee") +
+      thenLabel +
       "</dd></div>" +
       "<div><dt>Name</dt><dd>" +
       (form.name.value || "—") +
@@ -285,6 +358,11 @@
     if (tier) {
       formData.set("chosenTier", tierSelect.value + " — " + tier.label + " (" + tier.priceLabel + ")");
     }
+    const addOnIds = selectedAddOnIds(tier);
+    formData.set(
+      "recurringAddOns",
+      addOnSummaryLines(tierSelect.value, addOnIds).join("; ") || "None selected"
+    );
 
     const response = await fetch(STATIC_FORMS_URL, {
       method: "POST",
@@ -328,6 +406,7 @@
       logoType: (logoInput && logoInput.files && logoInput.files[0] && logoInput.files[0].type) || logoMeta.type || "",
       companyInformation,
       signedAgreement: document.getElementById("signed-agreement")?.checked ? "yes" : "no",
+      addOns: selectedAddOnIds(TIERS[tierSelect.value]),
     };
 
     const response = await fetch("/api/create-checkout-session", {
@@ -400,6 +479,15 @@
   });
 
   tierSelect?.addEventListener("change", () => {
+    renderTier();
+    saveState();
+  });
+
+  bilingualInput?.addEventListener("change", () => {
+    renderTier();
+    saveState();
+  });
+  reportsInput?.addEventListener("change", () => {
     renderTier();
     saveState();
   });

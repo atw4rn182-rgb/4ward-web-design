@@ -52,6 +52,38 @@ const PRICE_ENV = {
   tier3: "STRIPE_PRICE_TIER3",
 };
 
+const ALLOWED_ADDONS = new Set(["bilingual", "reports"]);
+const REPORTS_CENTS = 4900;
+
+function bilingualCents(tierId) {
+  if (tierId === "tier1" || tierId === "tier2") return 500;
+  if (tierId === "tier3") return 0;
+  return null;
+}
+
+function normalizeAddOns(raw, tier) {
+  if (!tier || tier.mode !== "subscription") return [];
+  const list = Array.isArray(raw) ? raw : [];
+  const out = [];
+  list.forEach((value) => {
+    const id = sanitize(String(value), 40);
+    if (ALLOWED_ADDONS.has(id) && !out.includes(id)) out.push(id);
+  });
+  return out;
+}
+
+function recurringAddonLineItem(index, { id, name, amount }) {
+  return {
+    [`line_items[${index}][quantity]`]: 1,
+    [`line_items[${index}][price_data][currency]`]: "usd",
+    [`line_items[${index}][price_data][unit_amount]`]: amount,
+    [`line_items[${index}][price_data][recurring][interval]`]: "month",
+    [`line_items[${index}][price_data][product_data][name]`]: name,
+    [`line_items[${index}][price_data][product_data][metadata][kind]`]: "addon",
+    [`line_items[${index}][price_data][product_data][metadata][addon]`]: id,
+  };
+}
+
 function sanitize(value, max = 500) {
   if (typeof value !== "string") return "";
   return value.trim().slice(0, max);
@@ -102,7 +134,7 @@ function launchFeeLineItem(index) {
   };
 }
 
-function buildLineItemParams(tier) {
+function buildLineItemParams(tier, addOnIds) {
   const priceEnvKey = PRICE_ENV[tier.id];
   const priceId = priceEnvKey ? process.env[priceEnvKey] : null;
   let items;
@@ -136,9 +168,40 @@ function buildLineItemParams(tier) {
     };
   }
 
+  const extra = {};
+  let index = 1;
+  if (tier.mode === "subscription") {
+    if (addOnIds.includes("bilingual")) {
+      const amount = bilingualCents(tier.id);
+      if (amount > 0) {
+        Object.assign(
+          extra,
+          recurringAddonLineItem(index, {
+            id: "bilingual",
+            name: "Bilingual Website",
+            amount,
+          })
+        );
+        index += 1;
+      }
+    }
+    if (addOnIds.includes("reports")) {
+      Object.assign(
+        extra,
+        recurringAddonLineItem(index, {
+          id: "reports",
+          name: "Monthly reports",
+          amount: REPORTS_CENTS,
+        })
+      );
+      index += 1;
+    }
+  }
+
   return {
     ...items,
-    ...launchFeeLineItem(1),
+    ...extra,
+    ...launchFeeLineItem(index),
   };
 }
 
@@ -213,6 +276,7 @@ export async function POST(request) {
   const companyInformation = sanitize(body.companyInformation, 2000);
   const logoName = sanitize(body.logoName, 160);
   const signedAgreement = sanitize(body.signedAgreement, 20);
+  const addOnIds = normalizeAddOns(body.addOns, tier);
 
   if (!companyName || !contactName || !email || !signerName) {
     return json(400, { error: "Missing required onboarding fields" });
@@ -239,6 +303,9 @@ export async function POST(request) {
     logo_provided: logoName ? "yes" : "no",
     form_handler: "staticforms",
     launch_fee_cents: String(LAUNCH_FEE_CENTS),
+    addons: addOnIds.join(",") || "none",
+    bilingual_requested: addOnIds.includes("bilingual") ? "yes" : "no",
+    reports_requested: addOnIds.includes("reports") ? "yes" : "no",
   };
 
   try {
@@ -261,7 +328,7 @@ export async function POST(request) {
         tier.mode === "subscription"
           ? "Today you pay the $200 Launch Fee plus the first month of your plan."
           : "Today you pay the $200 Launch Fee plus two years of your chosen tier.",
-      ...buildLineItemParams(tier),
+      ...buildLineItemParams(tier, addOnIds),
       ...metadataParams("metadata", metadata),
     };
 

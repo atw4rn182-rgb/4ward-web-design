@@ -4,6 +4,7 @@ const nextConfig = {
     return [
       { source: "/", destination: "/index.html" },
       { source: "/onboarding", destination: "/onboarding.html" },
+      { source: "/quote", destination: "/quote.html" },
     ];
   },
 };
