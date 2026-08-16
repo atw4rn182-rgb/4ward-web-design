@@ -2,9 +2,11 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getActionOrigin, safeAdminNext } from "@/lib/supabase/origin";
 
 export type AuthState = {
   error?: string;
+  sent?: boolean;
 };
 
 export async function loginAction(
@@ -12,11 +14,10 @@ export async function loginAction(
   formData: FormData
 ): Promise<AuthState> {
   const email = String(formData.get("email") || "").trim();
-  const password = String(formData.get("password") || "");
-  const next = String(formData.get("next") || "/admin/dashboard");
+  const next = safeAdminNext(String(formData.get("next") || "/admin/dashboard"));
 
-  if (!email || !password) {
-    return { error: "Email and password are required." };
+  if (!email) {
+    return { error: "Email is required." };
   }
 
   if (
@@ -29,30 +30,21 @@ export async function loginAction(
     };
   }
 
+  const origin = await getActionOrigin();
   const supabase = await createClient();
-  const { data, error } = await supabase.auth.signInWithPassword({
+  const { error } = await supabase.auth.signInWithOtp({
     email,
-    password,
+    options: {
+      shouldCreateUser: false,
+      emailRedirectTo: `${origin}/auth/callback?next=${encodeURIComponent(next)}`,
+    },
   });
 
-  if (error || !data.user) {
-    return { error: "Invalid email or password." };
+  if (error && /configured|environment|invalid api/i.test(error.message)) {
+    return { error: "Admin login is not configured yet. Check the Supabase keys." };
   }
 
-  const { data: adminRow } = await supabase
-    .from("admin_users")
-    .select("user_id")
-    .eq("user_id", data.user.id)
-    .maybeSingle();
-
-  if (!adminRow) {
-    await supabase.auth.signOut();
-    return { error: "This account is not authorized for admin access." };
-  }
-
-  const safeNext =
-    next.startsWith("/admin") && next !== "/admin/login" ? next : "/admin/dashboard";
-  redirect(safeNext);
+  return { sent: true };
 }
 
 export async function logoutAction() {

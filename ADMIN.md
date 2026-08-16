@@ -25,21 +25,29 @@ Path in the dashboard: gear icon **Project Settings** (left sidebar bottom) → 
 2. Paste the full contents of `supabase/migrations/001_admin_schema.sql`
 3. Click **Run**
 
-## 4. Lock down signups (recommended)
+## 4. Email magic-link login
 
 1. **Authentication → Providers → Email** — keep Email enabled
-2. **Authentication → Providers → Email** — turn **off** “Confirm email” only if you want instant login for the admin you create in the dashboard (optional)
-3. **Authentication → Sign In / Providers** — disable any providers you are not using
-4. Prefer creating users only in the dashboard (do not leave public signup open on a marketing site)
+2. Keep **Confirm email** on (magic links need email delivery)
+3. Disable any other providers you are not using
+4. Create admin users only in the dashboard (do not leave public signup open)
 
-In newer dashboards: **Authentication → Sign Up / Providers** — disable public sign-ups if the toggle exists, or leave signup unused and only create users manually.
+**Authentication → URL Configuration**
+
+- Site URL: `https://www.4wardwebdesign.com`
+- Redirect URLs (add all of these):
+  - `https://www.4wardwebdesign.com/auth/callback`
+  - `https://4wardwebdesign.com/auth/callback`
+  - `http://localhost:3000/auth/callback`
+
+The login form uses `signInWithOtp` and does **not** create new users. The Auth user must already exist.
 
 ## 5. Create the first admin Auth user
 
 1. **Authentication → Users → Add user → Create new user**
 2. Email: `atw.4rn182@gmail.com` (change if you want a different admin email)
-3. Password: choose a strong password and save it
-4. Check **Auto Confirm User** so you can sign in immediately
+3. Password: any strong password is fine (login uses a magic link, not the password)
+4. Check **Auto Confirm User**
 5. Create user
 6. Open that user and **copy the User UID** (UUID)
 
@@ -63,8 +71,9 @@ Only rows in `admin_users` can access `/admin` (app checks this on login and on 
 
 ## 7. Verify
 
-1. Open `https://www.4wardwebdesign.com/admin/login`
-2. Sign in with the admin email + password → should land on `/admin/dashboard`
-3. Sign out
-4. In Supabase, create a second throwaway Auth user that is **not** inserted into `admin_users`
-5. Try signing in with that user → should see **not authorized** and never reach the dashboard
+1. Open `https://www.4wardwebdesign.com/admin/login` (or `http://localhost:3000/admin/login`)
+2. Enter the admin email → you should see “check your email”
+3. Open the magic link on the **same browser** → should land on `/admin/dashboard`
+4. Sign out
+5. In Supabase, create a second throwaway Auth user that is **not** inserted into `admin_users`
+6. Try that email → the link should not grant dashboard access
