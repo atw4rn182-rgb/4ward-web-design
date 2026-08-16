@@ -1881,23 +1881,44 @@ a.ba-frame:hover img {
   }
 
   .hero {
-    min-height: min(92vh, 820px);
-    align-items: flex-end;
-    justify-content: center;
-    padding: calc(var(--header-h) + 0.7rem) 0 1.35rem;
+    min-height: 0;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: var(--header-h) 0 1.15rem;
     background: #1a140e;
+  }
+
+  .hero-stage {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    min-height: min(52vh, 360px);
+    max-height: 68vh;
+    background: #d7e3f4;
   }
 
   .hero-content.container,
   .hero-content {
     width: min(1140px, calc(100% - 1.75rem));
-    padding: 0;
+    padding: 1rem 0 0.15rem;
   }
 
-  .hero-video,
+  .hero-video {
+    object-fit: contain;
+    object-position: center center;
+  }
+
   .hero-slide {
     object-fit: cover;
     object-position: center center;
+  }
+
+  .hero-overlay {
+    background:
+      linear-gradient(180deg, rgba(8, 14, 26, 0.08) 0%, transparent 24%, transparent 72%, rgba(8, 14, 26, 0.42) 100%);
   }
 
   .hero-actions {

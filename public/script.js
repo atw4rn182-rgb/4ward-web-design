@@ -9,6 +9,7 @@
   }
 
   const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const mobileHero = window.matchMedia("(max-width: 760px)");
 
   const heroVideo = document.getElementById("hero-video");
   const heroMontage = document.getElementById("hero-montage");
@@ -16,6 +17,24 @@
   const SLIDE_MS = 3400;
   const FADE_MS = 1100;
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  function heroSourceForViewport() {
+    if (!heroVideo) return "";
+    return mobileHero.matches
+      ? heroVideo.getAttribute("data-mobile-src") || "assets/4wardweblogospinning.mp4"
+      : heroVideo.getAttribute("data-desktop-src") || "assets/hero-4ward.mp4";
+  }
+
+  function applyHeroSource() {
+    if (!heroVideo) return;
+    const next = heroSourceForViewport();
+    const source = heroVideo.querySelector("source");
+    if (!next || !source) return;
+    const current = source.getAttribute("src") || "";
+    if (current === next) return;
+    source.setAttribute("src", next);
+    heroVideo.load();
+  }
 
   function showHeroVideo() {
     if (!heroVideo) return;
@@ -117,6 +136,7 @@
   }
 
   if (heroVideo) {
+    applyHeroSource();
     muteHeroVideo();
     if (prefersReduced) {
       heroVideo.removeAttribute("autoplay");
@@ -125,6 +145,11 @@
     } else {
       heroVideo.loop = false;
       runHeroSequence();
+    }
+    if (typeof mobileHero.addEventListener === "function") {
+      mobileHero.addEventListener("change", () => {
+        applyHeroSource();
+      });
     }
   }
 

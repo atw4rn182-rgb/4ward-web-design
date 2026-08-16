@@ -169,12 +169,26 @@
           autoplay
           muted
           playsinline
-          preload="auto"
+          webkit-playsinline
+          preload="metadata"
           disablepictureinpicture
           controlslist="nodownload nofullscreen noremoteplayback"
+          data-desktop-src="assets/hero-4ward.mp4"
+          data-mobile-src="assets/4wardweblogospinning.mp4"
         >
           <source src="assets/hero-4ward.mp4" type="video/mp4" />
         </video>
+        <script>
+          (function () {
+            var video = document.getElementById("hero-video");
+            if (!video || !window.matchMedia("(max-width: 760px)").matches) return;
+            var source = video.querySelector("source");
+            var mobileSrc = video.getAttribute("data-mobile-src");
+            if (!source || !mobileSrc) return;
+            source.setAttribute("src", mobileSrc);
+            video.load();
+          })();
+        </script>
         <div class="hero-montage" id="hero-montage">
           <img
             class="hero-slide"
