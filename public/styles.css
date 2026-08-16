@@ -1896,7 +1896,7 @@ a.ba-frame:hover img {
     height: auto;
     aspect-ratio: 464 / 688;
     min-height: 0;
-    max-height: 78vh;
+    max-height: 88vh;
     background: #1a140e;
   }
 
@@ -1907,8 +1907,10 @@ a.ba-frame:hover img {
   }
 
   .hero-video {
-    object-fit: cover;
+    object-fit: contain;
     object-position: center center;
+    transform: scale(0.88);
+    transform-origin: center center;
   }
 
   .hero-slide {
