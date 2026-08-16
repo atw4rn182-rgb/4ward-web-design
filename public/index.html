@@ -164,31 +164,29 @@
     <section class="hero" aria-labelledby="hero-heading">
       <div class="hero-stage" aria-hidden="true">
         <video
-          class="hero-video is-active"
-          id="hero-video"
-          autoplay
+          class="hero-video hero-video--desktop is-active"
+          id="hero-video-desktop"
           muted
           playsinline
           webkit-playsinline
           preload="metadata"
           disablepictureinpicture
           controlslist="nodownload nofullscreen noremoteplayback"
-          data-desktop-src="assets/hero-4ward.mp4"
-          data-mobile-src="assets/herovideo4ward.mp4"
         >
           <source src="assets/hero-4ward.mp4" type="video/mp4" />
         </video>
-        <script>
-          (function () {
-            var video = document.getElementById("hero-video");
-            if (!video || !window.matchMedia("(max-width: 760px)").matches) return;
-            var source = video.querySelector("source");
-            var mobileSrc = video.getAttribute("data-mobile-src");
-            if (!source || !mobileSrc) return;
-            source.setAttribute("src", mobileSrc);
-            video.load();
-          })();
-        </script>
+        <video
+          class="hero-video hero-video--mobile is-active"
+          id="hero-video-mobile"
+          muted
+          playsinline
+          webkit-playsinline
+          preload="metadata"
+          disablepictureinpicture
+          controlslist="nodownload nofullscreen noremoteplayback"
+        >
+          <source src="assets/herovideo4ward.mp4" type="video/mp4" />
+        </video>
         <div class="hero-montage" id="hero-montage">
           <img
             class="hero-slide"

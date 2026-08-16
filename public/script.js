@@ -9,47 +9,41 @@
   }
 
   const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const mobileHero = window.matchMedia("(max-width: 760px)");
-
-  const heroVideo = document.getElementById("hero-video");
+  const mobileHero = window.matchMedia("(max-width: 900px)");
+  const desktopVideo = document.getElementById("hero-video-desktop");
+  const phoneVideo = document.getElementById("hero-video-mobile");
   const heroMontage = document.getElementById("hero-montage");
   const heroSlides = heroMontage ? Array.from(heroMontage.querySelectorAll(".hero-slide")) : [];
   const SLIDE_MS = 3400;
   const FADE_MS = 1100;
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-  function heroSourceForViewport() {
-    if (!heroVideo) return "";
-    return mobileHero.matches
-      ? heroVideo.getAttribute("data-mobile-src") || "assets/herovideo4ward.mp4"
-      : heroVideo.getAttribute("data-desktop-src") || "assets/hero-4ward.mp4";
-  }
-
-  function applyHeroSource() {
-    if (!heroVideo) return;
-    const next = heroSourceForViewport();
-    const source = heroVideo.querySelector("source");
-    if (!next || !source) return;
-    const current = source.getAttribute("src") || "";
-    if (current === next) return;
-    source.setAttribute("src", next);
-    heroVideo.load();
+  function getHeroVideo() {
+    return mobileHero.matches ? phoneVideo : desktopVideo;
   }
 
   function showHeroVideo() {
-    if (!heroVideo) return;
-    heroVideo.classList.add("is-active");
+    const heroVideo = getHeroVideo();
+    if (desktopVideo) {
+      desktopVideo.classList.toggle("is-active", heroVideo === desktopVideo);
+      if (heroVideo !== desktopVideo) desktopVideo.pause();
+    }
+    if (phoneVideo) {
+      phoneVideo.classList.toggle("is-active", heroVideo === phoneVideo);
+      if (heroVideo !== phoneVideo) phoneVideo.pause();
+    }
     if (heroMontage) heroMontage.classList.remove("is-active");
     heroSlides.forEach((slide) => slide.classList.remove("is-active"));
   }
 
   function showMontage() {
     if (!heroMontage) return;
-    if (heroVideo) heroVideo.classList.remove("is-active");
+    if (desktopVideo) desktopVideo.classList.remove("is-active");
+    if (phoneVideo) phoneVideo.classList.remove("is-active");
     heroMontage.classList.add("is-active");
   }
 
-  function muteHeroVideo() {
+  function muteHeroVideo(heroVideo) {
     if (!heroVideo) return;
     heroVideo.muted = true;
     heroVideo.defaultMuted = true;
@@ -61,6 +55,7 @@
 
   function playHeroVideoOnce() {
     return new Promise((resolve) => {
+      const heroVideo = getHeroVideo();
       if (!heroVideo) {
         resolve();
         return;
@@ -79,7 +74,7 @@
       heroVideo.addEventListener("ended", onEnded);
 
       const startPlayback = () => {
-        muteHeroVideo();
+        muteHeroVideo(heroVideo);
         try {
           heroVideo.loop = false;
           if (heroVideo.currentTime !== 0) heroVideo.currentTime = 0;
@@ -108,7 +103,7 @@
   }
 
   async function runHeroSequence() {
-    if (!heroVideo || prefersReduced) return;
+    if (!getHeroVideo() || prefersReduced) return;
 
     while (true) {
       showHeroVideo();
@@ -135,21 +130,22 @@
     }
   }
 
-  if (heroVideo) {
-    applyHeroSource();
-    muteHeroVideo();
+  [desktopVideo, phoneVideo].forEach((heroVideo) => {
+    if (!heroVideo) return;
+    muteHeroVideo(heroVideo);
     if (prefersReduced) {
       heroVideo.removeAttribute("autoplay");
       heroVideo.pause();
-      showHeroVideo();
     } else {
       heroVideo.loop = false;
-      runHeroSequence();
     }
-    if (typeof mobileHero.addEventListener === "function") {
-      mobileHero.addEventListener("change", () => {
-        applyHeroSource();
-      });
+  });
+
+  if (getHeroVideo()) {
+    if (prefersReduced) {
+      showHeroVideo();
+    } else {
+      runHeroSequence();
     }
   }
 
