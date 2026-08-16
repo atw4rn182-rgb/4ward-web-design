@@ -1,48 +1,58 @@
 import { PageHeader } from "@/components/admin/PageHeader";
 import { StatCard } from "@/components/admin/StatCard";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { getProjects, labelStatus, relatedCompany } from "@/lib/supabase/queries";
 
 export const metadata = {
   title: "Projects | 4Ward Admin",
   robots: { index: false, follow: false },
 };
 
-const PROJECTS = [
-  { name: "Accu-Fab redesign", stage: "Review", owner: "Nereece" },
-  { name: "Black Mesa launch", stage: "Live", owner: "Nereece" },
-  { name: "Desert Peak brochure", stage: "Design", owner: "Nereece" },
-  { name: "Cafe Co. refresh", stage: "Development", owner: "Nereece" },
-];
+export default async function ProjectsPage() {
+  const { data: projects } = await getProjects();
+  const open = projects.filter((row) => !["live", "archived"].includes(row.status)).length;
+  const inReview = projects.filter((row) => row.status === "review").length;
+  const launched = projects.filter((row) => row.status === "live").length;
 
-export default function ProjectsPage() {
   return (
     <div>
       <PageHeader
         title="Projects"
-        description="Website builds and statuses. Placeholder cards until website_projects data is connected."
+        description="Website builds from the website_projects table."
       />
       <section className="mb-6 grid gap-4 sm:grid-cols-3">
-        <StatCard label="Open projects" value="7" hint="Not yet archived" />
-        <StatCard label="In review" value="2" hint="Waiting on client feedback" />
-        <StatCard label="Launched YTD" value="5" hint="Placeholder count" trend="+1" />
+        <StatCard label="Open projects" value={String(open)} hint="Not yet archived" />
+        <StatCard label="In review" value={String(inReview)} hint="Waiting on client feedback" />
+        <StatCard label="Launched" value={String(launched)} hint="Marked live" />
       </section>
-      <div className="grid gap-4 md:grid-cols-2">
-        {PROJECTS.map((project) => (
-          <article
-            key={project.name}
-            className="rounded-2xl border border-black/10 bg-paper p-5 shadow-soft"
-          >
-            <div className="flex items-start justify-between gap-3">
-              <h2 className="font-display text-lg font-bold tracking-tight">
-                {project.name}
-              </h2>
-              <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
-                {project.stage}
-              </span>
-            </div>
-            <p className="mt-2 text-sm text-muted">Owner: {project.owner}</p>
-          </article>
-        ))}
-      </div>
+      {projects.length === 0 ? (
+        <EmptyState
+          title="No projects yet"
+          detail="Projects will show here after they are created in Supabase."
+        />
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2">
+          {projects.map((project) => (
+            <article
+              key={project.id}
+              className="rounded-2xl border border-black/10 bg-paper p-5 shadow-soft"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="font-display text-lg font-bold tracking-tight">
+                  {project.name}
+                </h2>
+                <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                  {labelStatus(project.status)}
+                </span>
+              </div>
+              <p className="mt-2 text-sm text-muted">
+                {relatedCompany(project.customers)}
+                {project.tier ? ` · ${project.tier}` : ""}
+              </p>
+            </article>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

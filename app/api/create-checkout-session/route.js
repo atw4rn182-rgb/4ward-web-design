@@ -197,7 +197,7 @@ function buildLineItemParams(tier, addOnIds) {
         extra,
         recurringAddonLineItem(index, {
           id: "reports",
-          name: "Monthly reports",
+          name: "Monthly Updates",
           amount: REPORTS_CENTS,
         })
       );
