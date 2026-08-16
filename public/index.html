@@ -115,7 +115,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=hero3" />
+  <link rel="stylesheet" href="styles.css?v=perf1" />
   <link rel="icon" href="assets/favicon.png?v=5" type="image/png" sizes="64x64" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=5" />
@@ -166,11 +166,10 @@
         <video
           class="hero-video hero-video--desktop is-active"
           id="hero-video-desktop"
-          autoplay
           muted
           playsinline
           webkit-playsinline
-          preload="auto"
+          preload="none"
           disablepictureinpicture
           controlslist="nodownload nofullscreen noremoteplayback"
         >
@@ -179,63 +178,37 @@
         <video
           class="hero-video hero-video--mobile is-active"
           id="hero-video-mobile"
-          autoplay
           muted
           loop
           playsinline
           webkit-playsinline
-          preload="auto"
+          preload="none"
           disablepictureinpicture
           controlslist="nodownload nofullscreen noremoteplayback"
         >
           <source src="assets/mobile-hero4ward.mp4?v=3" type="video/mp4" />
         </video>
         <div class="hero-montage" id="hero-montage" hidden aria-hidden="true">
-          <img
-            class="hero-slide"
-            src="assets/hero-southwest.png"
-            alt=""
-            width="1920"
-            height="1080"
-            decoding="async"
-            fetchpriority="low"
-          />
-          <img
-            class="hero-slide"
-            src="assets/hero-high-desert.png"
-            alt=""
-            width="1920"
-            height="1080"
-            decoding="async"
-            fetchpriority="low"
-          />
-          <img
-            class="hero-slide"
-            src="assets/hero-carlsbad-bright-1.png"
-            alt=""
-            width="1920"
-            height="1080"
-            decoding="async"
-            fetchpriority="low"
-          />
-          <img
-            class="hero-slide"
-            src="assets/hero-carlsbad-caverns.png"
-            alt=""
-            width="1920"
-            height="1080"
-            decoding="async"
-            fetchpriority="low"
-          />
-          <img
-            class="hero-slide"
-            src="assets/hero-sitting-bull-falls.png"
-            alt=""
-            width="1920"
-            height="1080"
-            decoding="async"
-            fetchpriority="low"
-          />
+          <picture>
+            <source srcset="assets/hero-southwest.webp" type="image/webp" />
+            <img class="hero-slide" src="assets/hero-southwest.png" alt="" width="1920" height="1080" loading="lazy" decoding="async" fetchpriority="low" />
+          </picture>
+          <picture>
+            <source srcset="assets/hero-high-desert.webp" type="image/webp" />
+            <img class="hero-slide" src="assets/hero-high-desert.png" alt="" width="1920" height="1080" loading="lazy" decoding="async" fetchpriority="low" />
+          </picture>
+          <picture>
+            <source srcset="assets/hero-carlsbad-bright-1.webp" type="image/webp" />
+            <img class="hero-slide" src="assets/hero-carlsbad-bright-1.png" alt="" width="1920" height="1080" loading="lazy" decoding="async" fetchpriority="low" />
+          </picture>
+          <picture>
+            <source srcset="assets/hero-carlsbad-caverns.webp" type="image/webp" />
+            <img class="hero-slide" src="assets/hero-carlsbad-caverns.png" alt="" width="1920" height="1080" loading="lazy" decoding="async" fetchpriority="low" />
+          </picture>
+          <picture>
+            <source srcset="assets/hero-sitting-bull-falls.webp" type="image/webp" />
+            <img class="hero-slide" src="assets/hero-sitting-bull-falls.png" alt="" width="1920" height="1080" loading="lazy" decoding="async" fetchpriority="low" />
+          </picture>
         </div>
       </div>
       <div class="container hero-content">
@@ -557,13 +530,19 @@
               <figure class="ba-panel">
                 <figcaption class="ba-label ba-before">Before</figcaption>
                 <div class="ba-frame">
-                  <img src="assets/before-accufab.png" alt="Before screenshot of Accu-Fab NM outdated website design" width="640" height="400" loading="lazy" />
+                  <picture>
+                    <source srcset="assets/before-accufab.webp" type="image/webp" />
+                    <img src="assets/before-accufab.png" alt="Before screenshot of Accu-Fab NM outdated website design" width="640" height="400" loading="lazy" decoding="async" />
+                  </picture>
                 </div>
               </figure>
               <figure class="ba-panel">
                 <figcaption class="ba-label ba-after">After</figcaption>
                 <a class="ba-frame" href="https://accufabnm.com" target="_blank" rel="noopener noreferrer">
-                  <img src="assets/after-accufab.png" alt="After screenshot of Accu-Fab NM professional website designed by 4Ward" width="640" height="400" loading="lazy" />
+                  <picture>
+                    <source srcset="assets/after-accufab.webp" type="image/webp" />
+                    <img src="assets/after-accufab.png" alt="After screenshot of Accu-Fab NM professional website designed by 4Ward" width="640" height="400" loading="lazy" decoding="async" />
+                  </picture>
                 </a>
               </figure>
             </div>
@@ -586,7 +565,10 @@
               <figure class="ba-panel">
                 <figcaption class="ba-label ba-after">After</figcaption>
                 <a class="ba-frame" href="https://blackmesawelding.com" target="_blank" rel="noopener noreferrer">
-                  <img src="assets/after-blackmesa.png" alt="After screenshot of Black Mesa Welding website designed by 4Ward Web Design" width="640" height="400" loading="lazy" />
+                  <picture>
+                    <source srcset="assets/after-blackmesa.webp" type="image/webp" />
+                    <img src="assets/after-blackmesa.png" alt="After screenshot of Black Mesa Welding website designed by 4Ward Web Design" width="640" height="400" loading="lazy" decoding="async" />
+                  </picture>
                 </a>
               </figure>
             </div>
@@ -628,7 +610,7 @@
   <footer class="site-footer">
     <div class="container footer-inner">
       <a class="brand brand-footer" href="#top">
-        <img src="assets/4ward-logo-header.png?v=5" alt="4Ward Web Design logo" width="110" height="118" />
+        <img src="assets/4ward-logo-header.png?v=5" alt="4Ward Web Design logo" width="110" height="118" loading="lazy" decoding="async" />
       </a>
       <div class="footer-meta">
         <p>&copy; <span id="year"></span> 4Ward Web Design. All rights reserved.</p>
@@ -638,6 +620,6 @@
     </div>
   </footer>
 
-  <script src="script.js?v=hero3"></script>
+  <script src="script.js?v=perf1"></script>
 </body>
 </html>

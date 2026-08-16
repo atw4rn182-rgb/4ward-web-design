@@ -30,8 +30,26 @@
     heroVideo.setAttribute("muted", "");
   }
 
+  function armVideo(heroVideo) {
+    if (!heroVideo) return;
+    heroVideo.preload = "auto";
+    heroVideo.setAttribute("preload", "auto");
+  }
+
+  function disarmVideo(heroVideo) {
+    if (!heroVideo) return;
+    heroVideo.preload = "none";
+    heroVideo.setAttribute("preload", "none");
+    try {
+      heroVideo.pause();
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
   function ensurePlaying(heroVideo) {
     if (!heroVideo) return Promise.resolve();
+    armVideo(heroVideo);
     muteHeroVideo(heroVideo);
     const playPromise = heroVideo.play();
     if (playPromise && typeof playPromise.catch === "function") {
@@ -61,11 +79,7 @@
 
     if (desktopVideo) {
       desktopVideo.classList.remove("is-active");
-      try {
-        desktopVideo.pause();
-      } catch (_) {
-        /* ignore */
-      }
+      disarmVideo(desktopVideo);
     }
 
     if (heroMontage) {
@@ -78,6 +92,7 @@
     phoneVideo.loop = true;
     phoneVideo.setAttribute("loop", "");
     phoneVideo.setAttribute("autoplay", "");
+    armVideo(phoneVideo);
     muteHeroVideo(phoneVideo);
 
     const kick = () => ensurePlaying(phoneVideo);
@@ -94,27 +109,29 @@
       kick();
     }
 
-    setInterval(() => {
-      if (!mobileHero.matches || prefersReduced) return;
-      if (phoneVideo.paused) ensurePlaying(phoneVideo);
-    }, 1200);
+    if (!phoneVideo.dataset.playGuard) {
+      phoneVideo.dataset.playGuard = "1";
+      phoneVideo.addEventListener("pause", () => {
+        if (!mobileHero.matches || prefersReduced || phoneVideo.ended) return;
+        ensurePlaying(phoneVideo);
+      });
+    }
   }
 
   function pauseInactiveVideos(activeVideo) {
     [desktopVideo, phoneVideo].forEach((video) => {
       if (!video || video === activeVideo) return;
       video.classList.remove("is-active");
-      try {
-        video.pause();
-      } catch (_) {
-        /* ignore */
-      }
+      disarmVideo(video);
     });
   }
 
   function showDesktopVideo() {
     pauseInactiveVideos(desktopVideo);
-    if (desktopVideo) desktopVideo.classList.add("is-active");
+    if (desktopVideo) {
+      desktopVideo.classList.add("is-active");
+      armVideo(desktopVideo);
+    }
     if (heroMontage) {
       heroMontage.classList.remove("is-active");
       heroMontage.hidden = true;
