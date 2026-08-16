@@ -17,10 +17,7 @@
   const SLIDE_MS = 3600;
   const FADE_MS = 900;
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-  function getHeroVideo() {
-    return mobileHero.matches ? phoneVideo : desktopVideo;
-  }
+  let desktopSequenceRunning = false;
 
   function muteHeroVideo(heroVideo) {
     if (!heroVideo) return;
@@ -31,6 +28,76 @@
     heroVideo.setAttribute("playsinline", "");
     heroVideo.setAttribute("webkit-playsinline", "");
     heroVideo.setAttribute("muted", "");
+  }
+
+  function ensurePlaying(heroVideo) {
+    if (!heroVideo) return Promise.resolve();
+    muteHeroVideo(heroVideo);
+    const playPromise = heroVideo.play();
+    if (playPromise && typeof playPromise.catch === "function") {
+      return playPromise.catch(() => {
+        return new Promise((resolve) => {
+          const retry = () => {
+            muteHeroVideo(heroVideo);
+            const again = heroVideo.play();
+            if (again && typeof again.then === "function") {
+              again.then(resolve).catch(() => resolve());
+            } else {
+              resolve();
+            }
+          };
+          document.addEventListener("touchstart", retry, { once: true, passive: true });
+          document.addEventListener("click", retry, { once: true });
+          setTimeout(retry, 250);
+        });
+      });
+    }
+    return Promise.resolve();
+  }
+
+  /* Mobile: only the deer/logo video — muted, autoplay, loop. No still images. */
+  function startMobileHeroVideo() {
+    if (!phoneVideo) return;
+
+    if (desktopVideo) {
+      desktopVideo.classList.remove("is-active");
+      try {
+        desktopVideo.pause();
+      } catch (_) {
+        /* ignore */
+      }
+    }
+
+    if (heroMontage) {
+      heroMontage.hidden = true;
+      heroMontage.classList.remove("is-active");
+    }
+    heroSlides.forEach((slide) => slide.classList.remove("is-active"));
+
+    phoneVideo.classList.add("is-active");
+    phoneVideo.loop = true;
+    phoneVideo.setAttribute("loop", "");
+    phoneVideo.setAttribute("autoplay", "");
+    muteHeroVideo(phoneVideo);
+
+    const kick = () => ensurePlaying(phoneVideo);
+    if (phoneVideo.readyState >= 2) {
+      kick();
+    } else {
+      phoneVideo.addEventListener("loadeddata", kick, { once: true });
+      phoneVideo.addEventListener("canplay", kick, { once: true });
+      try {
+        phoneVideo.load();
+      } catch (_) {
+        /* ignore */
+      }
+      kick();
+    }
+
+    setInterval(() => {
+      if (!mobileHero.matches || prefersReduced) return;
+      if (phoneVideo.paused) ensurePlaying(phoneVideo);
+    }, 1200);
   }
 
   function pauseInactiveVideos(activeVideo) {
@@ -45,24 +112,26 @@
     });
   }
 
-  function showHeroVideo() {
-    const heroVideo = getHeroVideo();
-    pauseInactiveVideos(heroVideo);
-    if (heroVideo) heroVideo.classList.add("is-active");
-    if (heroMontage) heroMontage.classList.remove("is-active");
+  function showDesktopVideo() {
+    pauseInactiveVideos(desktopVideo);
+    if (desktopVideo) desktopVideo.classList.add("is-active");
+    if (heroMontage) {
+      heroMontage.classList.remove("is-active");
+      heroMontage.hidden = true;
+    }
     heroSlides.forEach((slide) => slide.classList.remove("is-active"));
   }
 
   function showMontage() {
-    if (!heroMontage) return;
+    if (!heroMontage || mobileHero.matches) return;
     pauseInactiveVideos(null);
+    heroMontage.hidden = false;
     heroMontage.classList.add("is-active");
   }
 
-  function playHeroVideoOnce() {
+  function playDesktopVideoOnce() {
     return new Promise((resolve) => {
-      const heroVideo = getHeroVideo();
-      if (!heroVideo) {
+      if (!desktopVideo) {
         resolve();
         return;
       }
@@ -71,45 +140,43 @@
       const finish = () => {
         if (settled) return;
         settled = true;
-        heroVideo.removeEventListener("ended", onEnded);
+        desktopVideo.removeEventListener("ended", onEnded);
         clearTimeout(fallback);
         resolve();
       };
 
       const onEnded = () => finish();
-      heroVideo.addEventListener("ended", onEnded);
+      desktopVideo.addEventListener("ended", onEnded);
 
       const startPlayback = () => {
-        muteHeroVideo(heroVideo);
         try {
-          heroVideo.loop = false;
-          if (heroVideo.currentTime !== 0) heroVideo.currentTime = 0;
+          desktopVideo.loop = false;
+          if (Number.isFinite(desktopVideo.currentTime) && desktopVideo.currentTime > 0.05) {
+            desktopVideo.currentTime = 0;
+          }
         } catch (_) {
-          /* ignore seek errors while loading */
+          /* ignore */
         }
-        const playPromise = heroVideo.play();
-        if (playPromise && typeof playPromise.catch === "function") {
-          playPromise.catch(() => finish());
-        }
+        ensurePlaying(desktopVideo);
       };
 
-      if (heroVideo.readyState >= 2) {
+      if (desktopVideo.readyState >= 2) {
         startPlayback();
       } else {
-        heroVideo.addEventListener("loadeddata", startPlayback, { once: true });
+        desktopVideo.addEventListener("loadeddata", startPlayback, { once: true });
         startPlayback();
       }
 
       const durationMs =
-        Number.isFinite(heroVideo.duration) && heroVideo.duration > 0
-          ? Math.min(Math.max(heroVideo.duration * 1000, 1200) + 400, 45000)
-          : 16000;
+        Number.isFinite(desktopVideo.duration) && desktopVideo.duration > 0
+          ? Math.min(Math.max(desktopVideo.duration * 1000, 1500) + 600, 60000)
+          : 20000;
       const fallback = setTimeout(finish, durationMs);
     });
   }
 
   async function playDesertLandscapes() {
-    if (!heroSlides.length) return;
+    if (!heroSlides.length || mobileHero.matches) return;
 
     heroSlides.forEach((slide, index) => {
       slide.classList.toggle("is-active", index === 0);
@@ -125,41 +192,64 @@
     }
   }
 
-  /* Logo/deer video → desert landscapes → back to logo, looping */
-  async function runHeroSequence() {
-    if (!getHeroVideo() || prefersReduced) return;
+  async function runDesktopHeroSequence() {
+    if (!desktopVideo || prefersReduced || desktopSequenceRunning || mobileHero.matches) return;
+    desktopSequenceRunning = true;
 
     while (true) {
-      showHeroVideo();
-      await wait(FADE_MS);
-      await playHeroVideoOnce();
-      await wait(120);
+      if (mobileHero.matches) break;
+      showDesktopVideo();
+      await playDesktopVideoOnce();
+      await wait(160);
       await playDesertLandscapes();
       heroSlides.forEach((slide) => slide.classList.remove("is-active"));
+      if (heroMontage) {
+        heroMontage.classList.remove("is-active");
+        heroMontage.hidden = true;
+      }
+      await wait(FADE_MS);
     }
+    desktopSequenceRunning = false;
   }
 
-  [desktopVideo, phoneVideo].forEach((heroVideo) => {
-    if (!heroVideo) return;
-    muteHeroVideo(heroVideo);
-    heroVideo.loop = false;
-    if (prefersReduced) {
-      heroVideo.removeAttribute("autoplay");
-      heroVideo.pause();
-    }
-  });
+  if (desktopVideo) {
+    muteHeroVideo(desktopVideo);
+    desktopVideo.loop = false;
+  }
 
-  if (getHeroVideo()) {
+  if (heroMontage) {
+    heroMontage.hidden = true;
+    heroMontage.classList.remove("is-active");
+  }
+  heroSlides.forEach((slide) => slide.classList.remove("is-active"));
+
+  if (mobileHero.matches) {
     if (prefersReduced) {
-      showHeroVideo();
+      if (phoneVideo) {
+        phoneVideo.classList.add("is-active");
+        phoneVideo.removeAttribute("autoplay");
+        phoneVideo.pause();
+      }
     } else {
-      runHeroSequence();
+      startMobileHeroVideo();
     }
+  } else if (desktopVideo) {
+    showDesktopVideo();
+    if (!prefersReduced) runDesktopHeroSequence();
   }
 
   if (typeof mobileHero.addEventListener === "function") {
     mobileHero.addEventListener("change", () => {
-      showHeroVideo();
+      if (mobileHero.matches) {
+        desktopSequenceRunning = false;
+        if (!prefersReduced) startMobileHeroVideo();
+      } else if (!prefersReduced) {
+        if (phoneVideo) {
+          phoneVideo.pause();
+          phoneVideo.classList.remove("is-active");
+        }
+        runDesktopHeroSequence();
+      }
     });
   }
 

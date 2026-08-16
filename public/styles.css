@@ -348,11 +348,11 @@ p {
 .hero {
   position: relative;
   width: 100%;
-  min-height: min(94vh, 980px);
   display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  padding: calc(var(--header-h) + 1rem) 0 2rem;
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
+  padding: var(--header-h) 0 0;
   color: #fff;
   overflow: hidden;
   isolation: isolate;
@@ -360,11 +360,11 @@ p {
 }
 
 .hero-stage {
-  position: absolute;
-  inset: 0;
+  position: relative;
   z-index: 0;
   width: 100%;
-  height: 100%;
+  min-height: min(78vh, 860px);
+  aspect-ratio: 16 / 9;
   overflow: hidden;
   background: #1a140e;
 }
@@ -390,6 +390,7 @@ p {
   z-index: 1;
   background: #1a140e;
   transition: opacity 0.9s var(--ease);
+  pointer-events: none;
 }
 
 .hero-video--mobile {
@@ -398,6 +399,7 @@ p {
 
 .hero-video.is-active {
   opacity: 1;
+  z-index: 3;
 }
 
 .hero-montage {
@@ -407,8 +409,13 @@ p {
   transition: opacity 0.9s var(--ease);
 }
 
+.hero-montage[hidden] {
+  display: none !important;
+}
+
 .hero-montage.is-active {
   opacity: 1;
+  z-index: 2;
 }
 
 .hero-slide {
@@ -423,12 +430,7 @@ p {
 }
 
 .hero-overlay {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background:
-    linear-gradient(180deg, rgba(8, 14, 26, 0.22) 0%, transparent 28%, transparent 58%, rgba(8, 14, 26, 0.58) 100%);
+  display: none;
 }
 
 .hero-content.container,
@@ -439,9 +441,10 @@ p {
   width: min(1140px, calc(100% - 2.75rem));
   max-width: none;
   margin: 0 auto;
-  padding: 0 0 0.35rem;
+  padding: 1.15rem 0 1.45rem;
   text-align: center;
   justify-content: center;
+  background: transparent;
 }
 
 .hero-actions {
@@ -2012,45 +2015,44 @@ a.ba-frame:hover img {
     aspect-ratio: 720 / 1280;
     overflow: hidden;
     background: #1a140e;
+    background-image: none;
   }
 
   .hero-video--desktop {
-    display: none;
+    display: none !important;
   }
 
   .hero-video--mobile {
-    display: block;
+    display: block !important;
     position: absolute;
     inset: 0;
     width: 100%;
     height: 100%;
     max-width: none;
+    opacity: 1 !important;
+    z-index: 5;
     object-fit: contain;
     object-position: center center;
     transform: none;
+    background: transparent;
+    background-image: none;
   }
 
   .hero-montage,
-  .hero-slide {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-  }
-
-  .hero-slide {
-    object-fit: cover;
-    object-position: center center;
+  .hero-montage.is-active,
+  .hero-slide,
+  .hero-slide.is-active {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+    background-image: none !important;
   }
 
   .hero-content.container,
   .hero-content {
     width: min(1140px, calc(100% - 1.75rem));
     padding: 1rem 0 0.15rem;
-  }
-
-  .hero-overlay {
-    display: none;
   }
 }
 

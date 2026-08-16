@@ -115,7 +115,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="styles.css?v=hero3" />
   <link rel="icon" href="assets/favicon.png?v=5" type="image/png" sizes="64x64" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=5" />
@@ -166,6 +166,7 @@
         <video
           class="hero-video hero-video--desktop is-active"
           id="hero-video-desktop"
+          autoplay
           muted
           playsinline
           webkit-playsinline
@@ -178,16 +179,18 @@
         <video
           class="hero-video hero-video--mobile is-active"
           id="hero-video-mobile"
+          autoplay
           muted
+          loop
           playsinline
           webkit-playsinline
           preload="auto"
           disablepictureinpicture
           controlslist="nodownload nofullscreen noremoteplayback"
         >
-          <source src="assets/mobile-hero4ward.mp4" type="video/mp4" />
+          <source src="assets/mobile-hero4ward.mp4?v=3" type="video/mp4" />
         </video>
-        <div class="hero-montage" id="hero-montage">
+        <div class="hero-montage" id="hero-montage" hidden aria-hidden="true">
           <img
             class="hero-slide"
             src="assets/hero-southwest.png"
@@ -234,7 +237,6 @@
             fetchpriority="low"
           />
         </div>
-        <div class="hero-overlay"></div>
       </div>
       <div class="container hero-content">
         <h1 id="hero-heading" class="sr-only">Need more customers? We can help.</h1>
@@ -636,6 +638,6 @@
     </div>
   </footer>
 
-  <script src="script.js"></script>
+  <script src="script.js?v=hero3"></script>
 </body>
 </html>
