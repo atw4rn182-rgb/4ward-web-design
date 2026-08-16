@@ -445,16 +445,21 @@ p {
 
 .hero-content.container,
 .hero-content {
-  position: relative;
-  z-index: 3;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: min(calc(100dvh - 5.5rem - env(safe-area-inset-bottom, 0px)), calc(100% - 5.5rem));
+  bottom: auto;
+  z-index: 6;
   display: flex;
   width: min(1140px, calc(100% - 2.75rem));
   max-width: none;
-  margin: 0 auto;
-  padding: 1.15rem 0 1.45rem;
+  margin: 0;
+  padding: 0.55rem 0;
   text-align: center;
   justify-content: center;
   background: transparent;
+  pointer-events: none;
 }
 
 .hero-actions {
@@ -462,6 +467,7 @@ p {
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.7rem;
+  pointer-events: auto;
 }
 
 .hero .btn-accent {
@@ -2062,7 +2068,8 @@ a.ba-frame:hover img {
   .hero-content.container,
   .hero-content {
     width: min(1140px, calc(100% - 1.75rem));
-    padding: 1rem 0 0.15rem;
+    top: min(calc(100dvh - 8.75rem - env(safe-area-inset-bottom, 0px)), calc(100% - 8.75rem));
+    padding: 0.45rem 0;
   }
 }
 
