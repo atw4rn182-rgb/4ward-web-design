@@ -451,15 +451,15 @@
       throw new Error(result.error || "Unable to start Stripe Checkout.");
     }
 
+    if (result.url) {
+      window.location.href = result.url;
+      return;
+    }
+
     if (window.Stripe && result.publishableKey && result.sessionId) {
       const stripe = window.Stripe(result.publishableKey);
       const { error } = await stripe.redirectToCheckout({ sessionId: result.sessionId });
       if (error) throw new Error(error.message || "Stripe redirect failed.");
-      return;
-    }
-
-    if (result.url) {
-      window.location.href = result.url;
       return;
     }
 

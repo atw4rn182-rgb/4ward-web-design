@@ -289,7 +289,7 @@ export async function POST(request) {
   const stripeEnv = getStripeEnv();
   const secret = stripeEnv.secret;
   const publishableKey = stripeEnv.publishableKey;
-  if (!secret || !publishableKey) {
+  if (!secret) {
     return json(503, {
       error:
         "Stripe is not configured yet. Add STRIPE_SECRET_KEY in your hosting environment.",
