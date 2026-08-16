@@ -10,6 +10,33 @@
 
   const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
+  const heroVideo = document.getElementById("hero-video");
+  if (heroVideo) {
+    heroVideo.muted = true;
+    heroVideo.defaultMuted = true;
+    heroVideo.volume = 0;
+    heroVideo.playsInline = true;
+    if (prefersReduced) {
+      heroVideo.removeAttribute("autoplay");
+      heroVideo.pause();
+    } else {
+      const playMuted = () => {
+        heroVideo.muted = true;
+        heroVideo.volume = 0;
+        const playPromise = heroVideo.play();
+        if (playPromise && typeof playPromise.catch === "function") {
+          playPromise.catch(() => {});
+        }
+      };
+      if (heroVideo.readyState >= 2) {
+        playMuted();
+      } else {
+        heroVideo.addEventListener("loadeddata", playMuted, { once: true });
+        playMuted();
+      }
+    }
+  }
+
   const onScroll = () => {
     if (!header) return;
     header.classList.toggle("is-scrolled", window.scrollY > 12);

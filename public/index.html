@@ -163,15 +163,20 @@
   <main id="main">
     <section class="hero" aria-labelledby="hero-heading">
       <div class="hero-stage">
-        <img
-          class="hero-image"
-          src="assets/4ward-business-card-front.png"
-          alt=""
-          width="1920"
-          height="1080"
-          decoding="async"
-          fetchpriority="high"
-        />
+        <video
+          class="hero-video"
+          id="hero-video"
+          autoplay
+          muted
+          loop
+          playsinline
+          preload="auto"
+          disablepictureinpicture
+          controlslist="nodownload nofullscreen noremoteplayback"
+          aria-hidden="true"
+        >
+          <source src="assets/herovideo4ward.mp4" type="video/mp4" />
+        </video>
       </div>
       <div class="container hero-content">
         <h1 id="hero-heading" class="sr-only">Need more customers? We can help.</h1>

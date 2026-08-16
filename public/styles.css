@@ -344,7 +344,7 @@ p {
   transform: translateY(-3.5px) rotate(-45deg);
 }
 
-/* Hero — full-bleed business card graphic */
+/* Hero — full-bleed muted video */
 .hero {
   position: relative;
   width: 100%;
@@ -367,7 +367,7 @@ p {
   background: #1a140e;
 }
 
-.hero-image {
+.hero-video {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -379,6 +379,7 @@ p {
   border: 0;
   margin: 0;
   padding: 0;
+  background: #1a140e;
 }
 
 .hero-content.container,
@@ -1850,7 +1851,7 @@ a.ba-frame:hover img {
     padding: 1rem 0 1.25rem;
   }
 
-  .hero-image {
+  .hero-video {
     object-fit: cover;
     object-position: center center;
   }
