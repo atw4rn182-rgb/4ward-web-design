@@ -21,7 +21,7 @@
   function heroSourceForViewport() {
     if (!heroVideo) return "";
     return mobileHero.matches
-      ? heroVideo.getAttribute("data-mobile-src") || "assets/4wardweblogospinning.mp4"
+      ? heroVideo.getAttribute("data-mobile-src") || "assets/herovideo4ward.mp4"
       : heroVideo.getAttribute("data-desktop-src") || "assets/hero-4ward.mp4";
   }
 
