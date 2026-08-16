@@ -21,7 +21,7 @@ export default async function ProjectsPage() {
         description="Website builds from the website_projects table."
       />
       <section className="mb-6 grid gap-4 sm:grid-cols-3">
-        <StatCard label="Open projects" value={String(open)} hint="Not yet archived" />
+        <StatCard label="Open projects" value={String(open)} hint="Not live or archived yet" />
         <StatCard label="In review" value={String(inReview)} hint="Waiting on client feedback" />
         <StatCard label="Launched" value={String(launched)} hint="Marked live" />
       </section>
@@ -49,6 +49,16 @@ export default async function ProjectsPage() {
                 {relatedCompany(project.customers)}
                 {project.tier ? ` · ${project.tier}` : ""}
               </p>
+              {project.live_url ? (
+                <a
+                  className="mt-3 inline-flex text-sm font-semibold text-brand-deep underline-offset-2 hover:underline"
+                  href={project.live_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  {project.live_url.replace(/^https?:\/\//, "")}
+                </a>
+              ) : null}
             </article>
           ))}
         </div>

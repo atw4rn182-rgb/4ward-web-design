@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 
 export type CustomerRow = {
   id: string;
@@ -59,6 +60,12 @@ export type OnboardingRow = {
 
 type QueryError = { code?: string; message?: string } | null;
 
+async function adminDb() {
+  // Prefer service role so admin pages always see portfolio clients / projects
+  // even when the browser session's RLS path returns empty rows.
+  return createServiceClient() || (await createClient());
+}
+
 function missing(error: QueryError) {
   if (!error) return false;
   return /PGRST205|42P01|does not exist|schema cache/i.test(
@@ -82,7 +89,7 @@ export function relatedCompany(
 }
 
 export async function getCustomers() {
-  const supabase = await createClient();
+  const supabase = await adminDb();
   const { data, error } = await supabase
     .from("customers")
     .select("id, company_name, contact_name, email, phone, status, created_at")
@@ -91,7 +98,7 @@ export async function getCustomers() {
 }
 
 export async function getProjects() {
-  const supabase = await createClient();
+  const supabase = await adminDb();
   const { data, error } = await supabase
     .from("website_projects")
     .select("id, name, tier, status, live_url, created_at, customers(company_name)")
@@ -100,7 +107,7 @@ export async function getProjects() {
 }
 
 export async function getPayments() {
-  const supabase = await createClient();
+  const supabase = await adminDb();
   const { data, error } = await supabase
     .from("payments")
     .select(
@@ -111,7 +118,7 @@ export async function getPayments() {
 }
 
 export async function getFiles() {
-  const supabase = await createClient();
+  const supabase = await adminDb();
   const { data, error } = await supabase
     .from("uploaded_files")
     .select("id, file_name, kind, byte_size, created_at, customers(company_name)")
@@ -120,7 +127,7 @@ export async function getFiles() {
 }
 
 export async function getNotes() {
-  const supabase = await createClient();
+  const supabase = await adminDb();
   const primary = await supabase
     .from("notes")
     .select("id, body, created_at, customers(company_name)")
@@ -147,7 +154,7 @@ export async function getNotes() {
 }
 
 export async function getOnboardings() {
-  const supabase = await createClient();
+  const supabase = await adminDb();
   const { data, error } = await supabase
     .from("onboarding_submissions")
     .select("id, company_name, contact_name, email, tier, status, created_at")

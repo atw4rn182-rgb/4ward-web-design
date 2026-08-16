@@ -25,10 +25,12 @@ export default async function DashboardPage() {
     getOnboardings(),
   ]);
 
-  const activeClients = customers.data.filter((row) => row.status === "active").length;
+  const activeClientsList = customers.data.filter((row) => row.status === "active");
+  const activeClients = activeClientsList.length;
   const openProjects = projects.data.filter(
     (row) => !["live", "archived"].includes(row.status)
   ).length;
+  const liveProjects = projects.data.filter((row) => row.status === "live");
   const monthStart = new Date(new Date().getFullYear(), new Date().getMonth(), 1).getTime();
   const monthlyRevenue = payments.data
     .filter((row) => row.status === "paid" && new Date(row.created_at).getTime() >= monthStart)
@@ -155,6 +157,75 @@ export default async function DashboardPage() {
               </div>
             ))}
           </div>
+        </article>
+      </section>
+
+      <section className="mt-6 grid gap-4 lg:grid-cols-2">
+        <article className="rounded-2xl border border-black/10 bg-paper p-5 shadow-soft">
+          <h2 className="font-display text-lg font-bold tracking-tight">Active clients</h2>
+          {activeClientsList.length === 0 ? (
+            <div className="mt-4">
+              <EmptyState
+                title="No active clients"
+                detail="Active customer records will appear here."
+              />
+            </div>
+          ) : (
+            <ul className="mt-4 divide-y divide-black/5">
+              {activeClientsList.map((client) => (
+                <li key={client.id} className="flex items-start justify-between gap-4 py-3">
+                  <div>
+                    <p className="text-sm font-semibold text-ink">{client.company_name}</p>
+                    <p className="mt-0.5 text-sm text-muted">
+                      {client.contact_name || client.email || "Active client"}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
+                    Active
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </article>
+
+        <article className="rounded-2xl border border-black/10 bg-paper p-5 shadow-soft">
+          <h2 className="font-display text-lg font-bold tracking-tight">Live sites</h2>
+          {liveProjects.length === 0 ? (
+            <div className="mt-4">
+              <EmptyState
+                title="No live projects"
+                detail="Launched website projects will appear here."
+              />
+            </div>
+          ) : (
+            <ul className="mt-4 divide-y divide-black/5">
+              {liveProjects.map((project) => (
+                <li key={project.id} className="flex items-start justify-between gap-4 py-3">
+                  <div>
+                    <p className="text-sm font-semibold text-ink">{project.name}</p>
+                    <p className="mt-0.5 text-sm text-muted">
+                      {project.live_url ? (
+                        <a
+                          href={project.live_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-brand-deep underline-offset-2 hover:underline"
+                        >
+                          {project.live_url.replace(/^https?:\/\//, "")}
+                        </a>
+                      ) : (
+                        "Live project"
+                      )}
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-800">
+                    Live
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </article>
       </section>
     </div>

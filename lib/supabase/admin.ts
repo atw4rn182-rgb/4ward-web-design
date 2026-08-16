@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import type { User } from "@supabase/supabase-js";
 
 export async function getAdminUser(): Promise<User | null> {
@@ -11,7 +12,9 @@ export async function getAdminUser(): Promise<User | null> {
     return null;
   }
 
-  const { data: adminRow, error } = await supabase
+  const service = createServiceClient();
+  const adminLookup = service || supabase;
+  const { data: adminRow, error } = await adminLookup
     .from("admin_users")
     .select("user_id")
     .eq("user_id", user.id)

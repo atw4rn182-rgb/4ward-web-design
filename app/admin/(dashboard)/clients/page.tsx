@@ -31,7 +31,7 @@ export default async function ClientsPage() {
     <div>
       <PageHeader
         title="Clients"
-        description="Live customer records from Supabase. Empty until someone completes onboarding."
+        description="Live customer records from Supabase, including portfolio clients with no Stripe subscription."
       />
       {schemaMissing ? <SchemaNotice /> : null}
       <section className="mb-6 grid gap-4 sm:grid-cols-3">
