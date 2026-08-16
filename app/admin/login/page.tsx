@@ -28,7 +28,7 @@ export default async function AdminLoginPage({ searchParams }: Props) {
           Admin sign in
         </h1>
         <p className="mt-2 mb-5 text-sm leading-relaxed text-muted">
-          Enter your email. We’ll send a sign-in link — no password needed.
+          Enter your email and password. You can also request a sign-in link if email sending is set up.
         </p>
         {unauthorized ? (
           <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">

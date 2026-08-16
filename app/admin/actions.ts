@@ -3,18 +3,35 @@
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
-import { getActionOrigin } from "@/lib/supabase/origin";
+import { getActionOrigin, safeAdminNext } from "@/lib/supabase/origin";
 
 export type AuthState = {
   error?: string;
   sent?: boolean;
 };
 
+async function requireAdmin(supabase: Awaited<ReturnType<typeof createClient>>, userId: string) {
+  const { data: adminRow } = await supabase
+    .from("admin_users")
+    .select("user_id")
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (!adminRow) {
+    await supabase.auth.signOut();
+    return { error: "This account is not authorized for admin access." } as AuthState;
+  }
+  return null;
+}
+
 export async function loginAction(
   _prev: AuthState,
   formData: FormData
 ): Promise<AuthState> {
   const email = String(formData.get("email") || "").trim();
+  const password = String(formData.get("password") || "");
+  const intent = String(formData.get("intent") || "otp");
+  const next = safeAdminNext(String(formData.get("next") || "/admin/dashboard"));
 
   if (!email) {
     return { error: "Email is required." };
@@ -27,8 +44,29 @@ export async function loginAction(
     };
   }
 
-  const origin = await getActionOrigin();
   const supabase = await createClient();
+
+  if (intent === "password") {
+    if (!password) {
+      return { error: "Enter your password, or use the email sign-in link instead." };
+    }
+
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (error || !data.user) {
+      return { error: "Invalid email or password." };
+    }
+
+    const denied = await requireAdmin(supabase, data.user.id);
+    if (denied) return denied;
+
+    redirect(next);
+  }
+
+  const origin = await getActionOrigin();
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
@@ -40,6 +78,12 @@ export async function loginAction(
   if (error) {
     console.error("signInWithOtp failed", error.message);
     const message = error.message.toLowerCase();
+    if (message.includes("sending magic link email") || message.includes("error sending")) {
+      return {
+        error:
+          "Supabase could not send the email. Use your password below, or add custom SMTP in Supabase under Authentication → Emails.",
+      };
+    }
     if (message.includes("redirect")) {
       return {
         error:
@@ -56,7 +100,10 @@ export async function loginAction(
           "This email is not set up for admin access. Create the user in Supabase Auth first.",
       };
     }
-    return { error: "Could not send a sign-in link. Try again in a minute." };
+    return {
+      error:
+        "Could not send a sign-in link. Use your password below, or try again in a minute.",
+    };
   }
 
   return { sent: true };
