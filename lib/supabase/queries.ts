@@ -68,7 +68,6 @@ function missing(error: QueryError) {
 
 function result<T>(data: T[] | null, error: QueryError): { data: T[]; missing: boolean } {
   if (error) {
-    console.error("[admin query]", error.message);
     return { data: [], missing: missing(error) };
   }
   return { data: data || [], missing: false };
@@ -122,12 +121,29 @@ export async function getFiles() {
 
 export async function getNotes() {
   const supabase = await createClient();
-  const { data, error } = await supabase
+  const primary = await supabase
     .from("notes")
     .select("id, body, created_at, customers(company_name)")
     .order("created_at", { ascending: false })
     .limit(50);
-  return result<NoteRow>(data, error);
+  if (!primary.error) {
+    return result<NoteRow>(primary.data, primary.error);
+  }
+
+  const fallback = await supabase
+    .from("notes")
+    .select("id, website, customer_id, customers(company_name)")
+    .limit(50);
+  if (fallback.error) {
+    return result<NoteRow>(null, fallback.error);
+  }
+  const mapped = (fallback.data || []).map((row: { id: string; website?: string | null; customers: NoteRow["customers"] }) => ({
+    id: row.id,
+    body: row.website || "",
+    created_at: "",
+    customers: row.customers,
+  }));
+  return { data: mapped as NoteRow[], missing: false };
 }
 
 export async function getOnboardings() {

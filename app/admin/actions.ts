@@ -76,12 +76,11 @@ export async function loginAction(
   });
 
   if (error) {
-    console.error("signInWithOtp failed", error.message);
     const message = error.message.toLowerCase();
     if (message.includes("sending magic link email") || message.includes("error sending")) {
       return {
         error:
-          "Supabase could not send the email. Use your password below, or add custom SMTP in Supabase under Authentication → Emails.",
+          "Email sign-in is not available until custom SMTP is added in Superbase. Use your password to sign in.",
       };
     }
     if (message.includes("redirect")) {

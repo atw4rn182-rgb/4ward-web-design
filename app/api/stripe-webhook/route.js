@@ -4,6 +4,7 @@ import {
   applyCheckoutSessionEvent,
   applyInvoiceEvent,
 } from "@/lib/payments/sync-stripe-session";
+import { sendPaymentConfirmation } from "@/lib/payments/send-confirmation";
 
 export const runtime = "nodejs";
 
@@ -28,7 +29,13 @@ export async function POST(request) {
 
   try {
     if (String(event.type || "").startsWith("checkout.session.")) {
-      await applyCheckoutSessionEvent(event.type, event.data && event.data.object);
+      const payment = await applyCheckoutSessionEvent(
+        event.type,
+        event.data && event.data.object
+      );
+      if (payment && payment.status === "paid") {
+        await sendPaymentConfirmation(event.data && event.data.object);
+      }
     } else if (event.type === "invoice.paid" || event.type === "invoice.payment_failed") {
       await applyInvoiceEvent(event.type, event.data && event.data.object);
     }
