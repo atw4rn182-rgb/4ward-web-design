@@ -1,22 +1,52 @@
-import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { NextRequest, NextResponse } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+import type { EmailOtpType } from "@supabase/supabase-js";
+import { getSupabasePublicEnv } from "@/lib/supabase/env";
 import { getRequestOrigin, safeAdminNext } from "@/lib/supabase/origin";
 
-export async function GET(request: Request) {
-  const requestUrl = new URL(request.url);
+export async function GET(request: NextRequest) {
   const origin = getRequestOrigin(request);
-  const code = requestUrl.searchParams.get("code");
-  const next = safeAdminNext(requestUrl.searchParams.get("next"));
+  const code = request.nextUrl.searchParams.get("code");
+  const tokenHash = request.nextUrl.searchParams.get("token_hash");
+  const type = request.nextUrl.searchParams.get("type");
+  const next = safeAdminNext(request.nextUrl.searchParams.get("next"));
+  const { url, key, configured } = getSupabasePublicEnv();
 
-  if (!code) {
-    return NextResponse.redirect(`${origin}/admin/login?error=link`);
+  const fail = (reason: "link" | "unauthorized") =>
+    NextResponse.redirect(`${origin}/admin/login?error=${reason}`);
+
+  if (!configured || (!code && !tokenHash)) {
+    return fail("link");
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  let response = NextResponse.redirect(`${origin}${next}`);
+  const supabase = createServerClient(url, key, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet: { name: string; value: string; options?: Record<string, unknown> }[]) {
+        cookiesToSet.forEach(({ name, value }) => {
+          request.cookies.set(name, value);
+        });
+        response = NextResponse.redirect(`${origin}${next}`);
+        cookiesToSet.forEach(({ name, value, options }) => {
+          response.cookies.set(name, value, options);
+        });
+      },
+    },
+  });
+
+  const { error } = code
+    ? await supabase.auth.exchangeCodeForSession(code)
+    : await supabase.auth.verifyOtp({
+        type: (type || "magiclink") as EmailOtpType,
+        token_hash: tokenHash || "",
+      });
 
   if (error) {
-    return NextResponse.redirect(`${origin}/admin/login?error=link`);
+    console.error("admin auth callback failed", error.message);
+    return fail("link");
   }
 
   const {
@@ -24,7 +54,7 @@ export async function GET(request: Request) {
   } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.redirect(`${origin}/admin/login?error=link`);
+    return fail("link");
   }
 
   const { data: adminRow } = await supabase
@@ -35,8 +65,8 @@ export async function GET(request: Request) {
 
   if (!adminRow) {
     await supabase.auth.signOut();
-    return NextResponse.redirect(`${origin}/admin/login?error=unauthorized`);
+    return fail("unauthorized");
   }
 
-  return NextResponse.redirect(`${origin}${next}`);
+  return response;
 }

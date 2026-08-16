@@ -1,14 +1,13 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { getSupabasePublicEnv } from "@/lib/supabase/env";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
+  const { url, key, configured } = getSupabasePublicEnv();
+  const pathname = request.nextUrl.pathname;
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !key) {
-    const pathname = request.nextUrl.pathname;
+  if (!configured) {
     if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/admin/login";
@@ -39,7 +38,6 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const pathname = request.nextUrl.pathname;
   const isAdminRoute = pathname.startsWith("/admin");
   const isLoginRoute = pathname === "/admin/login";
 
