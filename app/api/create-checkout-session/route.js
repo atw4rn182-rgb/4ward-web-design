@@ -1,4 +1,7 @@
 import { NextResponse } from "next/server";
+import { supabaseInsert } from "@/lib/supabase/service-rest";
+import { recordPendingCheckoutPayment } from "@/lib/payments/sync-stripe-session";
+import { getStripeEnv } from "@/lib/stripe/env";
 
 const TIERS = {
   tier1: {
@@ -238,30 +241,6 @@ function json(status, body) {
   });
 }
 
-async function supabaseInsert(table, row) {
-  const base = String(process.env.NEXT_PUBLIC_SUPABASE_URL || "").replace(
-    /\/$/,
-    ""
-  );
-  const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
-  if (!base || !service) return null;
-  const response = await fetch(`${base}/rest/v1/${table}`, {
-    method: "POST",
-    headers: {
-      apikey: service,
-      Authorization: `Bearer ${service}`,
-      "Content-Type": "application/json",
-      Prefer: "return=representation",
-    },
-    body: JSON.stringify(row),
-  });
-  if (!response.ok) {
-    throw new Error("Supabase insert failed");
-  }
-  const data = await response.json();
-  return Array.isArray(data) ? data[0] : data;
-}
-
 async function saveOnboardingRecord(record) {
   try {
     const customer = await supabaseInsert("customers", {
@@ -289,8 +268,10 @@ async function saveOnboardingRecord(record) {
         logo_name: record.logoName,
       },
     });
+    return customer;
   } catch (error) {
     console.error("Onboarding record save failed");
+    return null;
   }
 }
 
@@ -305,9 +286,10 @@ export async function OPTIONS() {
 }
 
 export async function POST(request) {
-  const secret = process.env.STRIPE_SECRET_KEY;
-  const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
-  if (!secret) {
+  const stripeEnv = getStripeEnv();
+  const secret = stripeEnv.secret;
+  const publishableKey = stripeEnv.publishableKey;
+  if (!secret || !publishableKey) {
     return json(503, {
       error:
         "Stripe is not configured yet. Add STRIPE_SECRET_KEY in your hosting environment.",
@@ -371,7 +353,7 @@ export async function POST(request) {
     reports_requested: addOnIds.includes("reports") ? "yes" : "no",
   };
 
-  await saveOnboardingRecord({
+  const customerRow = await saveOnboardingRecord({
     companyName,
     contactName,
     email,
@@ -383,6 +365,9 @@ export async function POST(request) {
     existingLinks,
     logoName,
   });
+  if (customerRow && customerRow.id) {
+    metadata.supabase_customer_id = customerRow.id;
+  }
 
   try {
     const customer = await stripeRequest(secret, "/customers", {
@@ -425,11 +410,21 @@ export async function POST(request) {
       "/checkout/sessions",
       sessionParams
     );
+    try {
+      await recordPendingCheckoutPayment({
+        session,
+        customerId: customerRow && customerRow.id,
+        tierId: tier.id,
+        description: `${companyName} · ${tier.id}`,
+      });
+    } catch (error) {
+      console.error("Pending payment save failed");
+    }
     return json(200, {
       url: session.url,
       sessionId: session.id,
       publishableKey,
-      liveMode: String(secret).startsWith("sk_live_"),
+      liveMode: stripeEnv.liveMode,
     });
   } catch (error) {
     console.error("Stripe checkout error:", error);

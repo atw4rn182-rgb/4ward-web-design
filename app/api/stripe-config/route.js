@@ -1,16 +1,17 @@
 import { NextResponse } from "next/server";
+import { getStripeEnv } from "@/lib/stripe/env";
 
 export async function GET() {
-  const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "";
-  const secret = process.env.STRIPE_SECRET_KEY || "";
-  const liveMode =
-    publishableKey.startsWith("pk_live_") && secret.startsWith("sk_live_");
+  const stripe = getStripeEnv();
 
   return NextResponse.json(
     {
-      publishableKey,
-      configured: Boolean(publishableKey && secret),
-      liveMode,
+      publishableKey: stripe.publishableKey,
+      configured: stripe.configured,
+      liveMode: stripe.liveMode,
+      publishableKind: stripe.publishableKind,
+      secretKind: stripe.secretKind,
+      hasWebhookSecret: Boolean(stripe.webhookSecret),
     },
     { headers: { "Cache-Control": "no-store" } }
   );

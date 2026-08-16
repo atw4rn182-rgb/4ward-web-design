@@ -28,7 +28,7 @@ export default async function PaymentsPage() {
     <div>
       <PageHeader
         title="Payments"
-        description="Live payment rows from the payments table. Empty until a paid record is saved there."
+        description="Live payment rows from Superbase. Checkout creates a pending row; Stripe webhooks mark it paid."
       />
       <section className="mb-6 grid gap-4 sm:grid-cols-3">
         <StatCard label="Collected (MTD)" value={formatMoney(collected)} hint="Paid this month" />
