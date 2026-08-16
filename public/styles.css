@@ -344,13 +344,15 @@ p {
   transform: translateY(-3.5px) rotate(-45deg);
 }
 
-/* Hero — full-bleed muted video */
+/* Hero — full-bleed muted video, then desert scenes */
 .hero {
   position: relative;
   width: 100%;
+  min-height: min(94vh, 980px);
   display: flex;
-  flex-direction: column;
-  padding-top: var(--header-h);
+  align-items: flex-end;
+  justify-content: center;
+  padding: calc(var(--header-h) + 1rem) 0 2rem;
   color: #fff;
   overflow: hidden;
   isolation: isolate;
@@ -358,28 +360,71 @@ p {
 }
 
 .hero-stage {
-  position: relative;
+  position: absolute;
+  inset: 0;
   z-index: 0;
   width: 100%;
-  aspect-ratio: 16 / 9;
-  min-height: min(72vh, 780px);
+  height: 100%;
   overflow: hidden;
   background: #1a140e;
 }
 
-.hero-video {
+.hero-video,
+.hero-montage,
+.hero-slide {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   max-width: none;
   display: block;
-  object-fit: cover;
-  object-position: center center;
   border: 0;
   margin: 0;
   padding: 0;
+}
+
+.hero-video {
+  object-fit: cover;
+  object-position: center center;
+  opacity: 0;
+  z-index: 1;
   background: #1a140e;
+  transition: opacity 1.1s var(--ease);
+}
+
+.hero-video.is-active {
+  opacity: 1;
+}
+
+.hero-montage {
+  z-index: 1;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 1.1s var(--ease);
+}
+
+.hero-montage.is-active {
+  opacity: 1;
+}
+
+.hero-slide {
+  object-fit: cover;
+  object-position: center center;
+  opacity: 0;
+  transition: opacity 1s var(--ease);
+}
+
+.hero-slide.is-active {
+  opacity: 1;
+}
+
+.hero-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(8, 14, 26, 0.22) 0%, transparent 28%, transparent 58%, rgba(8, 14, 26, 0.58) 100%);
 }
 
 .hero-content.container,
@@ -390,7 +435,7 @@ p {
   width: min(1140px, calc(100% - 2.75rem));
   max-width: none;
   margin: 0 auto;
-  padding: 1.15rem 0 1.45rem;
+  padding: 0 0 0.35rem;
   text-align: center;
   justify-content: center;
 }
@@ -1836,22 +1881,21 @@ a.ba-frame:hover img {
   }
 
   .hero {
-    padding-top: var(--header-h);
+    min-height: min(92vh, 820px);
+    align-items: flex-end;
+    justify-content: center;
+    padding: calc(var(--header-h) + 0.7rem) 0 1.35rem;
     background: #1a140e;
-  }
-
-  .hero-stage {
-    min-height: min(58vh, 520px);
-    aspect-ratio: 16 / 9;
   }
 
   .hero-content.container,
   .hero-content {
     width: min(1140px, calc(100% - 1.75rem));
-    padding: 1rem 0 1.25rem;
+    padding: 0;
   }
 
-  .hero-video {
+  .hero-video,
+  .hero-slide {
     object-fit: cover;
     object-position: center center;
   }
@@ -1970,6 +2014,10 @@ a.ba-frame:hover img {
   .reveal {
     opacity: 1;
     transform: none;
+    transition: none;
+  }
+  .hero-video,
+  .hero-montage {
     transition: none;
   }
   .hero-stage {

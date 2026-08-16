@@ -11,29 +11,120 @@
   const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   const heroVideo = document.getElementById("hero-video");
-  if (heroVideo) {
+  const heroMontage = document.getElementById("hero-montage");
+  const heroSlides = heroMontage ? Array.from(heroMontage.querySelectorAll(".hero-slide")) : [];
+  const SLIDE_MS = 3400;
+  const FADE_MS = 1100;
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+  function showHeroVideo() {
+    if (!heroVideo) return;
+    heroVideo.classList.add("is-active");
+    if (heroMontage) heroMontage.classList.remove("is-active");
+    heroSlides.forEach((slide) => slide.classList.remove("is-active"));
+  }
+
+  function showMontage() {
+    if (!heroMontage) return;
+    if (heroVideo) heroVideo.classList.remove("is-active");
+    heroMontage.classList.add("is-active");
+  }
+
+  function muteHeroVideo() {
+    if (!heroVideo) return;
     heroVideo.muted = true;
     heroVideo.defaultMuted = true;
     heroVideo.volume = 0;
     heroVideo.playsInline = true;
+    heroVideo.setAttribute("playsinline", "");
+    heroVideo.setAttribute("muted", "");
+  }
+
+  function playHeroVideoOnce() {
+    return new Promise((resolve) => {
+      if (!heroVideo) {
+        resolve();
+        return;
+      }
+
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        heroVideo.removeEventListener("ended", onEnded);
+        clearTimeout(fallback);
+        resolve();
+      };
+
+      const onEnded = () => finish();
+      heroVideo.addEventListener("ended", onEnded);
+
+      const startPlayback = () => {
+        muteHeroVideo();
+        try {
+          heroVideo.loop = false;
+          if (heroVideo.currentTime !== 0) heroVideo.currentTime = 0;
+        } catch (_) {
+          /* ignore seek errors while loading */
+        }
+        const playPromise = heroVideo.play();
+        if (playPromise && typeof playPromise.catch === "function") {
+          playPromise.catch(() => finish());
+        }
+      };
+
+      if (heroVideo.readyState >= 2) {
+        startPlayback();
+      } else {
+        heroVideo.addEventListener("loadeddata", startPlayback, { once: true });
+        startPlayback();
+      }
+
+      const durationMs =
+        Number.isFinite(heroVideo.duration) && heroVideo.duration > 0
+          ? Math.min(Math.max(heroVideo.duration * 1000, 1200) + 250, 30000)
+          : 12000;
+      const fallback = setTimeout(finish, durationMs);
+    });
+  }
+
+  async function runHeroSequence() {
+    if (!heroVideo || prefersReduced) return;
+
+    while (true) {
+      showHeroVideo();
+      await playHeroVideoOnce();
+      await wait(150);
+
+      if (heroSlides.length) {
+        if (heroSlides[0]) heroSlides[0].classList.add("is-active");
+        showMontage();
+        await wait(FADE_MS);
+
+        for (let i = 0; i < heroSlides.length; i += 1) {
+          heroSlides.forEach((slide, index) => {
+            slide.classList.toggle("is-active", index === i);
+          });
+          await wait(SLIDE_MS);
+        }
+
+        heroSlides.forEach((slide) => slide.classList.remove("is-active"));
+      }
+
+      showHeroVideo();
+      await wait(FADE_MS);
+    }
+  }
+
+  if (heroVideo) {
+    muteHeroVideo();
     if (prefersReduced) {
       heroVideo.removeAttribute("autoplay");
       heroVideo.pause();
+      showHeroVideo();
     } else {
-      const playMuted = () => {
-        heroVideo.muted = true;
-        heroVideo.volume = 0;
-        const playPromise = heroVideo.play();
-        if (playPromise && typeof playPromise.catch === "function") {
-          playPromise.catch(() => {});
-        }
-      };
-      if (heroVideo.readyState >= 2) {
-        playMuted();
-      } else {
-        heroVideo.addEventListener("loadeddata", playMuted, { once: true });
-        playMuted();
-      }
+      heroVideo.loop = false;
+      runHeroSequence();
     }
   }
 
