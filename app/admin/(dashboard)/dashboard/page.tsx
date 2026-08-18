@@ -41,6 +41,9 @@ export default async function DashboardPage() {
     ["received", "payment_pending"].includes(row.status)
   ).length;
   const newQuotes = quotes.data.filter((row) => row.status === "new").length;
+  const openQuotes = quotes.data.filter((row) =>
+    ["reviewing", "quote_preparing", "quote_sent", "awaiting_payment"].includes(row.status)
+  ).length;
 
   const activity = [
     ...quotes.data.slice(0, 4).map((row) => ({
@@ -116,7 +119,12 @@ export default async function DashboardPage() {
         <StatCard
           label="New quotes"
           value={String(newQuotes)}
-          hint="Custom work requests to review"
+          hint="Custom work awaiting review"
+        />
+        <StatCard
+          label="Open quotes"
+          value={String(openQuotes)}
+          hint="Reviewing through awaiting payment"
         />
       </section>
 

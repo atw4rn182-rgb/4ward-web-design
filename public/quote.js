@@ -35,6 +35,7 @@
       phone: data.get("phone") || "",
       company: data.get("company") || "",
       service: data.get("service") || "",
+      quantity: data.get("quantity") || "",
       message: data.get("message") || "",
       honeypot: data.get("honeypot") || "",
     };

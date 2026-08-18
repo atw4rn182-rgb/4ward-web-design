@@ -1,5 +1,8 @@
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { formatMoney, formatWhen, labelStatus } from "@/lib/format";
+
+export { formatMoney, formatWhen, labelStatus };
 
 export type CustomerRow = {
   id: string;
@@ -55,9 +58,22 @@ export type QuoteRow = {
   phone: string | null;
   company_name: string | null;
   service: string;
+  quantity: string | null;
   message: string;
   status: string;
+  payment_status: string;
+  quoted_amount_cents: number | null;
+  currency: string;
+  internal_notes: string | null;
+  stripe_checkout_session_id: string | null;
+  stripe_payment_intent_id: string | null;
+  stripe_payment_link_id: string | null;
+  stripe_payment_url: string | null;
+  stripe_customer_id: string | null;
+  quote_sent_at: string | null;
+  paid_at: string | null;
   created_at: string;
+  updated_at: string;
 };
 
 export type OnboardingRow = {
@@ -165,15 +181,37 @@ export async function getNotes() {
   return { data: mapped as NoteRow[], missing: false };
 }
 
-export async function getQuoteRequests() {
+export async function getQuoteRequests(statusFilter?: string) {
+  const supabase = await adminDb();
+  let query = supabase
+    .from("quote_requests")
+    .select(
+      "id, contact_name, email, phone, company_name, service, quantity, message, status, payment_status, quoted_amount_cents, currency, internal_notes, stripe_checkout_session_id, stripe_payment_intent_id, stripe_payment_link_id, stripe_payment_url, stripe_customer_id, quote_sent_at, paid_at, created_at, updated_at"
+    )
+    .order("created_at", { ascending: false });
+
+  if (statusFilter && statusFilter !== "all") {
+    query = query.eq("status", statusFilter);
+  }
+
+  const { data, error } = await query;
+  return result<QuoteRow>(data, error);
+}
+
+export async function getQuoteRequest(id: string) {
   const supabase = await adminDb();
   const { data, error } = await supabase
     .from("quote_requests")
     .select(
-      "id, contact_name, email, phone, company_name, service, message, status, created_at"
+      "id, contact_name, email, phone, company_name, service, quantity, message, status, payment_status, quoted_amount_cents, currency, internal_notes, stripe_checkout_session_id, stripe_payment_intent_id, stripe_payment_link_id, stripe_payment_url, stripe_customer_id, quote_sent_at, paid_at, created_at, updated_at"
     )
-    .order("created_at", { ascending: false });
-  return result<QuoteRow>(data, error);
+    .eq("id", id)
+    .maybeSingle();
+
+  if (error) {
+    return { data: null as QuoteRow | null, missing: missing(error) };
+  }
+  return { data: (data as QuoteRow | null) || null, missing: false };
 }
 
 export async function getOnboardings() {
@@ -185,30 +223,9 @@ export async function getOnboardings() {
   return result<OnboardingRow>(data, error);
 }
 
-export function formatMoney(cents: number, currency = "usd") {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: currency.toUpperCase(),
-  }).format((cents || 0) / 100);
-}
-
 export function formatBytes(bytes: number | null) {
   const value = bytes || 0;
   if (value < 1024) return `${value} B`;
   if (value < 1024 * 1024) return `${(value / 1024).toFixed(1)} KB`;
   return `${(value / (1024 * 1024)).toFixed(1)} MB`;
-}
-
-export function formatWhen(iso: string) {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return "—";
-  return date.toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-}
-
-export function labelStatus(value: string) {
-  return value.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
 }

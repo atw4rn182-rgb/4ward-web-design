@@ -46,6 +46,7 @@ export async function POST(request) {
   const phone = sanitize(body.phone, 40);
   const companyName = sanitize(body.company, 120);
   const service = sanitize(body.service, 120);
+  const quantity = sanitize(body.quantity, 120);
   const message = sanitize(body.message, 4000);
 
   if (!contactName || !email || !service || !message) {
@@ -84,8 +85,10 @@ export async function POST(request) {
       phone: phone || null,
       company_name: companyName || null,
       service,
+      quantity: quantity || null,
       message,
       status: "new",
+      payment_status: "none",
       payload: { source: "quote.html" },
     });
   } catch (error) {

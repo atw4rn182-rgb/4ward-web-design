@@ -1,65 +1,134 @@
+import Link from "next/link";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { StatCard } from "@/components/admin/StatCard";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { SchemaNotice } from "@/components/admin/SchemaNotice";
-import { formatWhen, getQuoteRequests, labelStatus } from "@/lib/supabase/queries";
+import { QUOTE_STATUSES, quotePaymentStatusLabel, quoteStatusLabel } from "@/lib/quotes/statuses";
+import { formatMoney, formatWhen, getQuoteRequests } from "@/lib/supabase/queries";
 
 export const metadata = {
   title: "Quote Requests | 4Ward Admin",
   robots: { index: false, follow: false },
 };
 
-export default async function QuotesPage() {
-  const { data: quotes, missing } = await getQuoteRequests();
+export default async function QuotesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string }>;
+}) {
+  const params = await searchParams;
+  const statusFilter = params.status || "all";
+  const { data: quotes, missing } = await getQuoteRequests(
+    statusFilter === "all" ? undefined : statusFilter
+  );
 
   const newQuotes = quotes.filter((row) => row.status === "new").length;
-  const reviewing = quotes.filter((row) => row.status === "reviewing").length;
+  const openQuotes = quotes.filter((row) =>
+    ["reviewing", "quote_preparing", "quote_sent", "awaiting_payment"].includes(row.status)
+  ).length;
+  const paidQuotes = quotes.filter((row) => row.status === "paid" || row.payment_status === "paid").length;
 
   return (
     <div>
       <PageHeader
         title="Quote requests"
-        description="Custom work requests from quote.html — separate from website onboarding and Stripe checkout."
+        description="Manage custom work quotes separately from fixed-tier website onboarding."
       />
       {missing ? <SchemaNotice /> : null}
-      <section className="mb-6 grid gap-4 sm:grid-cols-3">
-        <StatCard label="Total requests" value={String(quotes.length)} hint="All quote submissions" />
-        <StatCard label="New" value={String(newQuotes)} hint="Awaiting review" />
-        <StatCard label="In review" value={String(reviewing)} hint="Being priced" />
+
+      <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <StatCard label="Total quotes" value={String(quotes.length)} hint="All custom quote records" />
+        <StatCard label="New" value={String(newQuotes)} hint="Awaiting first review" />
+        <StatCard label="Open pipeline" value={String(openQuotes)} hint="Review through awaiting payment" />
+        <StatCard label="Paid" value={String(paidQuotes)} hint="Payment received or marked paid" />
       </section>
+
+      <section className="mb-4 flex flex-wrap gap-2">
+        <Link
+          href="/admin/quotes"
+          className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+            statusFilter === "all"
+              ? "bg-brand-blue text-white"
+              : "bg-black/[0.04] text-ink hover:bg-black/[0.08]"
+          }`}
+        >
+          All
+        </Link>
+        {QUOTE_STATUSES.map((status) => (
+          <Link
+            key={status.value}
+            href={`/admin/quotes?status=${status.value}`}
+            className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+              statusFilter === status.value
+                ? "bg-brand-blue text-white"
+                : "bg-black/[0.04] text-ink hover:bg-black/[0.08]"
+            }`}
+          >
+            {status.label}
+          </Link>
+        ))}
+      </section>
+
       {quotes.length === 0 ? (
         <EmptyState
           title="No quote requests yet"
           detail="Custom quote submissions will appear here when saved to Supabase."
         />
       ) : (
-        <div className="space-y-3">
-          {quotes.map((row) => (
-            <article
-              key={row.id}
-              className="rounded-2xl border border-black/10 bg-paper p-5 shadow-soft"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <p className="text-sm font-semibold text-ink">
-                    {row.company_name || row.contact_name}
-                  </p>
-                  <p className="mt-0.5 text-sm text-muted">
-                    {row.contact_name} · {row.email}
-                    {row.phone ? ` · ${row.phone}` : ""}
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900">
-                    {labelStatus(row.status)}
-                  </span>
-                  <span className="text-xs font-medium text-muted">{formatWhen(row.created_at)}</span>
-                </div>
-              </div>
-              <p className="mt-3 text-sm font-medium text-brand-deep">{row.service}</p>
-              <p className="mt-2 whitespace-pre-wrap text-sm text-muted">{row.message}</p>
-            </article>
-          ))}
+        <div className="overflow-hidden rounded-2xl border border-black/10 bg-paper shadow-soft">
+          <table className="min-w-full text-left text-sm">
+            <thead className="bg-black/[0.03] text-xs uppercase tracking-wide text-muted">
+              <tr>
+                <th className="px-4 py-3 font-semibold">Customer</th>
+                <th className="px-4 py-3 font-semibold">Service</th>
+                <th className="px-4 py-3 font-semibold">Qty</th>
+                <th className="px-4 py-3 font-semibold">Quoted</th>
+                <th className="px-4 py-3 font-semibold">Status</th>
+                <th className="px-4 py-3 font-semibold">Payment</th>
+                <th className="px-4 py-3 font-semibold">Submitted</th>
+                <th className="px-4 py-3 font-semibold"></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-black/5">
+              {quotes.map((row) => (
+                <tr key={row.id} className="hover:bg-black/[0.02]">
+                  <td className="px-4 py-3">
+                    <p className="font-semibold text-ink">{row.contact_name}</p>
+                    <p className="text-xs text-muted">
+                      {row.company_name || row.email}
+                      {row.phone ? ` · ${row.phone}` : ""}
+                    </p>
+                  </td>
+                  <td className="px-4 py-3 text-ink">{row.service}</td>
+                  <td className="px-4 py-3 text-muted">{row.quantity || "—"}</td>
+                  <td className="px-4 py-3 text-ink">
+                    {row.quoted_amount_cents != null
+                      ? formatMoney(row.quoted_amount_cents, row.currency)
+                      : "—"}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900">
+                      {quoteStatusLabel(row.status)}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
+                      {quotePaymentStatusLabel(row.payment_status || "none")}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-muted">{formatWhen(row.created_at)}</td>
+                  <td className="px-4 py-3 text-right">
+                    <Link
+                      href={`/admin/quotes/${row.id}`}
+                      className="text-sm font-semibold text-brand-deep underline-offset-2 hover:underline"
+                    >
+                      Manage
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
