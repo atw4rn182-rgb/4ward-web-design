@@ -71,9 +71,36 @@ export type QuoteRow = {
   stripe_payment_url: string | null;
   stripe_customer_id: string | null;
   quote_sent_at: string | null;
+  payment_link_sent_at: string | null;
   paid_at: string | null;
+  last_email_error: string | null;
+  last_email_error_at: string | null;
+  last_email_error_type: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type QuoteEmailFailureRow = {
+  id: string;
+  contact_name: string;
+  email: string;
+  company_name: string | null;
+  service: string;
+  status: string;
+  payment_status: string;
+  last_email_error: string | null;
+  last_email_error_at: string | null;
+  last_email_error_type: string | null;
+};
+
+export type QuoteEmailEventRow = {
+  id: string;
+  event_key: string;
+  event_type: string;
+  status: string;
+  error_message: string | null;
+  recipient_email: string | null;
+  created_at: string;
 };
 
 export type OnboardingRow = {
@@ -186,7 +213,7 @@ export async function getQuoteRequests(statusFilter?: string) {
   let query = supabase
     .from("quote_requests")
     .select(
-      "id, contact_name, email, phone, company_name, service, quantity, message, status, payment_status, quoted_amount_cents, currency, internal_notes, stripe_checkout_session_id, stripe_payment_intent_id, stripe_payment_link_id, stripe_payment_url, stripe_customer_id, quote_sent_at, paid_at, created_at, updated_at"
+      "id, contact_name, email, phone, company_name, service, quantity, message, status, payment_status, quoted_amount_cents, currency, internal_notes, stripe_checkout_session_id, stripe_payment_intent_id, stripe_payment_link_id, stripe_payment_url, stripe_customer_id, quote_sent_at, payment_link_sent_at, paid_at, last_email_error, last_email_error_at, last_email_error_type, created_at, updated_at"
     )
     .order("created_at", { ascending: false });
 
@@ -203,7 +230,7 @@ export async function getQuoteRequest(id: string) {
   const { data, error } = await supabase
     .from("quote_requests")
     .select(
-      "id, contact_name, email, phone, company_name, service, quantity, message, status, payment_status, quoted_amount_cents, currency, internal_notes, stripe_checkout_session_id, stripe_payment_intent_id, stripe_payment_link_id, stripe_payment_url, stripe_customer_id, quote_sent_at, paid_at, created_at, updated_at"
+      "id, contact_name, email, phone, company_name, service, quantity, message, status, payment_status, quoted_amount_cents, currency, internal_notes, stripe_checkout_session_id, stripe_payment_intent_id, stripe_payment_link_id, stripe_payment_url, stripe_customer_id, quote_sent_at, payment_link_sent_at, paid_at, last_email_error, last_email_error_at, last_email_error_type, created_at, updated_at"
     )
     .eq("id", id)
     .maybeSingle();
@@ -212,6 +239,32 @@ export async function getQuoteRequest(id: string) {
     return { data: null as QuoteRow | null, missing: missing(error) };
   }
   return { data: (data as QuoteRow | null) || null, missing: false };
+}
+
+export async function getQuoteEmailEvents(quoteId: string) {
+  const supabase = await adminDb();
+  const { data, error } = await supabase
+    .from("email_events")
+    .select("id, event_key, event_type, status, error_message, recipient_email, created_at")
+    .eq("quote_request_id", quoteId)
+    .order("created_at", { ascending: false })
+    .limit(10);
+
+  return result<QuoteEmailEventRow>(data, error);
+}
+
+export async function getQuotesWithEmailFailures() {
+  const supabase = await adminDb();
+  const { data, error } = await supabase
+    .from("quote_requests")
+    .select(
+      "id, contact_name, email, company_name, service, status, payment_status, last_email_error, last_email_error_at, last_email_error_type"
+    )
+    .not("last_email_error", "is", null)
+    .order("last_email_error_at", { ascending: false })
+    .limit(10);
+
+  return result<QuoteEmailFailureRow>(data, error);
 }
 
 export async function getOnboardings() {

@@ -115,6 +115,9 @@ export default async function QuotesPage({
                     <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
                       {quotePaymentStatusLabel(row.payment_status || "none")}
                     </span>
+                    {row.last_email_error ? (
+                      <p className="mt-1 text-xs font-medium text-amber-800">Email failed</p>
+                    ) : null}
                   </td>
                   <td className="px-4 py-3 text-muted">{formatWhen(row.created_at)}</td>
                   <td className="px-4 py-3 text-right">

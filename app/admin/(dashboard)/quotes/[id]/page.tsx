@@ -3,8 +3,9 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { SchemaNotice } from "@/components/admin/SchemaNotice";
 import { QuoteManageForm } from "@/components/admin/QuoteManageForm";
+import { QuoteAutomationPanel } from "@/components/admin/QuoteAutomationPanel";
 import { quoteStatusLabel, quotePaymentStatusLabel } from "@/lib/quotes/statuses";
-import { formatMoney, formatWhen, getQuoteRequest } from "@/lib/supabase/queries";
+import { formatMoney, formatWhen, getQuoteEmailEvents, getQuoteRequest } from "@/lib/supabase/queries";
 
 export const metadata = {
   title: "Quote Detail | 4Ward Admin",
@@ -17,7 +18,10 @@ export default async function QuoteDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { data: quote, missing } = await getQuoteRequest(id);
+  const [{ data: quote, missing }, emailEvents] = await Promise.all([
+    getQuoteRequest(id),
+    getQuoteEmailEvents(id),
+  ]);
 
   if (missing) {
     return (
@@ -63,6 +67,9 @@ export default async function QuoteDetailPage({
         ) : null}
       </div>
       <QuoteManageForm quote={quote} />
+      <div className="mt-6">
+        <QuoteAutomationPanel quote={quote} emailEvents={emailEvents.data} />
+      </div>
     </div>
   );
 }

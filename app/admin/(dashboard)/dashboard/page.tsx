@@ -10,6 +10,7 @@ import {
   getPayments,
   getProjects,
   getQuoteRequests,
+  getQuotesWithEmailFailures,
   labelStatus,
 } from "@/lib/supabase/queries";
 
@@ -19,12 +20,13 @@ export const metadata = {
 };
 
 export default async function DashboardPage() {
-  const [customers, projects, payments, onboardings, quotes] = await Promise.all([
+  const [customers, projects, payments, onboardings, quotes, emailFailures] = await Promise.all([
     getCustomers(),
     getProjects(),
     getPayments(),
     getOnboardings(),
     getQuoteRequests(),
+    getQuotesWithEmailFailures(),
   ]);
 
   const activeClientsList = customers.data.filter((row) => row.status === "active");
@@ -44,6 +46,8 @@ export default async function DashboardPage() {
   const openQuotes = quotes.data.filter((row) =>
     ["reviewing", "quote_preparing", "quote_sent", "awaiting_payment"].includes(row.status)
   ).length;
+
+  const awaitingPaymentQuotes = quotes.data.filter((row) => row.status === "awaiting_payment");
 
   const activity = [
     ...quotes.data.slice(0, 4).map((row) => ({
@@ -126,6 +130,11 @@ export default async function DashboardPage() {
           value={String(openQuotes)}
           hint="Reviewing through awaiting payment"
         />
+        <StatCard
+          label="Awaiting payment"
+          value={String(quotes.data.filter((row) => row.status === "awaiting_payment").length)}
+          hint="Payment link sent or ready"
+        />
       </section>
 
       <section className="mt-6 grid gap-4 lg:grid-cols-5">
@@ -187,6 +196,64 @@ export default async function DashboardPage() {
           </div>
         </article>
       </section>
+
+      {emailFailures.data.length > 0 ? (
+        <section className="mt-6 rounded-2xl border border-amber-200 bg-amber-50/50 p-5 shadow-soft">
+          <h2 className="font-display text-lg font-bold tracking-tight text-amber-950">
+            Quote email alerts
+          </h2>
+          <p className="mt-1 text-sm text-amber-900/80">
+            These quotes have saved payment data but an automated email failed. Open the quote to retry.
+          </p>
+          <ul className="mt-4 divide-y divide-amber-200/60">
+            {emailFailures.data.map((row) => (
+              <li key={row.id} className="flex flex-wrap items-start justify-between gap-3 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-amber-950">
+                    {row.company_name || row.contact_name || row.email}
+                  </p>
+                  <p className="mt-0.5 text-sm text-amber-900">{row.last_email_error}</p>
+                </div>
+                <a
+                  href={`/admin/quotes/${row.id}`}
+                  className="text-sm font-semibold text-amber-950 underline-offset-2 hover:underline"
+                >
+                  Manage quote
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {awaitingPaymentQuotes.length > 0 ? (
+        <section className="mt-6 rounded-2xl border border-black/10 bg-paper p-5 shadow-soft">
+          <h2 className="font-display text-lg font-bold tracking-tight">Quotes awaiting payment</h2>
+          <ul className="mt-4 divide-y divide-black/5">
+            {awaitingPaymentQuotes.slice(0, 6).map((row) => (
+              <li key={row.id} className="flex items-start justify-between gap-4 py-3">
+                <div>
+                  <p className="text-sm font-semibold text-ink">
+                    {row.company_name || row.contact_name || row.email}
+                  </p>
+                  <p className="mt-0.5 text-sm text-muted">
+                    {row.service}
+                    {row.quoted_amount_cents != null
+                      ? ` · ${formatMoney(row.quoted_amount_cents, row.currency)}`
+                      : ""}
+                  </p>
+                </div>
+                <a
+                  href={`/admin/quotes/${row.id}`}
+                  className="shrink-0 text-sm font-semibold text-brand-deep underline-offset-2 hover:underline"
+                >
+                  Manage
+                </a>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       <section className="mt-6 grid gap-4 lg:grid-cols-2">
         <article className="rounded-2xl border border-black/10 bg-paper p-5 shadow-soft">
