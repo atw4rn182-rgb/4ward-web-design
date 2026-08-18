@@ -387,9 +387,9 @@ p {
   object-fit: cover;
   object-position: center center;
   opacity: 0;
-  z-index: 1;
+  z-index: 3;
   background: #1a140e;
-  transition: opacity 0.9s var(--ease);
+  transition: opacity 1.1s var(--ease);
   pointer-events: none;
 }
 
@@ -402,20 +402,37 @@ p {
   z-index: 3;
 }
 
-.hero-montage {
-  z-index: 1;
+.hero-video.is-active.is-leaving {
   opacity: 0;
-  pointer-events: none;
-  transition: opacity 0.9s var(--ease);
 }
 
-.hero-montage[hidden] {
-  display: none !important;
+.hero-montage {
+  z-index: 2;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 1.1s var(--ease), visibility 0s linear 1.1s;
+}
+
+.hero-montage.is-prepped,
+.hero-montage.is-active {
+  visibility: visible;
+  transition: opacity 1.1s var(--ease), visibility 0s linear 0s;
+}
+
+.hero-montage.is-prepped {
+  opacity: 0;
+  z-index: 2;
 }
 
 .hero-montage.is-active {
   opacity: 1;
   z-index: 2;
+}
+
+.hero-video.is-leaving {
+  opacity: 0;
+  z-index: 3;
 }
 
 .hero-montage picture {
@@ -432,7 +449,7 @@ p {
   object-fit: cover;
   object-position: center center;
   opacity: 0;
-  transition: opacity 0.85s var(--ease);
+  transition: opacity 1s var(--ease);
 }
 
 .hero-slide.is-active {
@@ -2045,24 +2062,44 @@ a.ba-frame:hover img {
     width: 100%;
     height: 100%;
     max-width: none;
-    opacity: 1 !important;
-    z-index: 5;
-    object-fit: contain;
+    opacity: 0;
+    z-index: 3;
+    object-fit: cover;
     object-position: center center;
     transform: none;
-    background: transparent;
-    background-image: none;
+    background: #1a140e;
+    transition: opacity 1.1s var(--ease);
+  }
+
+  .hero-video--mobile.is-active {
+    opacity: 1 !important;
+  }
+
+  .hero-video--mobile.is-active.is-leaving {
+    opacity: 0 !important;
   }
 
   .hero-montage,
-  .hero-montage.is-active,
-  .hero-slide,
-  .hero-slide.is-active {
-    display: none !important;
-    opacity: 0 !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-    background-image: none !important;
+  .hero-montage.is-prepped,
+  .hero-montage.is-active {
+    display: block !important;
+    visibility: hidden;
+    opacity: 0;
+  }
+
+  .hero-montage.is-prepped,
+  .hero-montage.is-active {
+    visibility: visible;
+  }
+
+  .hero-montage.is-active {
+    opacity: 1 !important;
+    z-index: 2;
+  }
+
+  .hero-slide {
+    object-fit: cover;
+    object-position: center center;
   }
 
   .hero-content.container,
@@ -2082,6 +2119,10 @@ a.ba-frame:hover img {
   }
   .hero-video,
   .hero-montage {
+    transition: none;
+  }
+  .hero-video.is-leaving,
+  .hero-slide {
     transition: none;
   }
   .hero-stage {

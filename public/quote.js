@@ -1,5 +1,4 @@
 (function () {
-  const STATIC_FORMS_URL = "https://api.staticforms.dev/submit";
   const form = document.getElementById("quote-form");
   const statusEl = document.getElementById("quote-status");
   const submitBtn = document.getElementById("quote-submit");
@@ -29,20 +28,26 @@
     statusEl.textContent = "Sending your request…";
     submitBtn.disabled = true;
 
+    const data = new FormData(form);
+    const payload = {
+      name: data.get("name") || "",
+      email: data.get("email") || "",
+      phone: data.get("phone") || "",
+      company: data.get("company") || "",
+      service: data.get("service") || "",
+      message: data.get("message") || "",
+      honeypot: data.get("honeypot") || "",
+    };
+
     try {
-      const response = await fetch(STATIC_FORMS_URL, {
+      const response = await fetch("/api/quote-request", {
         method: "POST",
-        body: new FormData(form),
-        headers: { Accept: "application/json" },
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(payload),
       });
-      let result = {};
-      try {
-        result = await response.json();
-      } catch {
-        result = {};
-      }
-      if (!response.ok || result.success === false) {
-        throw new Error(result.message || result.error || "Quote request failed.");
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || result.ok === false) {
+        throw new Error(result.error || result.message || "Quote request failed.");
       }
 
       form.hidden = true;

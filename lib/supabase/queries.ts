@@ -48,6 +48,18 @@ export type NoteRow = {
   customers: { company_name: string } | { company_name: string }[] | null;
 };
 
+export type QuoteRow = {
+  id: string;
+  contact_name: string;
+  email: string;
+  phone: string | null;
+  company_name: string | null;
+  service: string;
+  message: string;
+  status: string;
+  created_at: string;
+};
+
 export type OnboardingRow = {
   id: string;
   company_name: string | null;
@@ -151,6 +163,17 @@ export async function getNotes() {
     customers: row.customers,
   }));
   return { data: mapped as NoteRow[], missing: false };
+}
+
+export async function getQuoteRequests() {
+  const supabase = await adminDb();
+  const { data, error } = await supabase
+    .from("quote_requests")
+    .select(
+      "id, contact_name, email, phone, company_name, service, message, status, created_at"
+    )
+    .order("created_at", { ascending: false });
+  return result<QuoteRow>(data, error);
 }
 
 export async function getOnboardings() {

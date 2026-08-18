@@ -25,7 +25,7 @@ export default async function ClientsPage() {
   }
 
   const active = customers.filter((row) => row.status === "active").length;
-  const leads = customers.filter((row) => row.status === "lead").length;
+  const paymentPending = customers.filter((row) => row.status === "payment_pending").length;
 
   return (
     <div>
@@ -36,8 +36,8 @@ export default async function ClientsPage() {
       {schemaMissing ? <SchemaNotice /> : null}
       <section className="mb-6 grid gap-4 sm:grid-cols-3">
         <StatCard label="Total clients" value={String(customers.length)} hint="All statuses" />
-        <StatCard label="Active" value={String(active)} hint="Currently marked active" />
-        <StatCard label="Leads" value={String(leads)} hint="Awaiting kickoff" />
+        <StatCard label="Active" value={String(active)} hint="Paid / active clients" />
+        <StatCard label="Payment pending" value={String(paymentPending)} hint="Onboarding, awaiting Stripe" />
       </section>
       {customers.length === 0 ? (
         <EmptyState

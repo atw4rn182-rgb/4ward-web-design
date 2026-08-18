@@ -76,8 +76,8 @@
 
       <div class="onboard-panel" id="onboard-success" hidden>
         <p class="eyebrow">You’re all set</p>
-        <h2>Payment started successfully</h2>
-        <p class="section-lead">Thanks for completing onboarding. Your details were sent to our team, and Stripe confirms your billing setup. We’ll follow up by email shortly.</p>
+        <h2>Thanks — check your email</h2>
+        <p class="section-lead">You returned from Stripe Checkout. If payment went through, you'll receive a welcome email once our system confirms it (usually within a minute). If checkout was canceled, use Resume below — your onboarding details stay saved.</p>
         <div class="onboard-actions">
           <a class="btn btn-accent" href="/">Return home</a>
           <a class="btn btn-outline" href="mailto:4wardwebdesigns@gmail.com">Email us</a>
@@ -118,7 +118,7 @@
             <h4>1. Services</h4>
             <p>Provider will design, develop, host, and maintain a website according to the Client’s selected tier. Every paid monthly tier is a full online overhaul: professional website, Google Business Profile setup, and a local SEO (Search Engine Optimization) foundation, plus hosting, development/creation, and ongoing maintenance within the included monthly update allowance.</p>
             <h4>2. Fees &amp; billing</h4>
-            <p>A one-time <strong>$200 Launch Fee</strong> applies to all tiers and covers initial consultation, custom design/setup, domain/DNS if needed, basic on-page SEO, Google Analytics, contact forms, mobile optimization, testing, and onboarding. Client also authorizes recurring monthly charges for the selected subscription tier, or a one-time buy-out payment when Tier 4 is selected. Fees are billed through Stripe. Optional recurring website add-ons selected during onboarding (such as bilingual site or monthly updates) are added to the monthly subscription shown before payment. One-time or custom services (logo, print, chatbot, extra pages, extra updates) are quoted separately and billed with a Stripe payment link. Extra updates beyond the included monthly allowance that are not purchased as a quote are billed separately at the rates listed for that tier.</p>
+            <p>A one-time <strong>$200 Launch Fee</strong> applies to all tiers and covers initial consultation, custom design/setup, domain/DNS if needed, basic on-page SEO, Google Analytics, contact forms, mobile optimization, testing, and onboarding. Client also authorizes recurring monthly charges for the selected subscription tier, or a one-time buy-out payment when Tier 4 is selected. Fees are billed through Stripe. Optional recurring website add-ons selected during onboarding (Monthly Performance Reports and/or Private Admin Dashboard) are added to the monthly subscription shown before payment. The Private Admin Dashboard is a private back-office feature — not customer-facing — and requires additional setup and ongoing maintenance. One-time or custom services (logo, print, chatbot, extra pages, extra updates) are quoted separately and billed with a Stripe payment link. Extra updates beyond the included monthly allowance that are not purchased as a quote are billed separately at the rates listed for that tier.</p>
             <h4>3. Client responsibilities</h4>
             <p>Client will provide accurate business information, logos, photos, copy, and timely feedback. Delays in Client materials may extend delivery timelines.</p>
             <h4>4. Intellectual property</h4>
@@ -148,7 +148,7 @@
 
         <section class="onboard-step" data-step="2" aria-labelledby="step2-heading" hidden>
           <h2 id="step2-heading">What’s included in your plan</h2>
-          <p class="onboard-step-lead">Confirm the tier you want. Every plan includes a $200 one-time Launch Fee. Monthly plans can add optional recurring website features below. You’ll see the updated monthly total and first payment before checkout.</p>
+          <p class="onboard-step-lead">Confirm the tier you want. Every plan includes a $200 one-time Launch Fee. Monthly tiers (1–3) can add optional recurring add-ons below — Monthly Performance Reports ($20/mo) and/or Private Admin Dashboard ($50/mo). You’ll see the updated monthly total and first payment before checkout.</p>
 
           <div class="form-row">
             <label for="tier-select">Chosen tier</label>
@@ -164,20 +164,27 @@
 
           <fieldset class="onboard-addons" id="recurring-addons">
             <legend>Optional recurring website add-ons</legend>
-            <p class="onboard-hint">These are added to your monthly Stripe subscription. One-time services use <a href="quote.html">Request a Quote</a>.</p>
+            <p class="onboard-hint">Available with every monthly website tier (Tier 1–3). Optional — select none, one, or both. These are added to your monthly Stripe subscription. One-time services use <a href="quote.html">Request a Quote</a>.</p>
             <input type="hidden" name="recurringAddOns" id="recurring-addons-hidden" value="None selected" />
             <label class="onboard-check">
-              <input id="addon-bilingual" name="addonBilingual" type="checkbox" value="bilingual" />
-              <span id="addon-bilingual-label">Bilingual Website — +$5/month</span>
+              <input id="addon-performance-reports" name="addonPerformanceReports" type="checkbox" value="performance_reports" />
+              <span>
+                Monthly Performance Reports — +$20/month
+                <ul class="onboard-addon-points">
+                  <li>Monthly Google Analytics performance summary</li>
+                  <li>Traffic, calls, and search visibility insights</li>
+                  <li>Simple tips to improve your results</li>
+                </ul>
+              </span>
             </label>
             <label class="onboard-check">
-              <input id="addon-reports" name="addonReports" type="checkbox" value="reports" />
+              <input id="addon-admin-dashboard" name="addonAdminDashboard" type="checkbox" value="admin_dashboard" />
               <span>
-                Monthly Updates – $49/mo
+                Private Admin Dashboard — +$50/month
                 <ul class="onboard-addon-points">
-                  <li>4 free website updates every month</li>
-                  <li>Monthly Google Analytics report so you know how your site is performing</li>
-                  <li>Simple tips on how to get more traffic and improve your results</li>
+                  <li>Private back-office for your business — <strong>not shown on your public website</strong></li>
+                  <li>Manage clients, projects, files, and internal notes</li>
+                  <li>Requires Supabase setup, configuration, and ongoing maintenance</li>
                 </ul>
               </span>
             </label>
@@ -280,6 +287,7 @@
   </footer>
 
   <script src="https://js.stripe.com/v3/"></script>
+  <script src="pricing-addons.js"></script>
   <script src="onboarding.js"></script>
 </body>
 </html>

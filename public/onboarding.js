@@ -1,10 +1,18 @@
 (function () {
   const STORAGE_KEY = "4ward-onboarding-v1";
   const MAX_LOGO_BYTES = 1.2 * 1024 * 1024;
-  const STATIC_FORMS_URL = "https://api.staticforms.dev/submit";
   const LAUNCH_FEE_CENTS = 20000;
-  const REPORTS_CENTS = 4900;
-  const BILINGUAL_CENTS = 500;
+  const pricingAddons = window.FwdPricingAddons || {
+    addOnMonthlyCents: function () {
+      return 0;
+    },
+    addOnSummaryLines: function () {
+      return [];
+    },
+    normalizeAddOnIds: function () {
+      return [];
+    },
+  };
 
   function money(cents) {
     return "$" + (cents / 100).toLocaleString("en-US", { minimumFractionDigits: 0 });
@@ -128,9 +136,8 @@
   const year = document.getElementById("year");
   const payBtn = document.getElementById("pay-btn");
   const addonsField = document.getElementById("recurring-addons");
-  const bilingualInput = document.getElementById("addon-bilingual");
-  const bilingualLabel = document.getElementById("addon-bilingual-label");
-  const reportsInput = document.getElementById("addon-reports");
+  const performanceReportsInput = document.getElementById("addon-performance-reports");
+  const adminDashboardInput = document.getElementById("addon-admin-dashboard");
   const addonsHidden = document.getElementById("recurring-addons-hidden");
 
   let currentStep = 1;
@@ -177,8 +184,8 @@
       companyInformation: data.get("companyInformation") || "",
       existingOnlinePresence: data.get("existingOnlinePresence") || "",
       logoMeta,
-      addonBilingual: Boolean(bilingualInput && bilingualInput.checked),
-      addonReports: Boolean(reportsInput && reportsInput.checked),
+      addonPerformanceReports: Boolean(performanceReportsInput && performanceReportsInput.checked),
+      addonAdminDashboard: Boolean(adminDashboardInput && adminDashboardInput.checked),
     };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
@@ -193,40 +200,34 @@
     if (state.companyInformation) form.companyInformation.value = state.companyInformation;
     if (state.existingOnlinePresence) form.existingOnlinePresence.value = state.existingOnlinePresence;
     if (state.logoMeta) logoMeta = state.logoMeta;
-    if (bilingualInput) bilingualInput.checked = Boolean(state.addonBilingual);
-    if (reportsInput) reportsInput.checked = Boolean(state.addonReports);
+    if (performanceReportsInput) {
+      performanceReportsInput.checked = Boolean(state.addonPerformanceReports);
+    }
+    if (adminDashboardInput) {
+      adminDashboardInput.checked = Boolean(state.addonAdminDashboard);
+    }
   }
 
   function selectedAddOnIds(tier) {
     if (!tier || tier.mode !== "subscription") return [];
-    const ids = [];
-    if (bilingualInput && bilingualInput.checked) ids.push("bilingual");
-    if (reportsInput && reportsInput.checked) ids.push("reports");
-    return ids;
+    const raw = [];
+    if (performanceReportsInput && performanceReportsInput.checked) {
+      raw.push("performance_reports");
+    }
+    if (adminDashboardInput && adminDashboardInput.checked) {
+      raw.push("admin_dashboard");
+    }
+    return pricingAddons.normalizeAddOnIds(raw, true);
   }
 
   function addOnMonthlyCents(tierKey, ids) {
-    let cents = 0;
-    if (ids.includes("bilingual") && (tierKey === "tier1" || tierKey === "tier2")) {
-      cents += BILINGUAL_CENTS;
-    }
-    if (ids.includes("reports")) cents += REPORTS_CENTS;
-    return cents;
+    void tierKey;
+    return pricingAddons.addOnMonthlyCents(ids);
   }
 
   function addOnSummaryLines(tierKey, ids) {
-    const lines = [];
-    if (ids.includes("bilingual")) {
-      lines.push(
-        tierKey === "tier3"
-          ? "Bilingual Website — Included"
-          : "Bilingual Website — +$5/month"
-      );
-    }
-    if (ids.includes("reports")) {
-      lines.push("Monthly Updates – $49/mo");
-    }
-    return lines;
+    void tierKey;
+    return pricingAddons.addOnSummaryLines(ids);
   }
 
   function renderTier() {
@@ -234,12 +235,6 @@
     const tier = TIERS[tierKey] || TIERS.tier2;
     const isMonthly = tier.mode === "subscription";
     if (addonsField) addonsField.hidden = !isMonthly;
-    if (bilingualLabel) {
-      bilingualLabel.textContent =
-        tierKey === "tier3"
-          ? "Bilingual Website — Included"
-          : "Bilingual Website — +$5/month";
-    }
 
     const addOnIds = selectedAddOnIds(tier);
     const addonCents = addOnMonthlyCents(tierKey, addOnIds);
@@ -375,55 +370,29 @@
     return firstLine || "New client";
   }
 
-  async function submitStaticForms() {
-    const formData = new FormData(form);
-    // Ensure chosen tier text is readable in the email
-    const tier = TIERS[tierSelect.value];
-    if (tier) {
-      formData.set("chosenTier", tierSelect.value + " — " + tier.label + " (" + tier.priceLabel + ")");
-    }
-    const addOnIds = selectedAddOnIds(tier);
-    formData.set(
-      "recurringAddOns",
-      addOnSummaryLines(tierSelect.value, addOnIds).join("; ") || "None selected"
-    );
-    formData.set("companyName", companyLabelFromInfo(form.companyInformation.value));
-    const formattedPhone = formatUsPhone(form.phone && form.phone.value);
-    if (formattedPhone && form.phone) form.phone.value = formattedPhone;
-    formData.set("phone", formattedPhone || (form.phone && form.phone.value) || "");
-    formData.set(
-      "bilingualRequested",
-      bilingualInput && bilingualInput.checked ? "Yes" : "No"
-    );
-
-    const response = await fetch(STATIC_FORMS_URL, {
-      method: "POST",
-      body: formData,
-      headers: { Accept: "application/json" },
+  async function readLogoBase64() {
+    const file = logoInput && logoInput.files && logoInput.files[0];
+    if (!file || file.size > MAX_LOGO_BYTES) return null;
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const result = String(reader.result || "");
+        const comma = result.indexOf(",");
+        resolve({
+          base64: comma >= 0 ? result.slice(comma + 1) : result,
+          name: file.name,
+          type: file.type,
+        });
+      };
+      reader.onerror = () => reject(new Error("Unable to read logo file."));
+      reader.readAsDataURL(file);
     });
-
-    let result = {};
-    try {
-      result = await response.json();
-    } catch {
-      result = {};
-    }
-
-    if (!response.ok) {
-      throw new Error(result.message || result.error || "Static Forms submission failed.");
-    }
-
-    // Some Static Forms responses use success flags; others return 200 with HTML/redirect.
-    if (result.success === false) {
-      throw new Error(result.message || "Static Forms rejected the submission.");
-    }
-
-    return result;
   }
 
   async function startStripeCheckout() {
     const data = new FormData(form);
     const companyInformation = String(data.get("companyInformation") || "");
+    const logoPayload = await readLogoBase64().catch(() => null);
     const payload = {
       tier: tierSelect.value,
       companyName: companyLabelFromInfo(companyInformation),
@@ -434,8 +403,13 @@
       existingLinks: data.get("existingOnlinePresence") || "",
       signerName: data.get("name") || "",
       agreementVersion: "service-agreement-v1",
-      logoName: (logoInput && logoInput.files && logoInput.files[0] && logoInput.files[0].name) || logoMeta.name || "",
-      logoType: (logoInput && logoInput.files && logoInput.files[0] && logoInput.files[0].type) || logoMeta.type || "",
+      logoName:
+        (logoPayload && logoPayload.name) ||
+        (logoInput && logoInput.files && logoInput.files[0] && logoInput.files[0].name) ||
+        logoMeta.name ||
+        "",
+      logoMimeType: (logoPayload && logoPayload.type) || logoMeta.type || "",
+      logoBase64: (logoPayload && logoPayload.base64) || "",
       companyInformation,
       signedAgreement: document.getElementById("signed-agreement")?.checked ? "yes" : "no",
       addOns: selectedAddOnIds(TIERS[tierSelect.value]),
@@ -521,11 +495,11 @@
     saveState();
   });
 
-  bilingualInput?.addEventListener("change", () => {
+  performanceReportsInput?.addEventListener("change", () => {
     renderTier();
     saveState();
   });
-  reportsInput?.addEventListener("change", () => {
+  adminDashboardInput?.addEventListener("change", () => {
     renderTier();
     saveState();
   });
@@ -539,12 +513,10 @@
     }
 
     statusEl.classList.remove("is-error");
-    statusEl.textContent = "Submitting onboarding details…";
+    statusEl.textContent = "Saving your details and opening secure Stripe Checkout…";
     payBtn.disabled = true;
 
     try {
-      await submitStaticForms();
-      statusEl.textContent = "Details sent. Opening secure Stripe Checkout…";
       await startStripeCheckout();
     } catch (error) {
       statusEl.classList.add("is-error");

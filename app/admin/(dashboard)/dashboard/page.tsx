@@ -9,6 +9,7 @@ import {
   getOnboardings,
   getPayments,
   getProjects,
+  getQuoteRequests,
   labelStatus,
 } from "@/lib/supabase/queries";
 
@@ -18,11 +19,12 @@ export const metadata = {
 };
 
 export default async function DashboardPage() {
-  const [customers, projects, payments, onboardings] = await Promise.all([
+  const [customers, projects, payments, onboardings, quotes] = await Promise.all([
     getCustomers(),
     getProjects(),
     getPayments(),
     getOnboardings(),
+    getQuoteRequests(),
   ]);
 
   const activeClientsList = customers.data.filter((row) => row.status === "active");
@@ -35,9 +37,18 @@ export default async function DashboardPage() {
   const monthlyRevenue = payments.data
     .filter((row) => row.status === "paid" && new Date(row.created_at).getTime() >= monthStart)
     .reduce((sum, row) => sum + (row.amount_cents || 0), 0);
-  const pendingOnboarding = onboardings.data.filter((row) => row.status === "received").length;
+  const pendingOnboarding = onboardings.data.filter((row) =>
+    ["received", "payment_pending"].includes(row.status)
+  ).length;
+  const newQuotes = quotes.data.filter((row) => row.status === "new").length;
 
   const activity = [
+    ...quotes.data.slice(0, 4).map((row) => ({
+      id: `quote-${row.id}`,
+      title: row.company_name || row.contact_name || row.email || "Quote request",
+      detail: `Quote · ${row.service} · ${labelStatus(row.status)}`,
+      at: row.created_at,
+    })),
     ...onboardings.data.slice(0, 6).map((row) => ({
       id: `onboarding-${row.id}`,
       title: row.company_name || row.email || "Onboarding",
@@ -67,7 +78,11 @@ export default async function DashboardPage() {
   const pipelineMax = Math.max(leadCount, designCount, devCount, liveCount, 1);
 
   const schemaMissing =
-    customers.missing || projects.missing || payments.missing || onboardings.missing;
+    customers.missing ||
+    projects.missing ||
+    payments.missing ||
+    onboardings.missing ||
+    quotes.missing;
 
   return (
     <div>
@@ -96,7 +111,12 @@ export default async function DashboardPage() {
         <StatCard
           label="Pending onboarding"
           value={String(pendingOnboarding)}
-          hint="Submissions waiting for review"
+          hint="Submitted, awaiting Stripe payment"
+        />
+        <StatCard
+          label="New quotes"
+          value={String(newQuotes)}
+          hint="Custom work requests to review"
         />
       </section>
 

@@ -179,7 +179,6 @@
           class="hero-video hero-video--mobile is-active"
           id="hero-video-mobile"
           muted
-          loop
           playsinline
           webkit-playsinline
           preload="none"
@@ -188,10 +187,10 @@
         >
           <source src="assets/mobile-hero4ward.mp4?v=3" type="video/mp4" />
         </video>
-        <div class="hero-montage" id="hero-montage" hidden aria-hidden="true">
+        <div class="hero-montage" id="hero-montage" aria-hidden="true">
           <picture>
             <source srcset="assets/hero-southwest.webp" type="image/webp" />
-            <img class="hero-slide" src="assets/hero-southwest.png" alt="" width="1920" height="1080" loading="lazy" decoding="async" fetchpriority="low" />
+            <img class="hero-slide" src="assets/hero-southwest.png" alt="" width="1920" height="1080" loading="eager" decoding="async" fetchpriority="high" />
           </picture>
           <picture>
             <source srcset="assets/hero-high-desert.webp" type="image/webp" />
@@ -387,7 +386,7 @@
               <p class="plan-fee">+$200 launch fee, once</p>
               <p class="plan-due">Due today: <strong>$599</strong></p>
               <p class="plan-overhaul">Full overhaul: website + Google Business Profile</p>
-              <p class="plan-summary">Best for businesses that need more pages, more detail, and room to grow. Bilingual website included — select it during signup.</p>
+              <p class="plan-summary">Best for businesses that need more pages, more detail, and room to grow.</p>
             </header>
             <ul class="plan-features">
               <li>Hosting &amp; development</li>
@@ -438,17 +437,17 @@
           <div class="addon-groups">
             <section class="addon-group">
               <h4>Recurring website add-ons</h4>
-              <p>Add these when you sign up. They go on the same monthly plan.</p>
+              <p>Optional with every monthly tier (Tier 1–3). Add when you sign up — same monthly Stripe subscription.</p>
               <ul class="addon-grid">
                 <li>
-                  <span>Bilingual Website</span>
-                  <strong>Tier 1–2 $5/mo</strong>
-                  <small>On Tier 3, bilingual is included — select it during signup.</small>
+                  <span>Monthly Performance Reports</span>
+                  <strong>$20/mo</strong>
+                  <small>Traffic, calls, search visibility, and actionable tips</small>
                 </li>
                 <li>
-                  <span>Monthly reports</span>
-                  <strong>$49/mo</strong>
-                  <small>Traffic, calls, and search visibility</small>
+                  <span>Private Admin Dashboard</span>
+                  <strong>$50/mo</strong>
+                  <small>Private back-office — not customer-facing. Requires Supabase setup and ongoing maintenance.</small>
                 </li>
               </ul>
             </section>

@@ -2,6 +2,16 @@ import { NextResponse } from "next/server";
 import { supabaseInsert } from "@/lib/supabase/service-rest";
 import { recordPendingCheckoutPayment } from "@/lib/payments/sync-stripe-session";
 import { getStripeEnv } from "@/lib/stripe/env";
+import {
+  attachLogoToStaticForms,
+  sendOnboardingPendingEmails,
+} from "@/lib/email/static-forms";
+import {
+  addOnPayloadFlags,
+  addOnSummary,
+  addonById,
+  normalizeAddOnIds,
+} from "@/lib/pricing/add-ons";
 
 const TIERS = {
   tier1: {
@@ -55,24 +65,8 @@ const PRICE_ENV = {
   tier3: "STRIPE_PRICE_TIER3",
 };
 
-const ALLOWED_ADDONS = new Set(["bilingual", "reports"]);
-const REPORTS_CENTS = 4900;
-
-function bilingualCents(tierId) {
-  if (tierId === "tier1" || tierId === "tier2") return 500;
-  if (tierId === "tier3") return 0;
-  return null;
-}
-
 function normalizeAddOns(raw, tier) {
-  if (!tier || tier.mode !== "subscription") return [];
-  const list = Array.isArray(raw) ? raw : [];
-  const out = [];
-  list.forEach((value) => {
-    const id = sanitize(String(value), 40);
-    if (ALLOWED_ADDONS.has(id) && !out.includes(id)) out.push(id);
-  });
-  return out;
+  return normalizeAddOnIds(raw, tier && tier.mode);
 }
 
 function recurringAddonLineItem(index, { id, name, amount }) {
@@ -181,31 +175,19 @@ function buildLineItemParams(tier, addOnIds) {
   const extra = {};
   let index = 1;
   if (tier.mode === "subscription") {
-    if (addOnIds.includes("bilingual")) {
-      const amount = bilingualCents(tier.id);
-      if (amount > 0) {
-        Object.assign(
-          extra,
-          recurringAddonLineItem(index, {
-            id: "bilingual",
-            name: "Bilingual Website",
-            amount,
-          })
-        );
-        index += 1;
-      }
-    }
-    if (addOnIds.includes("reports")) {
+    addOnIds.forEach((addonId) => {
+      const addon = addonById(addonId);
+      if (!addon) return;
       Object.assign(
         extra,
         recurringAddonLineItem(index, {
-          id: "reports",
-          name: "Monthly Updates",
-          amount: REPORTS_CENTS,
+          id: addon.id,
+          name: addon.stripeName,
+          amount: addon.cents,
         })
       );
       index += 1;
-    }
+    });
   }
 
   return {
@@ -248,9 +230,9 @@ async function saveOnboardingRecord(record) {
       contact_name: record.contactName,
       email: record.email,
       phone: record.phone,
-      status: "lead",
+      status: "payment_pending",
     });
-    await supabaseInsert("onboarding_submissions", {
+    const onboarding = await supabaseInsert("onboarding_submissions", {
       customer_id: customer && customer.id ? customer.id : null,
       tier: record.tier,
       company_name: record.companyName,
@@ -259,16 +241,14 @@ async function saveOnboardingRecord(record) {
       phone: record.phone,
       notes: record.companyInformation || null,
       agreement_accepted: record.signedAgreement === "yes",
-      status: "received",
+      status: "payment_pending",
       payload: {
-        addons: record.addOnIds,
-        bilingual_requested: record.addOnIds.includes("bilingual"),
-        reports_requested: record.addOnIds.includes("reports"),
+        ...addOnPayloadFlags(record.addOnIds),
         existing_links: record.existingLinks,
         logo_name: record.logoName,
       },
     });
-    return customer;
+    return { customer, onboarding };
   } catch (error) {
     console.error("Onboarding record save failed");
     return null;
@@ -320,6 +300,8 @@ export async function POST(request) {
     sanitize(body.agreementVersion, 80) || "service-agreement-v1";
   const companyInformation = sanitize(body.companyInformation, 2000);
   const logoName = sanitize(body.logoName, 160);
+  const logoMimeType = sanitize(body.logoMimeType, 80);
+  const logoBase64 = sanitize(body.logoBase64, 2_000_000);
   const signedAgreement = sanitize(body.signedAgreement, 20);
   const addOnIds = normalizeAddOns(body.addOns, tier);
 
@@ -335,6 +317,7 @@ export async function POST(request) {
   const metadata = {
     tier: tier.id,
     company_name: companyName,
+    email,
     contact_name: contactName,
     phone,
     address,
@@ -349,11 +332,13 @@ export async function POST(request) {
     form_handler: "staticforms",
     launch_fee_cents: String(LAUNCH_FEE_CENTS),
     addons: addOnIds.join(",") || "none",
-    bilingual_requested: addOnIds.includes("bilingual") ? "yes" : "no",
-    reports_requested: addOnIds.includes("reports") ? "yes" : "no",
+    performance_reports_requested: addOnIds.includes("performance_reports")
+      ? "yes"
+      : "no",
+    admin_dashboard_requested: addOnIds.includes("admin_dashboard") ? "yes" : "no",
   };
 
-  const customerRow = await saveOnboardingRecord({
+  const saved = await saveOnboardingRecord({
     companyName,
     contactName,
     email,
@@ -365,8 +350,55 @@ export async function POST(request) {
     existingLinks,
     logoName,
   });
+  const customerRow = saved && saved.customer;
+  const onboardingRow = saved && saved.onboarding;
   if (customerRow && customerRow.id) {
     metadata.supabase_customer_id = customerRow.id;
+  }
+  if (onboardingRow && onboardingRow.id) {
+    metadata.supabase_onboarding_id = onboardingRow.id;
+  }
+
+  if (!saved || !saved.customer) {
+    return json(503, {
+      error: "Unable to save onboarding information. Please try again.",
+    });
+  }
+
+  try {
+    await sendOnboardingPendingEmails({
+      companyName,
+      contactName,
+      email,
+      phone,
+      tier: tier.id,
+      companyInformation,
+      addOnSummary: addOnSummary(addOnIds) || "None",
+      logoName,
+    });
+    if (logoBase64 && logoName) {
+      try {
+        const logoBuffer = Buffer.from(logoBase64, "base64");
+        if (logoBuffer.length > 0 && logoBuffer.length <= 1.2 * 1024 * 1024) {
+          await attachLogoToStaticForms({
+            contactName,
+            email,
+            companyName,
+            logoBuffer,
+            logoName,
+            logoMimeType,
+          });
+        }
+      } catch (error) {
+        console.error("Logo email attachment failed:", error.message);
+      }
+    }
+  } catch (error) {
+    console.error("Onboarding notification emails failed:", error.message);
+    return json(502, {
+      error:
+        "Your information was saved but we could not send confirmation emails. Please contact us before paying.",
+    });
   }
 
   try {
