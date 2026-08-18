@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseInsert, supabaseSelect } from "@/lib/supabase/service-rest";
-import { sendQuoteRequestEmails } from "@/lib/email/static-forms";
+import { deliverQuoteRequestEmails } from "@/lib/quotes/deliver-request-emails";
 
 function sanitize(value, max = 500) {
   if (typeof value !== "string") return "";
@@ -99,14 +99,14 @@ export async function POST(request) {
   }
 
   try {
-    await sendQuoteRequestEmails({
-      contactName,
-      email,
-      phone,
-      companyName,
-      service,
-      message,
-    });
+    const emailResult = await deliverQuoteRequestEmails(quoteRow);
+    if (!emailResult.ok && !emailResult.skipped) {
+      return json(502, {
+        error:
+          "Your request was saved but email delivery failed. We will follow up manually.",
+        id: quoteRow?.id,
+      });
+    }
   } catch (error) {
     console.error("Quote email failed:", error.message);
     return json(502, {

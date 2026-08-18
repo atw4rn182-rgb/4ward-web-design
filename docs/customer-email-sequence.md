@@ -36,15 +36,30 @@ Email sends use **idempotency keys** in `email_events` so Stripe webhook retries
 
 ## Custom quote requests (one-time work)
 
-| # | When | Recipient | Trigger |
-|---|------|-----------|---------|
-| A | Customer submits quote form | Customer + internal | `POST /api/quote-request` |
-| B | Admin sends Stripe payment link | Customer + internal | Admin dashboard → send payment link |
-| C | Stripe confirms quote payment | Customer + internal | Webhook → `sendQuotePaymentConfirmation()` |
+| # | When | Recipient | Subject line | Trigger | Idempotency key |
+|---|------|-----------|--------------|---------|-----------------|
+| A | Customer submits quote form | Internal + customer | `[QUOTE — NEW REQUEST]` / `[Quote Request] Received — …` | `POST /api/quote-request` | `quote_request:{quoteId}` |
+| B | Admin emails Stripe payment link | Internal + customer | `[QUOTE — PAYMENT LINK SENT]` / `[Custom Quote] Payment link — …` | Admin → send payment link | `quote_payment_link:{quoteId}:{paymentLinkId}` |
+| C | Stripe confirms quote payment | Internal + customer | `[QUOTE — PAYMENT RECEIVED]` / `[Custom Quote] Payment confirmed — …` | Webhook → `sendQuotePaymentConfirmation()` | `quote_payment_success:{checkoutSessionId}` |
+
+### Email A — Quote request confirmation
+- **Customer:** Confirms request received with dynamic summary (name, service, quantity, project details, quote reference). Explains pricing will be reviewed — **not approved yet**. **No charge** implied.
+- **Internal:** Full request details + quote ID for Admin → Quotes.
+- Duplicate API submissions (same email/service/message within 5 minutes) skip insert and email.
+
+### Email B — Custom payment link
+- **Customer:** States what the payment is for, quoted amount from Supabase, secure Stripe link. No internal notes or vendor costs.
+- **Internal:** Quote ID, amount, payment URL. Quote status → Awaiting Payment before send.
+- Idempotent per payment link ID; admin can retry after failure.
+
+### Email C — Quote payment confirmed
+- **Customer:** Payment confirmation with service, quantity, amount paid, quote reference; next steps for custom work.
+- **Internal:** Full payment details + Supabase quote ID.
+- **Webhook-only** — never sent on page refresh or opening payment link.
+
+Quote templates live in `lib/email/quote-emails.js`. Onboarding uses separate subjects (`[ONBOARDING — …]`, `[PAYMENT RECEIVED]` without `[Custom Quote]`).
 
 See [quote-automation.md](./quote-automation.md) for quote status automation.
-
-Quote emails are **never** mixed with onboarding welcome content.
 
 ---
 
