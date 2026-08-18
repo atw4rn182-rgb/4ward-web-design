@@ -3,6 +3,7 @@ import { StatCard } from "@/components/admin/StatCard";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { SchemaNotice } from "@/components/admin/SchemaNotice";
 import { getCustomers, getOnboardings, labelStatus } from "@/lib/supabase/queries";
+import { tierLabel } from "@/lib/pricing/tier-labels";
 
 export const metadata = {
   title: "Clients | 4Ward Admin",
@@ -75,6 +76,57 @@ export default async function ClientsPage() {
           </table>
         </div>
       )}
+
+      <section className="mt-8">
+        <h2 className="font-display text-lg font-bold tracking-tight">Recent onboarding</h2>
+        <p className="mt-1 text-sm text-muted">
+          Submissions from the client onboarding form, including domain preferences.
+        </p>
+        {onboardings.length === 0 ? (
+          <div className="mt-4">
+            <EmptyState
+              title="No onboarding submissions yet"
+              detail="New onboarding records will appear here after clients start checkout."
+            />
+          </div>
+        ) : (
+          <div className="mt-4 overflow-hidden rounded-2xl border border-black/10 bg-paper shadow-soft">
+            <table className="min-w-full text-left text-sm">
+              <thead className="bg-black/[0.03] text-xs uppercase tracking-wide text-muted">
+                <tr>
+                  <th className="px-4 py-3 font-semibold">Client</th>
+                  <th className="px-4 py-3 font-semibold">Tier</th>
+                  <th className="px-4 py-3 font-semibold">Preferred domain</th>
+                  <th className="px-4 py-3 font-semibold">Alternates</th>
+                  <th className="px-4 py-3 font-semibold">Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-black/5">
+                {onboardings.slice(0, 20).map((row) => (
+                  <tr key={row.id} className="hover:bg-black/[0.02]">
+                    <td className="px-4 py-3">
+                      <p className="font-semibold text-ink">{row.company_name || row.contact_name || "—"}</p>
+                      <p className="text-xs text-muted">{row.email || "—"}</p>
+                    </td>
+                    <td className="px-4 py-3 text-muted">{tierLabel(row.tier)}</td>
+                    <td className="px-4 py-3 font-medium text-ink">
+                      {row.domain_preferred || "—"}
+                    </td>
+                    <td className="px-4 py-3 text-xs text-muted">
+                      {[row.domain_second_choice, row.domain_third_choice].filter(Boolean).join(" · ") || "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
+                        {labelStatus(row.status)}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
     </div>
   );
 }

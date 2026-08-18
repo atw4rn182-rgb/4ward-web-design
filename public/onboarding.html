@@ -200,7 +200,7 @@
 
         <section class="onboard-step" data-step="3" aria-labelledby="step3-heading" hidden>
           <h2 id="step3-heading">Company information</h2>
-          <p class="onboard-step-lead">Share your email, phone, company details, logo, and any existing online presence. We’ll follow up by email if we have questions.</p>
+          <p class="onboard-step-lead">Share your email, phone, company details, desired domain name, logo, and any existing online presence. We’ll follow up by email if we have questions.</p>
 
           <div class="form-row">
             <label for="email">Email</label>
@@ -232,6 +232,45 @@
               <img id="logo-preview-img" alt="Uploaded logo preview" />
               <button class="btn btn-outline btn-sm" type="button" id="logo-clear">Remove logo</button>
             </div>
+          </div>
+
+          <div class="form-row">
+            <label for="domain-preferred">Preferred domain <span class="required">(required)</span></label>
+            <input
+              id="domain-preferred"
+              name="domainPreferred"
+              type="text"
+              required
+              inputmode="url"
+              autocomplete="off"
+              placeholder="yourbusiness.com"
+            />
+            <p class="onboard-hint">The web address you want for your site. You do not need to own this domain yet — we will help check availability and set it up during the project.</p>
+          </div>
+
+          <div class="form-row">
+            <label for="domain-second">Second-choice domain <span class="optional">(optional)</span></label>
+            <input
+              id="domain-second"
+              name="domainSecondChoice"
+              type="text"
+              inputmode="url"
+              autocomplete="off"
+              placeholder="yourbusiness.net"
+            />
+          </div>
+
+          <div class="form-row">
+            <label for="domain-third">Third-choice domain <span class="optional">(optional)</span></label>
+            <input
+              id="domain-third"
+              name="domainThirdChoice"
+              type="text"
+              inputmode="url"
+              autocomplete="off"
+              placeholder="yourbusiness.co"
+            />
+            <p class="onboard-hint">Optional backup names are helpful if your first choice is already taken.</p>
           </div>
 
           <div class="form-row">

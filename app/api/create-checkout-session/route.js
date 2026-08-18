@@ -7,6 +7,10 @@ import {
   sendOnboardingPendingEmails,
 } from "@/lib/email/static-forms";
 import {
+  isValidDomain,
+  normalizeDomainInput,
+} from "@/lib/onboarding/domains";
+import {
   addOnPayloadFlags,
   addOnSummary,
   addonById,
@@ -241,11 +245,17 @@ async function saveOnboardingRecord(record) {
       phone: record.phone,
       notes: record.companyInformation || null,
       agreement_accepted: record.signedAgreement === "yes",
+      domain_preferred: record.domainPreferred,
+      domain_second_choice: record.domainSecondChoice || null,
+      domain_third_choice: record.domainThirdChoice || null,
       status: "payment_pending",
       payload: {
         ...addOnPayloadFlags(record.addOnIds),
         existing_links: record.existingLinks,
         logo_name: record.logoName,
+        domain_preferred: record.domainPreferred,
+        domain_second_choice: record.domainSecondChoice || null,
+        domain_third_choice: record.domainThirdChoice || null,
       },
     });
     return { customer, onboarding };
@@ -304,9 +314,25 @@ export async function POST(request) {
   const logoBase64 = sanitize(body.logoBase64, 2_000_000);
   const signedAgreement = sanitize(body.signedAgreement, 20);
   const addOnIds = normalizeAddOns(body.addOns, tier);
+  const domainPreferred = normalizeDomainInput(body.domainPreferred);
+  const domainSecondChoice = normalizeDomainInput(body.domainSecondChoice);
+  const domainThirdChoice = normalizeDomainInput(body.domainThirdChoice);
 
   if (!companyName || !contactName || !email || !signerName || !phone) {
     return json(400, { error: "Missing required onboarding fields" });
+  }
+
+  if (!isValidDomain(domainPreferred)) {
+    return json(400, {
+      error:
+        "Enter a valid preferred domain (example: yourbusiness.com). You do not need to own it yet.",
+    });
+  }
+  if (domainSecondChoice && !isValidDomain(domainSecondChoice)) {
+    return json(400, { error: "Second-choice domain is not a valid domain name." });
+  }
+  if (domainThirdChoice && !isValidDomain(domainThirdChoice)) {
+    return json(400, { error: "Third-choice domain is not a valid domain name." });
   }
 
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
@@ -336,6 +362,9 @@ export async function POST(request) {
       ? "yes"
       : "no",
     admin_dashboard_requested: addOnIds.includes("admin_dashboard") ? "yes" : "no",
+    domain_preferred: domainPreferred,
+    domain_second_choice: domainSecondChoice || "",
+    domain_third_choice: domainThirdChoice || "",
   };
 
   const saved = await saveOnboardingRecord({
@@ -349,6 +378,9 @@ export async function POST(request) {
     addOnIds,
     existingLinks,
     logoName,
+    domainPreferred,
+    domainSecondChoice,
+    domainThirdChoice,
   });
   const customerRow = saved && saved.customer;
   const onboardingRow = saved && saved.onboarding;
@@ -375,6 +407,9 @@ export async function POST(request) {
       companyInformation,
       addOnSummary: addOnSummary(addOnIds) || "None",
       logoName,
+      domainPreferred,
+      domainSecondChoice,
+      domainThirdChoice,
     });
     if (logoBase64 && logoName) {
       try {

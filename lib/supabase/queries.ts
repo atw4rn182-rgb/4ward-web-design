@@ -110,6 +110,9 @@ export type OnboardingRow = {
   email: string | null;
   tier: string;
   status: string;
+  domain_preferred: string | null;
+  domain_second_choice: string | null;
+  domain_third_choice: string | null;
   created_at: string;
 };
 
@@ -271,7 +274,9 @@ export async function getOnboardings() {
   const supabase = await adminDb();
   const { data, error } = await supabase
     .from("onboarding_submissions")
-    .select("id, company_name, contact_name, email, tier, status, created_at")
+    .select(
+      "id, company_name, contact_name, email, tier, status, domain_preferred, domain_second_choice, domain_third_choice, created_at"
+    )
     .order("created_at", { ascending: false });
   return result<OnboardingRow>(data, error);
 }

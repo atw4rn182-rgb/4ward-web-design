@@ -163,6 +163,25 @@
     "buyout-tier3": "buyout-tier3",
   };
 
+  function normalizeDomain(value) {
+    let s = String(value || "").trim().toLowerCase();
+    if (!s) return "";
+    s = s.replace(/^https?:\/\//i, "");
+    s = s.replace(/^www\./i, "");
+    s = s.split("/")[0].split("?")[0].split("#")[0];
+    return s.slice(0, 253);
+  }
+
+  function isValidDomain(value) {
+    const domain = normalizeDomain(value);
+    if (!domain || domain.length < 4 || !domain.includes(".")) return false;
+    if (!/^[a-z0-9][a-z0-9.-]*[a-z0-9]$/.test(domain) || domain.includes("..")) return false;
+    const labels = domain.split(".");
+    if (labels.some(function (label) { return !label || label.length > 63; })) return false;
+    const tld = labels[labels.length - 1];
+    return tld.length >= 2 && /^[a-z]{2,}$/.test(tld);
+  }
+
   function loadState() {
     try {
       return JSON.parse(sessionStorage.getItem(STORAGE_KEY) || "{}");
@@ -182,6 +201,9 @@
       email: data.get("email") || "",
       phone: data.get("phone") || "",
       companyInformation: data.get("companyInformation") || "",
+      domainPreferred: data.get("domainPreferred") || "",
+      domainSecondChoice: data.get("domainSecondChoice") || "",
+      domainThirdChoice: data.get("domainThirdChoice") || "",
       existingOnlinePresence: data.get("existingOnlinePresence") || "",
       logoMeta,
       addonPerformanceReports: Boolean(performanceReportsInput && performanceReportsInput.checked),
@@ -198,6 +220,13 @@
     if (state.email) form.email.value = state.email;
     if (state.phone && form.phone) form.phone.value = state.phone;
     if (state.companyInformation) form.companyInformation.value = state.companyInformation;
+    if (state.domainPreferred && form.domainPreferred) form.domainPreferred.value = state.domainPreferred;
+    if (state.domainSecondChoice && form.domainSecondChoice) {
+      form.domainSecondChoice.value = state.domainSecondChoice;
+    }
+    if (state.domainThirdChoice && form.domainThirdChoice) {
+      form.domainThirdChoice.value = state.domainThirdChoice;
+    }
     if (state.existingOnlinePresence) form.existingOnlinePresence.value = state.existingOnlinePresence;
     if (state.logoMeta) logoMeta = state.logoMeta;
     if (performanceReportsInput) {
@@ -301,6 +330,9 @@
       "<div><dt>Phone</dt><dd>" +
       (formatUsPhone(form.phone && form.phone.value) || form.phone.value || "—") +
       "</dd></div>" +
+      "<div><dt>Preferred domain</dt><dd>" +
+      (normalizeDomain(form.domainPreferred && form.domainPreferred.value) || "—") +
+      "</dd></div>" +
       "<div><dt>Agreement</dt><dd>" +
       (document.getElementById("signed-agreement")?.checked ? "Signed" : "Not signed") +
       "</dd></div>" +
@@ -351,6 +383,31 @@
         }
         field.setCustomValidity("");
         field.value = formatted;
+      } else if (field.name === "domainPreferred") {
+        const normalized = normalizeDomain(field.value);
+        if (!isValidDomain(normalized)) {
+          field.setCustomValidity(
+            "Enter a valid preferred domain (example: yourbusiness.com). You do not need to own it yet."
+          );
+          field.reportValidity();
+          return false;
+        }
+        field.setCustomValidity("");
+        field.value = normalized;
+      } else if (field.name === "domainSecondChoice" || field.name === "domainThirdChoice") {
+        const raw = String(field.value || "").trim();
+        if (raw) {
+          const normalized = normalizeDomain(raw);
+          if (!isValidDomain(normalized)) {
+            field.setCustomValidity("Enter a valid domain name or leave this field blank.");
+            field.reportValidity();
+            return false;
+          }
+          field.setCustomValidity("");
+          field.value = normalized;
+        } else if (field.setCustomValidity) {
+          field.setCustomValidity("");
+        }
       } else if (field.setCustomValidity) {
         field.setCustomValidity("");
       }
@@ -411,6 +468,9 @@
       logoMimeType: (logoPayload && logoPayload.type) || logoMeta.type || "",
       logoBase64: (logoPayload && logoPayload.base64) || "",
       companyInformation,
+      domainPreferred: normalizeDomain(data.get("domainPreferred") || ""),
+      domainSecondChoice: normalizeDomain(data.get("domainSecondChoice") || ""),
+      domainThirdChoice: normalizeDomain(data.get("domainThirdChoice") || ""),
       signedAgreement: document.getElementById("signed-agreement")?.checked ? "yes" : "no",
       addOns: selectedAddOnIds(TIERS[tierSelect.value]),
     };
