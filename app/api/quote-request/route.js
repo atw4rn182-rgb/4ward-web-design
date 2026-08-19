@@ -98,23 +98,9 @@ export async function POST(request) {
     });
   }
 
-  try {
-    const emailResult = await deliverQuoteRequestEmails(quoteRow);
-    if (!emailResult.ok && !emailResult.skipped) {
-      return json(502, {
-        error:
-          "Your request was saved but email delivery failed. We will follow up manually.",
-        id: quoteRow?.id,
-      });
-    }
-  } catch (error) {
+  deliverQuoteRequestEmails(quoteRow).catch((error) => {
     console.error("Quote email failed:", error.message);
-    return json(502, {
-      error:
-        "Your request was saved but email delivery failed. We will follow up manually.",
-      id: quoteRow?.id,
-    });
-  }
+  });
 
   return json(200, { ok: true, id: quoteRow?.id });
 }

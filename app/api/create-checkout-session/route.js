@@ -293,6 +293,11 @@ export async function POST(request) {
     return json(400, { error: "Invalid JSON body" });
   }
 
+  const honeypot = sanitize(body.honeypot, 200);
+  if (honeypot) {
+    return json(200, { ok: true, skipped: "spam" });
+  }
+
   const tierKey = sanitize(body.tier, 40);
   const tier = TIERS[tierKey];
   if (!tier) {
@@ -398,45 +403,6 @@ export async function POST(request) {
   }
 
   try {
-    await sendOnboardingPendingEmails({
-      companyName,
-      contactName,
-      email,
-      phone,
-      tier: tier.id,
-      companyInformation,
-      addOnSummary: addOnSummary(addOnIds) || "None",
-      logoName,
-      domainPreferred,
-      domainSecondChoice,
-      domainThirdChoice,
-    });
-    if (logoBase64 && logoName) {
-      try {
-        const logoBuffer = Buffer.from(logoBase64, "base64");
-        if (logoBuffer.length > 0 && logoBuffer.length <= 1.2 * 1024 * 1024) {
-          await attachLogoToStaticForms({
-            contactName,
-            email,
-            companyName,
-            logoBuffer,
-            logoName,
-            logoMimeType,
-          });
-        }
-      } catch (error) {
-        console.error("Logo email attachment failed:", error.message);
-      }
-    }
-  } catch (error) {
-    console.error("Onboarding notification emails failed:", error.message);
-    return json(502, {
-      error:
-        "Your information was saved but we could not send confirmation emails. Please contact us before paying.",
-    });
-  }
-
-  try {
     const customer = await stripeRequest(secret, "/customers", {
       email,
       name: companyName,
@@ -487,6 +453,37 @@ export async function POST(request) {
     } catch (error) {
       console.error("Pending payment save failed");
     }
+
+    sendOnboardingPendingEmails({
+      companyName,
+      contactName,
+      email,
+      phone,
+      tier: tier.id,
+      companyInformation,
+      addOnSummary: addOnSummary(addOnIds) || "None",
+      logoName,
+      domainPreferred,
+      domainSecondChoice,
+      domainThirdChoice,
+    })
+      .then(() => {
+        if (logoBase64 && logoName) {
+          const logoBuffer = Buffer.from(logoBase64, "base64");
+          if (logoBuffer.length > 0 && logoBuffer.length <= 1.2 * 1024 * 1024) {
+            return attachLogoToStaticForms({
+              contactName,
+              email,
+              companyName,
+              logoBuffer,
+              logoName,
+              logoMimeType,
+            });
+          }
+        }
+      })
+      .catch((err) => console.error("Onboarding notification emails failed:", err.message));
+
     return json(200, {
       url: session.url,
       sessionId: session.id,

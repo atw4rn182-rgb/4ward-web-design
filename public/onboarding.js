@@ -473,6 +473,7 @@
       domainThirdChoice: normalizeDomain(data.get("domainThirdChoice") || ""),
       signedAgreement: document.getElementById("signed-agreement")?.checked ? "yes" : "no",
       addOns: selectedAddOnIds(TIERS[tierSelect.value]),
+      honeypot: data.get("honeypot") || "",
     };
 
     const response = await fetch("/api/create-checkout-session", {
