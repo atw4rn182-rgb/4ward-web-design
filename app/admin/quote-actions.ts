@@ -8,7 +8,6 @@ import { createQuotePaymentLink } from "@/lib/payments/quote-stripe";
 import {
   PAYMENT_STATUS_AFTER_PAYMENT_REQUEST_SENT,
   PAYMENT_STATUS_LINK_PENDING,
-  STATUS_AFTER_PAYMENT_LINK,
   STATUS_AFTER_PAYMENT_REQUEST_SENT,
 } from "@/lib/quotes/automation";
 import { clearQuoteEmailError, recordQuoteEmailError } from "@/lib/quotes/email-tracking";
@@ -159,7 +158,7 @@ export async function generateQuotePaymentLinkAction(
   const { data: quote, error: readError } = await client
     .from("quote_requests")
     .select(
-      "id, contact_name, email, company_name, service, quantity, currency, status, payment_status, quoted_amount_cents, stripe_payment_url, quote_sent_at"
+      "id, contact_name, email, company_name, service, quantity, currency, status, payment_status, quoted_amount_cents, stripe_payment_url, stripe_payment_link_id, quote_sent_at"
     )
     .eq("id", quoteId)
     .maybeSingle();
@@ -179,6 +178,21 @@ export async function generateQuotePaymentLinkAction(
     return { error: "Amount must be at least $0.50." };
   }
 
+  if (
+    quote.stripe_payment_url &&
+    quote.stripe_payment_link_id &&
+    quote.quoted_amount_cents === amountCents
+  ) {
+    revalidatePath("/admin/quotes");
+    revalidatePath(`/admin/quotes/${quoteId}`);
+    revalidatePath("/admin/dashboard");
+    return {
+      ok: true,
+      paymentUrl: quote.stripe_payment_url,
+      message: "Existing Stripe payment link is still valid for this amount.",
+    };
+  }
+
   let linkResult;
   try {
     linkResult = await createQuotePaymentLink(quote, amountCents);
@@ -194,7 +208,6 @@ export async function generateQuotePaymentLinkAction(
     stripe_payment_link_id: linkResult.paymentLinkId,
     stripe_payment_url: linkResult.paymentUrl,
     payment_status: PAYMENT_STATUS_LINK_PENDING,
-    status: STATUS_AFTER_PAYMENT_LINK,
     quote_sent_at: quote.quote_sent_at || now,
   };
 
@@ -230,7 +243,7 @@ export async function sendQuotePaymentLinkEmailAction(
   const { data: quote, error: readError } = await client
     .from("quote_requests")
     .select(
-      "id, contact_name, email, company_name, service, quoted_amount_cents, currency, stripe_payment_url, payment_status, status, quote_sent_at"
+      "id, contact_name, email, company_name, service, quantity, quoted_amount_cents, currency, stripe_payment_url, stripe_payment_link_id, payment_status, status, quote_sent_at, payment_link_sent_at"
     )
     .eq("id", quoteId)
     .maybeSingle();
@@ -249,44 +262,58 @@ export async function sendQuotePaymentLinkEmailAction(
     return { error: "Quoted amount is missing." };
   }
 
-  const now = new Date().toISOString();
-  const patch: Record<string, string | null> = {
-    status: STATUS_AFTER_PAYMENT_REQUEST_SENT,
-    payment_status: PAYMENT_STATUS_AFTER_PAYMENT_REQUEST_SENT,
-    payment_link_sent_at: now,
-    quote_sent_at: quote.quote_sent_at || now,
-  };
-
-  const { error: dbError } = await client
-    .from("quote_requests")
-    .update(patch)
-    .eq("id", quoteId);
-
-  if (dbError) {
-    return { error: "Unable to update quote before sending email." };
-  }
-
-  const emailResult = await deliverQuotePaymentLinkEmails({
-    ...quote,
-    ...patch,
-  });
+  const emailResult = await deliverQuotePaymentLinkEmails(quote);
 
   if (emailResult.skipped) {
+    const now = new Date().toISOString();
+    await client
+      .from("quote_requests")
+      .update({
+        status: STATUS_AFTER_PAYMENT_REQUEST_SENT,
+        payment_status: PAYMENT_STATUS_AFTER_PAYMENT_REQUEST_SENT,
+        payment_link_sent_at: quote.payment_link_sent_at || now,
+        quote_sent_at: quote.quote_sent_at || now,
+      })
+      .eq("id", quoteId);
+
     revalidatePath("/admin/quotes");
     revalidatePath(`/admin/quotes/${quoteId}`);
     revalidatePath("/admin/dashboard");
     return {
       ok: true,
-      message: "Quote is Awaiting Payment. Payment link email was already sent for this link.",
+      message: "Payment link email was already sent for this link. Quote is Awaiting Payment.",
     };
   }
 
   if (!emailResult.ok) {
+    await recordQuoteEmailError(
+      client,
+      quoteId,
+      "payment_link_email",
+      emailResult.error || "Email delivery failed"
+    );
     revalidatePath("/admin/quotes");
     revalidatePath(`/admin/quotes/${quoteId}`);
     revalidatePath("/admin/dashboard");
     return {
-      error: `Quote marked Awaiting Payment, but email failed: ${emailResult.error || "Unknown error"}. You can retry from this page.`,
+      error: `Payment link email failed: ${emailResult.error || "Unknown error"}. The Stripe link is still valid — retry sending from this page.`,
+    };
+  }
+
+  const now = new Date().toISOString();
+  const { error: dbError } = await client
+    .from("quote_requests")
+    .update({
+      status: STATUS_AFTER_PAYMENT_REQUEST_SENT,
+      payment_status: PAYMENT_STATUS_AFTER_PAYMENT_REQUEST_SENT,
+      payment_link_sent_at: now,
+      quote_sent_at: quote.quote_sent_at || now,
+    })
+    .eq("id", quoteId);
+
+  if (dbError) {
+    return {
+      error: "Payment link email was sent, but quote status could not be updated.",
     };
   }
 
@@ -345,14 +372,18 @@ async function retryQuotePaymentConfirmationById(quoteId: string): Promise<Quote
   const emailResult = await deliverQuotePaymentConfirmationEmails(session, quote);
 
   if (!emailResult.ok && !emailResult.skipped) {
+    const failureMessage =
+      "error" in emailResult && emailResult.error
+        ? String(emailResult.error)
+        : "Email delivery failed";
     await recordQuoteEmailError(
       client,
       quoteId,
       "payment_confirmation_email",
-      emailResult.error || "Email delivery failed"
+      failureMessage
     );
     revalidatePath(`/admin/quotes/${quoteId}`);
-    return { error: emailResult.error || "Unable to resend confirmation email." };
+    return { error: failureMessage || "Unable to resend confirmation email." };
   }
 
   await clearQuoteEmailError(client, quoteId);

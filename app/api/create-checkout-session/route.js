@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
-import { supabaseInsert } from "@/lib/supabase/service-rest";
+import {
+  supabaseInsert,
+  supabasePatch,
+  supabaseSelect,
+} from "@/lib/supabase/service-rest";
 import { recordPendingCheckoutPayment } from "@/lib/payments/sync-stripe-session";
 import { getStripeEnv } from "@/lib/stripe/env";
-import {
-  attachLogoToStaticForms,
-  sendOnboardingPendingEmails,
-} from "@/lib/email/static-forms";
+import { stripeCustomerFailure } from "@/lib/stripe/customer-error";
+import { attachLogoToStaticForms } from "@/lib/email/static-forms";
+import { deliverOnboardingPendingEmails } from "@/lib/onboarding/deliver-pending-emails";
 import {
   isValidDomain,
   normalizeDomainInput,
@@ -227,17 +230,40 @@ function json(status, body) {
   });
 }
 
+function first(rows) {
+  return Array.isArray(rows) && rows.length ? rows[0] : null;
+}
+
+async function findReusablePendingOnboarding(email) {
+  const customer = first(
+    await supabaseSelect(
+      "customers",
+      `email=eq.${encodeURIComponent(email)}&status=eq.payment_pending&select=id&order=created_at.desc&limit=1`
+    )
+  );
+  if (!customer || !customer.id) return null;
+
+  const onboarding = first(
+    await supabaseSelect(
+      "onboarding_submissions",
+      `customer_id=eq.${customer.id}&status=eq.payment_pending&select=id&order=created_at.desc&limit=1`
+    )
+  );
+  if (!onboarding || !onboarding.id) return null;
+
+  return { customer, onboarding };
+}
+
 async function saveOnboardingRecord(record) {
   try {
-    const customer = await supabaseInsert("customers", {
+    const customerPayload = {
       company_name: record.companyName,
       contact_name: record.contactName,
       email: record.email,
       phone: record.phone,
       status: "payment_pending",
-    });
-    const onboarding = await supabaseInsert("onboarding_submissions", {
-      customer_id: customer && customer.id ? customer.id : null,
+    };
+    const onboardingPayload = {
       tier: record.tier,
       company_name: record.companyName,
       contact_name: record.contactName,
@@ -257,10 +283,35 @@ async function saveOnboardingRecord(record) {
         domain_second_choice: record.domainSecondChoice || null,
         domain_third_choice: record.domainThirdChoice || null,
       },
+    };
+
+    const reusable = await findReusablePendingOnboarding(record.email);
+    if (reusable) {
+      const customer = await supabasePatch(
+        "customers",
+        `id=eq.${reusable.customer.id}`,
+        customerPayload
+      );
+      const onboarding = await supabasePatch(
+        "onboarding_submissions",
+        `id=eq.${reusable.onboarding.id}`,
+        { ...onboardingPayload, customer_id: reusable.customer.id }
+      );
+      return {
+        customer: customer || reusable.customer,
+        onboarding: onboarding || reusable.onboarding,
+        reused: true,
+      };
+    }
+
+    const customer = await supabaseInsert("customers", customerPayload);
+    const onboarding = await supabaseInsert("onboarding_submissions", {
+      ...onboardingPayload,
+      customer_id: customer && customer.id ? customer.id : null,
     });
-    return { customer, onboarding };
+    return { customer, onboarding, reused: false };
   } catch (error) {
-    console.error("Onboarding record save failed");
+    console.error("Onboarding record save failed:", error.message);
     return null;
   }
 }
@@ -454,7 +505,8 @@ export async function POST(request) {
       console.error("Pending payment save failed");
     }
 
-    sendOnboardingPendingEmails({
+    deliverOnboardingPendingEmails({
+      onboardingId: onboardingRow && onboardingRow.id,
       companyName,
       contactName,
       email,
@@ -491,9 +543,7 @@ export async function POST(request) {
       liveMode: stripeEnv.liveMode,
     });
   } catch (error) {
-    console.error("Stripe checkout error:", error);
-    return json(error.status || 500, {
-      error: error.message || "Unable to start Stripe Checkout",
-    });
+    const failure = stripeCustomerFailure("Stripe checkout error:", error);
+    return json(failure.status, failure.body);
   }
 }
