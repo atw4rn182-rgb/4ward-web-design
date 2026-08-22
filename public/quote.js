@@ -61,12 +61,14 @@
         body: JSON.stringify(payload),
       });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok || result.ok === false || result.skipped) {
+      if (!response.ok || result.ok === false || result.skipped || result.duplicate) {
         throw new Error(
           result.error ||
             (result.skipped
               ? "We couldn't submit your request. Please try again."
-              : result.message || "Quote request failed.")
+              : result.duplicate
+                ? "We already received this request recently. There's no need to submit it again."
+                : result.message || "Quote request failed.")
         );
       }
 
