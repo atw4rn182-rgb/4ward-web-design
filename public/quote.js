@@ -13,9 +13,8 @@
     const markHpTouched = () => {
       hpTouched = true;
     };
-    hpField.addEventListener("focus", markHpTouched);
-    hpField.addEventListener("input", markHpTouched);
-    hpField.addEventListener("change", markHpTouched);
+    hpField.addEventListener("pointerdown", markHpTouched);
+    hpField.addEventListener("keydown", markHpTouched);
   }
 
   const params = new URLSearchParams(window.location.search);
