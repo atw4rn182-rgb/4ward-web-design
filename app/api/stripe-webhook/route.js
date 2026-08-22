@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getStripeEnv } from "@/lib/stripe/env";
 import { verifyStripeSignature } from "@/lib/stripe/verify-webhook";
 import {
   applyCheckoutSessionEvent,
@@ -10,16 +11,19 @@ import {
   sendQuotePaymentConfirmation,
 } from "@/lib/payments/send-confirmation";
 import { isQuoteCheckoutSession } from "@/lib/payments/quote-stripe";
+import { isLiveVerificationCheckoutSession } from "@/lib/payments/live-verification-stripe";
+import { applyLiveVerificationCheckoutSessionEvent } from "@/lib/payments/sync-live-verification-session";
+import { sendLiveVerificationConfirmation } from "@/lib/payments/send-live-verification-confirmation";
 
 export const runtime = "nodejs";
 
 export async function POST(request) {
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  const { webhookSecret } = getStripeEnv();
   const rawBody = await request.text();
   const signature = request.headers.get("stripe-signature");
 
   try {
-    verifyStripeSignature(rawBody, signature, secret);
+    verifyStripeSignature(rawBody, signature, webhookSecret);
   } catch (error) {
     console.error("Stripe webhook signature failed:", error.message);
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
@@ -39,6 +43,14 @@ export async function POST(request) {
         const quote = await applyQuoteCheckoutSessionEvent(event.type, session);
         if (quote && quote.payment_status === "paid") {
           await sendQuotePaymentConfirmation(session, quote);
+        }
+      } else if (isLiveVerificationCheckoutSession(session)) {
+        const result = await applyLiveVerificationCheckoutSessionEvent(
+          event.type,
+          session
+        );
+        if (result && result.sendConfirmation) {
+          await sendLiveVerificationConfirmation(session);
         }
       } else {
         const payment = await applyCheckoutSessionEvent(event.type, session);

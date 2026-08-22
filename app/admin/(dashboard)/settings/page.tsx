@@ -1,4 +1,5 @@
 import { PageHeader } from "@/components/admin/PageHeader";
+import { LiveVerificationPanel } from "@/components/admin/LiveVerificationPanel";
 import { getAdminUser } from "@/lib/supabase/admin";
 
 export const metadata = {
@@ -45,6 +46,7 @@ export default async function SettingsPage() {
             the Supabase SQL editor.
           </p>
         </article>
+        <LiveVerificationPanel />
       </div>
     </div>
   );
