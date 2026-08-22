@@ -4,8 +4,19 @@
   const submitBtn = document.getElementById("quote-submit");
   const successPanel = document.getElementById("quote-success");
   const year = document.getElementById("quote-year");
+  const hpField = form?.querySelector('input[name="_hp_ref"]');
+  let hpTouched = false;
 
   if (year) year.textContent = String(new Date().getFullYear());
+
+  if (hpField) {
+    const markHpTouched = () => {
+      hpTouched = true;
+    };
+    hpField.addEventListener("focus", markHpTouched);
+    hpField.addEventListener("input", markHpTouched);
+    hpField.addEventListener("change", markHpTouched);
+  }
 
   const params = new URLSearchParams(window.location.search);
   const serviceParam = params.get("service");
@@ -24,6 +35,10 @@
       return;
     }
 
+    if (hpField && !hpTouched) {
+      hpField.value = "";
+    }
+
     statusEl.classList.remove("is-error");
     statusEl.textContent = "Saving your request…";
     submitBtn.disabled = true;
@@ -37,7 +52,7 @@
       service: data.get("service") || "",
       quantity: data.get("quantity") || "",
       message: data.get("message") || "",
-      company_website_verify: data.get("company_website_verify") || "",
+      _hp_ref: data.get("_hp_ref") || "",
     };
 
     try {
