@@ -344,7 +344,7 @@ export async function POST(request) {
     return json(400, { error: "Invalid JSON body" });
   }
 
-  const honeypot = sanitize(body.honeypot, 200);
+  const honeypot = sanitize(body._hp_ref, 200);
   if (honeypot) {
     return json(200, { ok: true, skipped: "spam" });
   }

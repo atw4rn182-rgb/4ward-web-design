@@ -119,6 +119,17 @@
   };
 
   const form = document.getElementById("onboard-form");
+  const hpField = form?.querySelector('input[name="_hp_ref"]');
+  let hpTouched = false;
+
+  if (hpField) {
+    const markHpTouched = () => {
+      hpTouched = true;
+    };
+    hpField.addEventListener("pointerdown", markHpTouched);
+    hpField.addEventListener("keydown", markHpTouched);
+  }
+
   const progress = document.getElementById("onboard-progress");
   const steps = Array.from(document.querySelectorAll(".onboard-step"));
   const tierSelect = document.getElementById("tier-select");
@@ -447,6 +458,10 @@
   }
 
   async function startStripeCheckout() {
+    if (hpField && !hpTouched) {
+      hpField.value = "";
+    }
+
     const data = new FormData(form);
     const companyInformation = String(data.get("companyInformation") || "");
     const logoPayload = await readLogoBase64().catch(() => null);
@@ -473,7 +488,7 @@
       domainThirdChoice: normalizeDomain(data.get("domainThirdChoice") || ""),
       signedAgreement: document.getElementById("signed-agreement")?.checked ? "yes" : "no",
       addOns: selectedAddOnIds(TIERS[tierSelect.value]),
-      honeypot: data.get("honeypot") || "",
+      _hp_ref: data.get("_hp_ref") || "",
     };
 
     const response = await fetch("/api/create-checkout-session", {
@@ -482,8 +497,13 @@
       body: JSON.stringify(payload),
     });
     const result = await response.json().catch(() => ({}));
-    if (!response.ok || (!result.url && !result.sessionId)) {
-      throw new Error(result.error || "Unable to start Stripe Checkout.");
+    if (!response.ok || result.skipped || (!result.url && !result.sessionId)) {
+      throw new Error(
+        result.error ||
+          (result.skipped
+            ? "We couldn't submit your request. Please try again."
+            : "Unable to start Stripe Checkout.")
+      );
     }
 
     if (result.url) {
