@@ -1,4 +1,5 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
+import { classifyStaticFormsError } from "@/lib/email/static-forms-diagnostics";
 import { supabaseInsert, supabaseSelect } from "@/lib/supabase/service-rest";
 import { deliverQuoteRequestEmails } from "@/lib/quotes/deliver-request-emails";
 
@@ -98,9 +99,31 @@ export async function POST(request) {
     });
   }
 
-  deliverQuoteRequestEmails(quoteRow).catch((error) => {
-    console.error("Quote email failed:", error.message);
+  const quoteId = quoteRow.id;
+  after(async () => {
+    try {
+      const result = await deliverQuoteRequestEmails(quoteRow);
+      if (result.skipped) {
+        console.info(
+          `[quote-request] email skipped quoteId=${quoteId} reason=${result.reason || "already_sent"}`
+        );
+        return;
+      }
+      if (!result.ok) {
+        const { category, safeMessage } = classifyStaticFormsError(
+          new Error(result.error || "Quote email delivery failed")
+        );
+        console.error(
+          `[quote-request] email delivery incomplete quoteId=${quoteId} category=${category} ${safeMessage}`
+        );
+      }
+    } catch (error) {
+      const { category, safeMessage } = classifyStaticFormsError(error);
+      console.error(
+        `[quote-request] email delivery failed quoteId=${quoteId} category=${category} ${safeMessage}`
+      );
+    }
   });
 
-  return json(200, { ok: true, id: quoteRow?.id });
+  return json(200, { ok: true, id: quoteId });
 }

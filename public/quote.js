@@ -25,7 +25,7 @@
     }
 
     statusEl.classList.remove("is-error");
-    statusEl.textContent = "Sending your request…";
+    statusEl.textContent = "Saving your request…";
     submitBtn.disabled = true;
 
     const data = new FormData(form);
