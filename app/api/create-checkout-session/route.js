@@ -19,6 +19,7 @@ import {
   addonById,
   normalizeAddOnIds,
 } from "@/lib/pricing/add-ons";
+import { checkRateLimit, clientIp } from "@/lib/api/rate-limit";
 
 const TIERS = {
   tier1: {
@@ -347,6 +348,14 @@ export async function POST(request) {
   const honeypot = sanitize(body._hp_ref, 200);
   if (honeypot) {
     return json(200, { ok: true, skipped: "spam" });
+  }
+
+  const rate = checkRateLimit(`checkout:${clientIp(request)}`);
+  if (rate.limited) {
+    return json(429, {
+      error: "Too many checkout attempts. Please wait a few minutes and try again.",
+      retryAfterSec: rate.retryAfterSec,
+    });
   }
 
   const tierKey = sanitize(body.tier, 40);

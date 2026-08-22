@@ -119,16 +119,6 @@
   };
 
   const form = document.getElementById("onboard-form");
-  const hpField = form?.querySelector('input[name="_hp_ref"]');
-  let hpTouched = false;
-
-  if (hpField) {
-    const markHpTouched = () => {
-      hpTouched = true;
-    };
-    hpField.addEventListener("pointerdown", markHpTouched);
-    hpField.addEventListener("keydown", markHpTouched);
-  }
 
   const progress = document.getElementById("onboard-progress");
   const steps = Array.from(document.querySelectorAll(".onboard-step"));
@@ -458,10 +448,6 @@
   }
 
   async function startStripeCheckout() {
-    if (hpField && !hpTouched) {
-      hpField.value = "";
-    }
-
     const data = new FormData(form);
     const companyInformation = String(data.get("companyInformation") || "");
     const logoPayload = await readLogoBase64().catch(() => null);
@@ -488,7 +474,7 @@
       domainThirdChoice: normalizeDomain(data.get("domainThirdChoice") || ""),
       signedAgreement: document.getElementById("signed-agreement")?.checked ? "yes" : "no",
       addOns: selectedAddOnIds(TIERS[tierSelect.value]),
-      _hp_ref: data.get("_hp_ref") || "",
+      _hp_ref: "",
     };
 
     const response = await fetch("/api/create-checkout-session", {
