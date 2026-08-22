@@ -37,7 +37,7 @@
       service: data.get("service") || "",
       quantity: data.get("quantity") || "",
       message: data.get("message") || "",
-      honeypot: data.get("honeypot") || "",
+      company_website_verify: data.get("company_website_verify") || "",
     };
 
     try {
@@ -47,8 +47,13 @@
         body: JSON.stringify(payload),
       });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok || result.ok === false) {
-        throw new Error(result.error || result.message || "Quote request failed.");
+      if (!response.ok || result.ok === false || result.skipped) {
+        throw new Error(
+          result.error ||
+            (result.skipped
+              ? "We couldn't submit your request. Please try again."
+              : result.message || "Quote request failed.")
+        );
       }
 
       form.hidden = true;
