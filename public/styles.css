@@ -313,17 +313,11 @@ p {
 
 .header-contact {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-left: auto;
-  flex-shrink: 0;
-}
-
-.header-contact-info {
-  display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 0.08rem;
+  margin-left: auto;
+  flex-shrink: 0;
   line-height: 1.25;
 }
 
@@ -334,12 +328,14 @@ p {
   white-space: nowrap;
 }
 
-.header-contact-number {
+.header-contact-line a,
+.header-contact-note a {
   color: var(--blue-strong);
   text-decoration: none;
 }
 
-.header-contact-number:hover {
+.header-contact-line a:hover,
+.header-contact-note a:hover {
   text-decoration: underline;
 }
 
@@ -347,10 +343,6 @@ p {
   font-size: 0.7rem;
   font-weight: 500;
   color: var(--muted);
-}
-
-.header-contact-actions {
-  display: none;
 }
 
 .mobile-nav-contact {
@@ -1884,19 +1876,6 @@ a.ba-frame:hover img {
     font-size: 0.66rem;
   }
 
-  .header-contact-info {
-    display: none;
-  }
-
-  .header-contact-actions {
-    display: flex;
-    gap: 0.35rem;
-  }
-
-  .header-contact-btn--call {
-    display: inline-flex;
-  }
-
   .launch-fee {
     grid-template-columns: 1fr;
     gap: 0.75rem;
@@ -2038,25 +2017,17 @@ a.ba-frame:hover img {
   .header-contact {
     margin-left: auto;
     margin-right: 0.15rem;
+    max-width: min(46vw, 11.5rem);
   }
 
-  .header-contact-info {
-    display: none;
+  .header-contact-line {
+    font-size: 0.72rem;
+    white-space: normal;
+    text-align: right;
   }
 
-  .header-contact-actions {
-    display: flex;
-    gap: 0.35rem;
-  }
-
-  .header-contact-btn {
-    min-height: 40px;
-    padding-inline: 0.85rem;
-    font-size: 0.88rem;
-  }
-
-  .header-contact-btn--call {
-    display: none;
+  .header-contact-note {
+    font-size: 0.68rem;
   }
 
   .mobile-nav-contact {
@@ -2073,20 +2044,22 @@ a.ba-frame:hover img {
     color: var(--ink);
   }
 
-  .mobile-nav-contact-line a {
+  .mobile-nav-contact-line a,
+  .mobile-nav-contact-note a {
     color: var(--blue-strong);
     text-decoration: none;
   }
 
-  .mobile-nav-contact-note {
-    margin: 0.2rem 0 0.65rem;
-    font-size: 0.82rem;
-    color: var(--muted);
+  .mobile-nav-contact-line a:hover,
+  .mobile-nav-contact-note a:hover {
+    text-decoration: underline;
   }
 
-  .mobile-nav-contact .btn {
-    width: 100%;
-    margin-top: 0;
+  .mobile-nav-contact-note {
+    margin: 0.35rem 0 0;
+    font-size: 0.92rem;
+    font-weight: 600;
+    color: var(--muted);
   }
 
   .brand {
@@ -2685,14 +2658,6 @@ a.ba-frame:hover img {
 
   .onboard-page .header-contact {
     margin-left: auto;
-  }
-
-  .onboard-page .header-contact-info {
-    display: none;
-  }
-
-  .onboard-page .header-contact-actions {
-    display: flex;
   }
 }
 
