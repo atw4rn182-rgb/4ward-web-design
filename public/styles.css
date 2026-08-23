@@ -262,7 +262,7 @@ p {
 
 .brand-wordmark {
   display: block;
-  width: min(286px, 62vw);
+  width: min(300px, 62vw);
   height: auto;
   max-height: 28px;
   overflow: visible;
@@ -1911,7 +1911,7 @@ a.ba-frame:hover img {
   }
 
   .brand-wordmark {
-    width: min(240px, 72vw);
+    width: min(252px, 72vw);
     max-height: 24px;
   }
 
