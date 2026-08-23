@@ -311,6 +311,52 @@ p {
   color: var(--blue-strong);
 }
 
+.header-contact {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+.header-contact-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.08rem;
+  line-height: 1.25;
+}
+
+.header-contact-line {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.header-contact-number {
+  color: var(--blue-strong);
+  text-decoration: none;
+}
+
+.header-contact-number:hover {
+  text-decoration: underline;
+}
+
+.header-contact-note {
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.header-contact-actions {
+  display: none;
+}
+
+.mobile-nav-contact {
+  display: none;
+}
+
 .nav-toggle {
   display: none;
   width: 44px;
@@ -1635,6 +1681,65 @@ a.ba-frame:hover img {
   box-shadow: 0 0 10px rgba(228, 155, 63, 0.45);
 }
 
+.contact-phone-lead {
+  margin-top: 0.35rem;
+  font-size: 1.05rem;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.contact-phone-lead a {
+  color: var(--blue-strong);
+  text-decoration: none;
+}
+
+.contact-phone-lead a:hover {
+  text-decoration: underline;
+}
+
+.contact-phone-note {
+  margin-top: 0.5rem;
+  color: var(--muted);
+  line-height: 1.55;
+  max-width: 38rem;
+}
+
+.contact-phone-follow {
+  margin-top: 0.85rem;
+}
+
+.page-contact-hint {
+  margin-top: 0.75rem;
+  font-size: 0.95rem;
+  color: var(--muted-soft);
+  line-height: 1.5;
+}
+
+.page-contact-hint a {
+  color: var(--blue-strong);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.page-contact-hint a:hover {
+  text-decoration: underline;
+}
+
+.footer-contact {
+  margin-top: 0.25rem !important;
+  font-size: 0.88rem !important;
+}
+
+.footer-contact a {
+  color: var(--blue-strong);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.footer-contact a:hover {
+  text-decoration: underline;
+}
+
 .quote-form {
   background: var(--bg-elevated);
   border: 1px solid var(--line);
@@ -1765,6 +1870,31 @@ a.ba-frame:hover img {
 @media (max-width: 960px) {
   .pricing-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .site-nav {
+    gap: 1rem;
+  }
+
+  .header-contact-line {
+    font-size: 0.76rem;
+  }
+
+  .header-contact-note {
+    font-size: 0.66rem;
+  }
+
+  .header-contact-info {
+    display: none;
+  }
+
+  .header-contact-actions {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .header-contact-btn--call {
+    display: inline-flex;
   }
 
   .launch-fee {
@@ -1903,6 +2033,60 @@ a.ba-frame:hover img {
   .site-nav .btn {
     margin-top: 0.65rem;
     width: 100%;
+  }
+
+  .header-contact {
+    margin-left: auto;
+    margin-right: 0.15rem;
+  }
+
+  .header-contact-info {
+    display: none;
+  }
+
+  .header-contact-actions {
+    display: flex;
+    gap: 0.35rem;
+  }
+
+  .header-contact-btn {
+    min-height: 40px;
+    padding-inline: 0.85rem;
+    font-size: 0.88rem;
+  }
+
+  .header-contact-btn--call {
+    display: none;
+  }
+
+  .mobile-nav-contact {
+    display: block;
+    padding: 0.85rem 0.25rem 1rem;
+    margin-bottom: 0.15rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .mobile-nav-contact-line {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--ink);
+  }
+
+  .mobile-nav-contact-line a {
+    color: var(--blue-strong);
+    text-decoration: none;
+  }
+
+  .mobile-nav-contact-note {
+    margin: 0.2rem 0 0.65rem;
+    font-size: 0.82rem;
+    color: var(--muted);
+  }
+
+  .mobile-nav-contact .btn {
+    width: 100%;
+    margin-top: 0;
   }
 
   .brand {
@@ -2497,6 +2681,18 @@ a.ba-frame:hover img {
 
   .onboard-nav {
     display: none;
+  }
+
+  .onboard-page .header-contact {
+    margin-left: auto;
+  }
+
+  .onboard-page .header-contact-info {
+    display: none;
+  }
+
+  .onboard-page .header-contact-actions {
+    display: flex;
   }
 }
 
