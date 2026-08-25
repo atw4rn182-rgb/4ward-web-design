@@ -4,14 +4,8 @@ import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/supabase/admin";
 import { createServiceClient } from "@/lib/supabase/service";
 import { createClient } from "@/lib/supabase/server";
-import {
-  isDisposableCustomer,
-  isDisposableOnboarding,
-  isDisposablePayment,
-  isDisposableQuote,
-  isPortfolioCompany,
-  type DeletableKind,
-} from "@/lib/admin/disposable-records";
+
+export type DeletableKind = "quote" | "payment" | "onboarding" | "customer";
 
 export type DeleteRecordState = {
   ok?: boolean;
@@ -20,15 +14,25 @@ export type DeleteRecordState = {
   deletedId?: string;
 };
 
+const KIND_TABLE: Record<DeletableKind, string> = {
+  quote: "quote_requests",
+  payment: "payments",
+  onboarding: "onboarding_submissions",
+  customer: "customers",
+};
+
 async function adminWriteClient() {
   const user = await getAdminUser();
-  if (!user) return { error: "Unauthorized.", client: null as null, user: null };
+  if (!user) return { error: "Unauthorized. Sign in as an admin and try again.", client: null as null };
 
-  const client = createServiceClient() || (await createClient());
-  return { error: null, client, user };
+  const service = createServiceClient();
+  if (service) return { error: null, client: service };
+
+  const sessionClient = await createClient();
+  return { error: null, client: sessionClient };
 }
 
-function revalidateAdminLists() {
+function revalidateAdminLists(kind: DeletableKind, id: string) {
   revalidatePath("/admin/dashboard");
   revalidatePath("/admin/clients");
   revalidatePath("/admin/payments");
@@ -37,10 +41,38 @@ function revalidateAdminLists() {
   revalidatePath("/admin/messages");
   revalidatePath("/admin/files");
   revalidatePath("/admin/analytics");
+  if (kind === "quote") {
+    revalidatePath(`/admin/quotes/${id}`);
+  }
 }
 
-function allowProductionDeletes() {
-  return String(process.env.ADMIN_ALLOW_PRODUCTION_DELETE || "").toLowerCase() === "true";
+function dbErrorMessage(error: { message?: string; code?: string; details?: string } | null, fallback: string) {
+  if (!error) return fallback;
+  const parts = [error.message, error.details, error.code ? `code ${error.code}` : ""]
+    .map((part) => String(part || "").trim())
+    .filter(Boolean);
+  return parts.join(" — ") || fallback;
+}
+
+async function verifyGone(
+  client: NonNullable<Awaited<ReturnType<typeof adminWriteClient>>["client"]>,
+  kind: DeletableKind,
+  id: string
+) {
+  const table = KIND_TABLE[kind];
+  const { data, error } = await client.from(table).select("id").eq("id", id).maybeSingle();
+  if (error) {
+    return {
+      error: `Deleted, but could not verify removal: ${dbErrorMessage(error, "verification query failed")}`,
+    };
+  }
+  if (data?.id) {
+    return {
+      error:
+        "Delete did not remove the row from the database. Check that SUPABASE_SERVICE_ROLE_KEY is set and RLS allows admin deletes.",
+    };
+  }
+  return null;
 }
 
 export async function deleteAdminRecordAction(
@@ -50,153 +82,150 @@ export async function deleteAdminRecordAction(
   const kind = String(formData.get("kind") || "") as DeletableKind;
   const id = String(formData.get("id") || "").trim();
   const confirmToken = String(formData.get("confirmToken") || "").trim();
-  const forceProduction = String(formData.get("forceProduction") || "") === "1";
+  const label = String(formData.get("label") || "").trim();
 
   if (!id || !["quote", "payment", "onboarding", "customer"].includes(kind)) {
-    return { error: "Invalid delete request." };
+    return { error: "Invalid delete request (missing record id or type)." };
   }
 
   if (confirmToken !== "DELETE") {
-    return { error: "Type DELETE to confirm." };
+    return { error: 'Type DELETE exactly to confirm.' };
   }
 
-  const { error, client } = await adminWriteClient();
-  if (error || !client) return { error: error || "Unauthorized." };
+  const { error: authError, client } = await adminWriteClient();
+  if (authError || !client) return { error: authError || "Unauthorized." };
 
   try {
     if (kind === "quote") {
       const { data: row, error: loadError } = await client
         .from("quote_requests")
-        .select("id, email, company_name, contact_name")
+        .select("id, email, company_name, contact_name, service")
         .eq("id", id)
         .maybeSingle();
 
-      if (loadError || !row) return { error: "Quote not found." };
+      if (loadError) {
+        return { error: `Could not load quote: ${dbErrorMessage(loadError, "load failed")}` };
+      }
+      if (!row) return { error: "Quote not found (it may already be deleted)." };
 
-      const disposable = isDisposableQuote(row);
-      if (!disposable) {
-        if (!forceProduction || !allowProductionDeletes()) {
-          return {
-            error:
-              "This looks like a real quote. Set ADMIN_ALLOW_PRODUCTION_DELETE=true and confirm production delete to remove it.",
-          };
-        }
+      const { error: emailError } = await client
+        .from("email_events")
+        .delete()
+        .eq("quote_request_id", id);
+      if (emailError) {
+        return {
+          error: `Could not delete related email events first: ${dbErrorMessage(emailError, "email_events delete failed")}`,
+        };
       }
 
-      await client.from("email_events").delete().eq("quote_request_id", id);
       const { error: delError } = await client.from("quote_requests").delete().eq("id", id);
-      if (delError) return { error: "Unable to delete quote." };
+      if (delError) {
+        return { error: `Could not delete quote: ${dbErrorMessage(delError, "delete failed")}` };
+      }
 
-      revalidateAdminLists();
-      revalidatePath(`/admin/quotes/${id}`);
+      const verifyError = await verifyGone(client, kind, id);
+      if (verifyError) return verifyError;
+
+      revalidateAdminLists(kind, id);
       return {
         ok: true,
         deletedId: id,
-        message: disposable ? "Test quote deleted." : "Quote deleted.",
+        message: `Deleted quote: ${label || row.contact_name || row.email || id}`,
       };
     }
 
     if (kind === "payment") {
       const { data: row, error: loadError } = await client
         .from("payments")
-        .select(
-          "id, amount_cents, payment_type, description, stripe_checkout_session_id, customers(company_name)"
-        )
+        .select("id, amount_cents, currency, description, status")
         .eq("id", id)
         .maybeSingle();
 
-      if (loadError || !row) return { error: "Payment not found." };
-
-      const disposable = isDisposablePayment(row);
-      if (!disposable) {
-        if (!forceProduction || !allowProductionDeletes()) {
-          return {
-            error:
-              "This looks like a real payment. Set ADMIN_ALLOW_PRODUCTION_DELETE=true and confirm production delete to remove it.",
-          };
-        }
+      if (loadError) {
+        return { error: `Could not load payment: ${dbErrorMessage(loadError, "load failed")}` };
       }
+      if (!row) return { error: "Payment not found (it may already be deleted)." };
 
       const { error: delError } = await client.from("payments").delete().eq("id", id);
-      if (delError) return { error: "Unable to delete payment." };
+      if (delError) {
+        return { error: `Could not delete payment: ${dbErrorMessage(delError, "delete failed")}` };
+      }
 
-      revalidateAdminLists();
+      const verifyError = await verifyGone(client, kind, id);
+      if (verifyError) return verifyError;
+
+      revalidateAdminLists(kind, id);
       return {
         ok: true,
         deletedId: id,
-        message: disposable ? "Test / verification payment deleted." : "Payment deleted.",
+        message: `Deleted payment: ${label || row.description || id}`,
       };
     }
 
     if (kind === "onboarding") {
       const { data: row, error: loadError } = await client
         .from("onboarding_submissions")
-        .select("id, email, company_name, contact_name")
+        .select("id, email, company_name, contact_name, tier, status")
         .eq("id", id)
         .maybeSingle();
 
-      if (loadError || !row) return { error: "Onboarding submission not found." };
-
-      const disposable = isDisposableOnboarding(row);
-      if (!disposable) {
-        if (!forceProduction || !allowProductionDeletes()) {
-          return {
-            error:
-              "This looks like a real onboarding submission. Set ADMIN_ALLOW_PRODUCTION_DELETE=true and confirm production delete to remove it.",
-          };
-        }
+      if (loadError) {
+        return { error: `Could not load onboarding: ${dbErrorMessage(loadError, "load failed")}` };
       }
+      if (!row) return { error: "Onboarding submission not found (it may already be deleted)." };
 
       const { error: delError } = await client
         .from("onboarding_submissions")
         .delete()
         .eq("id", id);
-      if (delError) return { error: "Unable to delete onboarding submission." };
+      if (delError) {
+        return {
+          error: `Could not delete onboarding submission: ${dbErrorMessage(delError, "delete failed")}`,
+        };
+      }
 
-      revalidateAdminLists();
+      const verifyError = await verifyGone(client, kind, id);
+      if (verifyError) return verifyError;
+
+      revalidateAdminLists(kind, id);
       return {
         ok: true,
         deletedId: id,
-        message: disposable ? "Test onboarding submission deleted." : "Onboarding submission deleted.",
+        message: `Deleted onboarding: ${label || row.company_name || row.email || id}`,
       };
     }
 
     if (kind === "customer") {
       const { data: row, error: loadError } = await client
         .from("customers")
-        .select("id, email, company_name")
+        .select("id, email, company_name, status")
         .eq("id", id)
         .maybeSingle();
 
-      if (loadError || !row) return { error: "Client not found." };
-
-      if (isPortfolioCompany(row.company_name)) {
-        return { error: "Portfolio clients cannot be deleted from the admin dashboard." };
+      if (loadError) {
+        return { error: `Could not load client: ${dbErrorMessage(loadError, "load failed")}` };
       }
-
-      const disposable = isDisposableCustomer(row);
-      if (!disposable) {
-        if (!forceProduction || !allowProductionDeletes()) {
-          return {
-            error:
-              "This looks like a real client. Set ADMIN_ALLOW_PRODUCTION_DELETE=true and confirm production delete to remove it.",
-          };
-        }
-      }
+      if (!row) return { error: "Client not found (it may already be deleted)." };
 
       const { error: delError } = await client.from("customers").delete().eq("id", id);
-      if (delError) return { error: "Unable to delete client." };
+      if (delError) {
+        return { error: `Could not delete client: ${dbErrorMessage(delError, "delete failed")}` };
+      }
 
-      revalidateAdminLists();
+      const verifyError = await verifyGone(client, kind, id);
+      if (verifyError) return verifyError;
+
+      revalidateAdminLists(kind, id);
       return {
         ok: true,
         deletedId: id,
-        message: disposable ? "Test client deleted." : "Client deleted.",
+        message: `Deleted client: ${label || row.company_name || row.email || id}`,
       };
     }
 
     return { error: "Unsupported record type." };
-  } catch {
-    return { error: "Delete failed unexpectedly." };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Delete failed unexpectedly.";
+    return { error: message };
   }
 }

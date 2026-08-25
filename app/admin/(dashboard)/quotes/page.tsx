@@ -4,10 +4,9 @@ import { StatCard } from "@/components/admin/StatCard";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { SchemaNotice } from "@/components/admin/SchemaNotice";
 import { AdminTableScroll } from "@/components/admin/AdminTableScroll";
-import { DeleteRecordButton, TestRecordBadge } from "@/components/admin/DeleteRecordButton";
+import { DeleteRecordButton } from "@/components/admin/DeleteRecordButton";
 import { QUOTE_STATUSES, quotePaymentStatusLabel, quoteStatusLabel } from "@/lib/quotes/statuses";
 import { formatMoney, formatWhen, getQuoteRequests } from "@/lib/supabase/queries";
-import { isDisposableQuote } from "@/lib/admin/disposable-records";
 
 export const metadata = {
   title: "Quote Requests | 4Ward Admin",
@@ -24,8 +23,6 @@ export default async function QuotesPage({
   const { data: quotes, missing } = await getQuoteRequests(
     statusFilter === "all" ? undefined : statusFilter
   );
-  const allowProductionDelete =
-    String(process.env.ADMIN_ALLOW_PRODUCTION_DELETE || "").toLowerCase() === "true";
 
   const newQuotes = quotes.filter((row) => row.status === "new").length;
   const openQuotes = quotes.filter((row) =>
@@ -37,7 +34,7 @@ export default async function QuotesPage({
     <div>
       <PageHeader
         title="Quote requests"
-        description="Manage custom work quotes separately from fixed-tier website onboarding. Test quotes are labeled and can be deleted safely."
+        description="Manage custom work quotes separately from fixed-tier website onboarding. Delete any individual quote after confirming."
       />
       {missing ? <SchemaNotice /> : null}
 
@@ -82,79 +79,68 @@ export default async function QuotesPage({
       ) : (
         <>
           <div className="space-y-3 md:hidden">
-            {quotes.map((row) => {
-              const disposable = isDisposableQuote(row);
-              return (
-                <article
-                  key={row.id}
-                  className={`rounded-2xl border bg-paper p-4 shadow-soft ${
-                    disposable ? "border-amber-200" : "border-black/10"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-semibold text-ink">{row.contact_name}</p>
-                      <p className="mt-0.5 truncate text-xs text-muted">
-                        {row.company_name || row.email}
-                        {row.phone ? ` · ${row.phone}` : ""}
-                      </p>
-                      {disposable ? (
-                        <div className="mt-2">
-                          <TestRecordBadge />
-                        </div>
-                      ) : null}
-                    </div>
-                    <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900">
-                      {quoteStatusLabel(row.status)}
-                    </span>
+            {quotes.map((row) => (
+              <article
+                key={row.id}
+                className="rounded-2xl border border-black/10 bg-paper p-4 shadow-soft"
+              >
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-ink">{row.contact_name}</p>
+                    <p className="mt-0.5 truncate text-xs text-muted">
+                      {row.company_name || row.email}
+                      {row.phone ? ` · ${row.phone}` : ""}
+                    </p>
                   </div>
-                  <dl className="mt-3 grid gap-1.5 text-sm">
-                    <div className="flex justify-between gap-3">
-                      <dt className="text-muted">Service</dt>
-                      <dd className="text-right font-medium text-ink">{row.service}</dd>
-                    </div>
-                    <div className="flex justify-between gap-3">
-                      <dt className="text-muted">Quoted</dt>
-                      <dd className="font-medium text-ink">
-                        {row.quoted_amount_cents != null
-                          ? formatMoney(row.quoted_amount_cents, row.currency)
-                          : "—"}
-                      </dd>
-                    </div>
-                    <div className="flex justify-between gap-3">
-                      <dt className="text-muted">Payment</dt>
-                      <dd className="text-right">
-                        <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
-                          {quotePaymentStatusLabel(row.payment_status || "none")}
-                        </span>
-                      </dd>
-                    </div>
-                    <div className="flex justify-between gap-3">
-                      <dt className="text-muted">Submitted</dt>
-                      <dd className="text-ink">{formatWhen(row.created_at)}</dd>
-                    </div>
-                  </dl>
-                  {row.last_email_error ? (
-                    <p className="mt-2 text-xs font-medium text-amber-800">Email failed</p>
-                  ) : null}
-                  <div className="mt-4 grid gap-2">
-                    <Link
-                      href={`/admin/quotes/${row.id}`}
-                      className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-brand-blue px-4 text-sm font-semibold text-white transition hover:bg-brand-deep"
-                    >
-                      Manage quote
-                    </Link>
-                    <DeleteRecordButton
-                      kind="quote"
-                      id={row.id}
-                      label={`${row.contact_name} · ${row.email}`}
-                      disposable={disposable}
-                      allowProductionDelete={allowProductionDelete}
-                    />
+                  <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900">
+                    {quoteStatusLabel(row.status)}
+                  </span>
+                </div>
+                <dl className="mt-3 grid gap-1.5 text-sm">
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-muted">Service</dt>
+                    <dd className="text-right font-medium text-ink">{row.service}</dd>
                   </div>
-                </article>
-              );
-            })}
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-muted">Quoted</dt>
+                    <dd className="font-medium text-ink">
+                      {row.quoted_amount_cents != null
+                        ? formatMoney(row.quoted_amount_cents, row.currency)
+                        : "—"}
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-muted">Payment</dt>
+                    <dd className="text-right">
+                      <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
+                        {quotePaymentStatusLabel(row.payment_status || "none")}
+                      </span>
+                    </dd>
+                  </div>
+                  <div className="flex justify-between gap-3">
+                    <dt className="text-muted">Submitted</dt>
+                    <dd className="text-ink">{formatWhen(row.created_at)}</dd>
+                  </div>
+                </dl>
+                {row.last_email_error ? (
+                  <p className="mt-2 text-xs font-medium text-amber-800">Email failed</p>
+                ) : null}
+                <div className="mt-4 grid gap-2">
+                  <Link
+                    href={`/admin/quotes/${row.id}`}
+                    className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-brand-blue px-4 text-sm font-semibold text-white transition hover:bg-brand-deep"
+                  >
+                    Manage quote
+                  </Link>
+                  <DeleteRecordButton
+                    kind="quote"
+                    id={row.id}
+                    label={`${row.contact_name} · ${row.email}`}
+                    detail={`${row.service} · ${quoteStatusLabel(row.status)} · ${formatWhen(row.created_at)}`}
+                  />
+                </div>
+              </article>
+            ))}
           </div>
           <div className="hidden md:block">
             <AdminTableScroll>
@@ -172,67 +158,55 @@ export default async function QuotesPage({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-black/5">
-                  {quotes.map((row) => {
-                    const disposable = isDisposableQuote(row);
-                    return (
-                      <tr
-                        key={row.id}
-                        className={`hover:bg-black/[0.02] ${disposable ? "bg-amber-50/40" : ""}`}
-                      >
-                        <td className="px-4 py-3">
-                          <p className="font-semibold text-ink">{row.contact_name}</p>
-                          <p className="text-xs text-muted">
-                            {row.company_name || row.email}
-                            {row.phone ? ` · ${row.phone}` : ""}
-                          </p>
-                          {disposable ? (
-                            <div className="mt-1">
-                              <TestRecordBadge />
-                            </div>
-                          ) : null}
-                        </td>
-                        <td className="px-4 py-3 text-ink">{row.service}</td>
-                        <td className="px-4 py-3 text-muted">{row.quantity || "—"}</td>
-                        <td className="px-4 py-3 text-ink">
-                          {row.quoted_amount_cents != null
-                            ? formatMoney(row.quoted_amount_cents, row.currency)
-                            : "—"}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900">
-                            {quoteStatusLabel(row.status)}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
-                            {quotePaymentStatusLabel(row.payment_status || "none")}
-                          </span>
-                          {row.last_email_error ? (
-                            <p className="mt-1 text-xs font-medium text-amber-800">Email failed</p>
-                          ) : null}
-                        </td>
-                        <td className="px-4 py-3 text-muted">{formatWhen(row.created_at)}</td>
-                        <td className="px-4 py-3 align-top">
-                          <div className="flex flex-col items-stretch gap-2">
-                            <Link
-                              href={`/admin/quotes/${row.id}`}
-                              className="inline-flex min-h-10 items-center justify-center text-sm font-semibold text-brand-deep underline-offset-2 hover:underline"
-                            >
-                              Manage
-                            </Link>
-                            <DeleteRecordButton
-                              kind="quote"
-                              id={row.id}
-                              label={`${row.contact_name} · ${row.email}`}
-                              disposable={disposable}
-                              allowProductionDelete={allowProductionDelete}
-                              compact
-                            />
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                  {quotes.map((row) => (
+                    <tr key={row.id} className="hover:bg-black/[0.02]">
+                      <td className="px-4 py-3">
+                        <p className="font-semibold text-ink">{row.contact_name}</p>
+                        <p className="text-xs text-muted">
+                          {row.company_name || row.email}
+                          {row.phone ? ` · ${row.phone}` : ""}
+                        </p>
+                      </td>
+                      <td className="px-4 py-3 text-ink">{row.service}</td>
+                      <td className="px-4 py-3 text-muted">{row.quantity || "—"}</td>
+                      <td className="px-4 py-3 text-ink">
+                        {row.quoted_amount_cents != null
+                          ? formatMoney(row.quoted_amount_cents, row.currency)
+                          : "—"}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-900">
+                          {quoteStatusLabel(row.status)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
+                          {quotePaymentStatusLabel(row.payment_status || "none")}
+                        </span>
+                        {row.last_email_error ? (
+                          <p className="mt-1 text-xs font-medium text-amber-800">Email failed</p>
+                        ) : null}
+                      </td>
+                      <td className="px-4 py-3 text-muted">{formatWhen(row.created_at)}</td>
+                      <td className="px-4 py-3 align-top">
+                        <div className="flex flex-col items-stretch gap-2">
+                          <Link
+                            href={`/admin/quotes/${row.id}`}
+                            className="inline-flex min-h-10 items-center justify-center text-sm font-semibold text-brand-deep underline-offset-2 hover:underline"
+                          >
+                            Manage
+                          </Link>
+                          <DeleteRecordButton
+                            kind="quote"
+                            id={row.id}
+                            label={`${row.contact_name} · ${row.email}`}
+                            detail={`${row.service} · ${quoteStatusLabel(row.status)} · ${formatWhen(row.created_at)}`}
+                            compact
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
             </AdminTableScroll>
