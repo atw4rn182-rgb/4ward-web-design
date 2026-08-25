@@ -3,8 +3,14 @@ import { StatCard } from "@/components/admin/StatCard";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { SchemaNotice } from "@/components/admin/SchemaNotice";
 import { AdminTableScroll } from "@/components/admin/AdminTableScroll";
+import { DeleteRecordButton, TestRecordBadge } from "@/components/admin/DeleteRecordButton";
 import { getCustomers, getOnboardings, labelStatus } from "@/lib/supabase/queries";
 import { tierLabel } from "@/lib/pricing/tier-labels";
+import {
+  isDisposableCustomer,
+  isDisposableOnboarding,
+  isPortfolioCompany,
+} from "@/lib/admin/disposable-records";
 
 export const metadata = {
   title: "Clients | 4Ward Admin",
@@ -19,6 +25,8 @@ export default async function ClientsPage() {
   const customers = customersResult.data;
   const onboardings = onboardingsResult.data;
   const schemaMissing = customersResult.missing || onboardingsResult.missing;
+  const allowProductionDelete =
+    String(process.env.ADMIN_ALLOW_PRODUCTION_DELETE || "").toLowerCase() === "true";
 
   const latestTier = new Map<string, string>();
   for (const row of onboardings) {
@@ -33,7 +41,7 @@ export default async function ClientsPage() {
     <div>
       <PageHeader
         title="Clients"
-        description="Live customer records from Supabase, including portfolio clients with no Stripe subscription."
+        description="Live customer records from Supabase, including portfolio clients with no Stripe subscription. Test clients and onboarding submissions are labeled for safe cleanup."
       />
       {schemaMissing ? <SchemaNotice /> : null}
       <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
@@ -51,10 +59,14 @@ export default async function ClientsPage() {
           <div className="space-y-3 md:hidden">
             {customers.map((row) => {
               const key = (row.email || row.company_name || "").toLowerCase();
+              const disposable = isDisposableCustomer(row);
+              const portfolio = isPortfolioCompany(row.company_name);
               return (
                 <article
                   key={row.id}
-                  className="rounded-2xl border border-black/10 bg-paper p-4 shadow-soft"
+                  className={`rounded-2xl border bg-paper p-4 shadow-soft ${
+                    disposable ? "border-amber-200" : "border-black/10"
+                  }`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
@@ -62,6 +74,18 @@ export default async function ClientsPage() {
                       <p className="mt-0.5 truncate text-sm text-muted">
                         {row.contact_name || row.email || "—"}
                       </p>
+                      {disposable ? (
+                        <div className="mt-2">
+                          <TestRecordBadge />
+                        </div>
+                      ) : null}
+                      {portfolio ? (
+                        <div className="mt-2">
+                          <span className="inline-flex items-center rounded-full bg-brand-blue/10 px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-wide text-brand-deep">
+                            Portfolio
+                          </span>
+                        </div>
+                      ) : null}
                     </div>
                     <span className="shrink-0 rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
                       {labelStatus(row.status)}
@@ -70,33 +94,72 @@ export default async function ClientsPage() {
                   <p className="mt-3 text-xs font-medium uppercase tracking-wide text-muted">
                     Tier · {latestTier.get(key) || "—"}
                   </p>
+                  <div className="mt-4">
+                    <DeleteRecordButton
+                      kind="customer"
+                      id={row.id}
+                      label={row.company_name}
+                      disposable={disposable}
+                      allowProductionDelete={allowProductionDelete && !portfolio}
+                    />
+                  </div>
                 </article>
               );
             })}
           </div>
           <div className="hidden md:block">
             <AdminTableScroll>
-              <table className="min-w-[640px] w-full text-left text-sm">
+              <table className="min-w-[760px] w-full text-left text-sm">
                 <thead className="bg-black/[0.03] text-xs uppercase tracking-wide text-muted">
                   <tr>
                     <th className="px-4 py-3 font-semibold">Company</th>
                     <th className="px-4 py-3 font-semibold">Contact</th>
                     <th className="px-4 py-3 font-semibold">Tier</th>
                     <th className="px-4 py-3 font-semibold">Status</th>
+                    <th className="px-4 py-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-black/5">
                   {customers.map((row) => {
                     const key = (row.email || row.company_name || "").toLowerCase();
+                    const disposable = isDisposableCustomer(row);
+                    const portfolio = isPortfolioCompany(row.company_name);
                     return (
-                      <tr key={row.id} className="hover:bg-black/[0.02]">
-                        <td className="px-4 py-3 font-semibold text-ink">{row.company_name}</td>
+                      <tr
+                        key={row.id}
+                        className={`hover:bg-black/[0.02] ${disposable ? "bg-amber-50/40" : ""}`}
+                      >
+                        <td className="px-4 py-3">
+                          <p className="font-semibold text-ink">{row.company_name}</p>
+                          {disposable ? (
+                            <div className="mt-1">
+                              <TestRecordBadge />
+                            </div>
+                          ) : null}
+                          {portfolio ? (
+                            <div className="mt-1">
+                              <span className="inline-flex items-center rounded-full bg-brand-blue/10 px-2.5 py-1 text-[0.68rem] font-bold uppercase tracking-wide text-brand-deep">
+                                Portfolio
+                              </span>
+                            </div>
+                          ) : null}
+                        </td>
                         <td className="px-4 py-3 text-muted">{row.contact_name || row.email || "—"}</td>
                         <td className="px-4 py-3 text-muted">{latestTier.get(key) || "—"}</td>
                         <td className="px-4 py-3">
                           <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
                             {labelStatus(row.status)}
                           </span>
+                        </td>
+                        <td className="px-4 py-3 align-top">
+                          <DeleteRecordButton
+                            kind="customer"
+                            id={row.id}
+                            label={row.company_name}
+                            disposable={disposable}
+                            allowProductionDelete={allowProductionDelete && !portfolio}
+                            compact
+                          />
                         </td>
                       </tr>
                     );
@@ -123,45 +186,64 @@ export default async function ClientsPage() {
         ) : (
           <>
             <div className="mt-4 space-y-3 md:hidden">
-              {onboardings.slice(0, 20).map((row) => (
-                <article
-                  key={row.id}
-                  className="rounded-2xl border border-black/10 bg-paper p-4 shadow-soft"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="font-semibold text-ink">
-                        {row.company_name || row.contact_name || "—"}
-                      </p>
-                      <p className="mt-0.5 truncate text-xs text-muted">{row.email || "—"}</p>
+              {onboardings.slice(0, 40).map((row) => {
+                const disposable = isDisposableOnboarding(row);
+                return (
+                  <article
+                    key={row.id}
+                    className={`rounded-2xl border bg-paper p-4 shadow-soft ${
+                      disposable ? "border-amber-200" : "border-black/10"
+                    }`}
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-semibold text-ink">
+                          {row.company_name || row.contact_name || "—"}
+                        </p>
+                        <p className="mt-0.5 truncate text-xs text-muted">{row.email || "—"}</p>
+                        {disposable ? (
+                          <div className="mt-2">
+                            <TestRecordBadge />
+                          </div>
+                        ) : null}
+                      </div>
+                      <span className="shrink-0 rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
+                        {labelStatus(row.status)}
+                      </span>
                     </div>
-                    <span className="shrink-0 rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
-                      {labelStatus(row.status)}
-                    </span>
-                  </div>
-                  <dl className="mt-3 grid gap-1.5 text-sm">
-                    <div className="flex justify-between gap-3">
-                      <dt className="text-muted">Tier</dt>
-                      <dd className="font-medium text-ink">{tierLabel(row.tier)}</dd>
+                    <dl className="mt-3 grid gap-1.5 text-sm">
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-muted">Tier</dt>
+                        <dd className="font-medium text-ink">{tierLabel(row.tier)}</dd>
+                      </div>
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-muted">Domain</dt>
+                        <dd className="truncate font-medium text-ink">{row.domain_preferred || "—"}</dd>
+                      </div>
+                      <div>
+                        <dt className="text-muted">Alternates</dt>
+                        <dd className="mt-0.5 break-words text-xs text-ink">
+                          {[row.domain_second_choice, row.domain_third_choice].filter(Boolean).join(" · ") ||
+                            "—"}
+                        </dd>
+                      </div>
+                    </dl>
+                    <div className="mt-4">
+                      <DeleteRecordButton
+                        kind="onboarding"
+                        id={row.id}
+                        label={`${row.company_name || row.contact_name || "Onboarding"} · ${row.email || "no email"}`}
+                        disposable={disposable}
+                        allowProductionDelete={allowProductionDelete}
+                      />
                     </div>
-                    <div className="flex justify-between gap-3">
-                      <dt className="text-muted">Domain</dt>
-                      <dd className="truncate font-medium text-ink">{row.domain_preferred || "—"}</dd>
-                    </div>
-                    <div>
-                      <dt className="text-muted">Alternates</dt>
-                      <dd className="mt-0.5 break-words text-xs text-ink">
-                        {[row.domain_second_choice, row.domain_third_choice].filter(Boolean).join(" · ") ||
-                          "—"}
-                      </dd>
-                    </div>
-                  </dl>
-                </article>
-              ))}
+                  </article>
+                );
+              })}
             </div>
             <div className="mt-4 hidden md:block">
               <AdminTableScroll>
-                <table className="min-w-[760px] w-full text-left text-sm">
+                <table className="min-w-[900px] w-full text-left text-sm">
                   <thead className="bg-black/[0.03] text-xs uppercase tracking-wide text-muted">
                     <tr>
                       <th className="px-4 py-3 font-semibold">Client</th>
@@ -169,33 +251,55 @@ export default async function ClientsPage() {
                       <th className="px-4 py-3 font-semibold">Preferred domain</th>
                       <th className="px-4 py-3 font-semibold">Alternates</th>
                       <th className="px-4 py-3 font-semibold">Status</th>
+                      <th className="px-4 py-3 font-semibold">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-black/5">
-                    {onboardings.slice(0, 20).map((row) => (
-                      <tr key={row.id} className="hover:bg-black/[0.02]">
-                        <td className="px-4 py-3">
-                          <p className="font-semibold text-ink">
-                            {row.company_name || row.contact_name || "—"}
-                          </p>
-                          <p className="text-xs text-muted">{row.email || "—"}</p>
-                        </td>
-                        <td className="px-4 py-3 text-muted">{tierLabel(row.tier)}</td>
-                        <td className="px-4 py-3 font-medium text-ink">
-                          {row.domain_preferred || "—"}
-                        </td>
-                        <td className="px-4 py-3 text-xs text-muted">
-                          {[row.domain_second_choice, row.domain_third_choice]
-                            .filter(Boolean)
-                            .join(" · ") || "—"}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
-                            {labelStatus(row.status)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                    {onboardings.slice(0, 40).map((row) => {
+                      const disposable = isDisposableOnboarding(row);
+                      return (
+                        <tr
+                          key={row.id}
+                          className={`hover:bg-black/[0.02] ${disposable ? "bg-amber-50/40" : ""}`}
+                        >
+                          <td className="px-4 py-3">
+                            <p className="font-semibold text-ink">
+                              {row.company_name || row.contact_name || "—"}
+                            </p>
+                            <p className="text-xs text-muted">{row.email || "—"}</p>
+                            {disposable ? (
+                              <div className="mt-1">
+                                <TestRecordBadge />
+                              </div>
+                            ) : null}
+                          </td>
+                          <td className="px-4 py-3 text-muted">{tierLabel(row.tier)}</td>
+                          <td className="px-4 py-3 font-medium text-ink">
+                            {row.domain_preferred || "—"}
+                          </td>
+                          <td className="px-4 py-3 text-xs text-muted">
+                            {[row.domain_second_choice, row.domain_third_choice]
+                              .filter(Boolean)
+                              .join(" · ") || "—"}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
+                              {labelStatus(row.status)}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3 align-top">
+                            <DeleteRecordButton
+                              kind="onboarding"
+                              id={row.id}
+                              label={`${row.company_name || row.contact_name || "Onboarding"} · ${row.email || "no email"}`}
+                              disposable={disposable}
+                              allowProductionDelete={allowProductionDelete}
+                              compact
+                            />
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </AdminTableScroll>

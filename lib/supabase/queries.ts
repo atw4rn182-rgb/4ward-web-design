@@ -31,6 +31,7 @@ export type PaymentRow = {
   status: string;
   payment_type: string;
   description: string | null;
+  stripe_checkout_session_id: string | null;
   created_at: string;
   customers: { company_name: string } | { company_name: string }[] | null;
 };
@@ -169,7 +170,7 @@ export async function getPayments() {
   const { data, error } = await supabase
     .from("payments")
     .select(
-      "id, amount_cents, currency, status, payment_type, description, created_at, customers(company_name)"
+      "id, amount_cents, currency, status, payment_type, description, stripe_checkout_session_id, created_at, customers(company_name)"
     )
     .order("created_at", { ascending: false });
   return result<PaymentRow>(data, error);
