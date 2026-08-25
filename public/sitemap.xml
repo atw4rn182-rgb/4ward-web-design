@@ -1,9 +1,41 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset
+  xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+  xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+  xmlns:video="http://www.google.com/schemas/sitemap-video/1.1"
+>
   <url>
-    <loc>https://4wardwebdesign.com/</loc>
-    <lastmod>2026-08-19</lastmod>
+    <loc>https://www.4wardwebdesign.com/</loc>
+    <lastmod>2026-08-25</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
+    <image:image>
+      <image:loc>https://www.4wardwebdesign.com/assets/4ward-logo.png</image:loc>
+      <image:title>4Ward Web Designs logo</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://www.4wardwebdesign.com/assets/after-accufab.webp</image:loc>
+      <image:title>Accu-Fab NM website by 4Ward Web Designs</image:title>
+    </image:image>
+    <image:image>
+      <image:loc>https://www.4wardwebdesign.com/assets/after-blackmesa.webp</image:loc>
+      <image:title>Black Mesa Welding website by 4Ward Web Designs</image:title>
+    </image:image>
+    <video:video>
+      <video:thumbnail_loc>https://www.4wardwebdesign.com/assets/hero-southwest.webp</video:thumbnail_loc>
+      <video:title>4Ward Web Designs — websites for Carlsbad businesses</video:title>
+      <video:description>Hero video for 4Ward Web Designs: professional websites and local Google search for Carlsbad and New Mexico businesses.</video:description>
+      <video:content_loc>https://www.4wardwebdesign.com/assets/widescreen-hero4ward.mp4</video:content_loc>
+      <video:family_friendly>yes</video:family_friendly>
+      <video:live>no</video:live>
+    </video:video>
+    <video:video>
+      <video:thumbnail_loc>https://www.4wardwebdesign.com/assets/hero-southwest.webp</video:thumbnail_loc>
+      <video:title>4Ward Web Designs — mobile hero</video:title>
+      <video:description>Mobile hero video for 4Ward Web Designs serving Carlsbad and New Mexico businesses.</video:description>
+      <video:content_loc>https://www.4wardwebdesign.com/assets/mobile-hero4ward.mp4</video:content_loc>
+      <video:family_friendly>yes</video:family_friendly>
+      <video:live>no</video:live>
+    </video:video>
   </url>
 </urlset>

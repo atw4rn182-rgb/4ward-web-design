@@ -3,5 +3,6 @@ Allow: /
 Disallow: /admin/
 Disallow: /auth/
 Disallow: /api/
+Disallow: /index.html
 
-Sitemap: https://4wardwebdesign.com/sitemap.xml
+Sitemap: https://www.4wardwebdesign.com/sitemap.xml

@@ -9,12 +9,17 @@ const nextConfig = {
   experimental: {
     optimizePackageImports: ["@supabase/supabase-js", "@supabase/ssr"],
   },
-  async rewrites() {
+  async redirects() {
     return [
-      { source: "/", destination: "/index.html" },
-      { source: "/onboarding", destination: "/onboarding.html" },
-      { source: "/quote", destination: "/quote.html" },
+      // Prefer the live www host’s clean homepage URL (avoid / vs /index.html duplicates).
+      { source: "/index.html", destination: "/", permanent: true },
+      // Consolidate clean aliases onto the canonical .html URLs used in links/canonicals.
+      { source: "/quote", destination: "/quote.html", permanent: true },
+      { source: "/onboarding", destination: "/onboarding.html", permanent: true },
     ];
+  },
+  async rewrites() {
+    return [{ source: "/", destination: "/index.html" }];
   },
   async headers() {
     return [
