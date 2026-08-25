@@ -11,3 +11,9 @@
 body {
   @apply bg-sand text-ink antialiased font-sans;
 }
+
+@layer utilities {
+  .admin-touch-target {
+    @apply min-h-11;
+  }
+}

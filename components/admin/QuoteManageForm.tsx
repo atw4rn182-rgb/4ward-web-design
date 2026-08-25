@@ -87,7 +87,7 @@ export function QuoteManageForm({ quote }: { quote: QuoteRow }) {
             <select
               name="status"
               defaultValue={quote.status}
-              className="w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm"
+              className="min-h-11 w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm"
             >
               {QUOTE_STATUSES.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -101,7 +101,7 @@ export function QuoteManageForm({ quote }: { quote: QuoteRow }) {
             <select
               name="paymentStatus"
               defaultValue={quote.payment_status || "none"}
-              className="w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm"
+              className="min-h-11 w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm"
             >
               {QUOTE_PAYMENT_STATUSES.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -117,7 +117,7 @@ export function QuoteManageForm({ quote }: { quote: QuoteRow }) {
               type="text"
               defaultValue={quote.quantity || ""}
               placeholder="e.g. 500 business cards"
-              className="w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm"
+              className="min-h-11 w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm"
             />
           </label>
           <label className="block text-sm">
@@ -128,7 +128,7 @@ export function QuoteManageForm({ quote }: { quote: QuoteRow }) {
               inputMode="decimal"
               defaultValue={amountInput(quote.quoted_amount_cents)}
               placeholder="0.00"
-              className="w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm"
+              className="min-h-11 w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm"
             />
           </label>
         </div>
@@ -142,11 +142,11 @@ export function QuoteManageForm({ quote }: { quote: QuoteRow }) {
             className="w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm leading-relaxed"
           />
         </label>
-        <div className="mt-4 flex flex-wrap gap-3">
+        <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <button
             type="submit"
             disabled={pending}
-            className="rounded-full bg-brand-blue px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-deep disabled:opacity-60"
+            className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand-blue px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-deep disabled:opacity-60"
           >
             {pending ? "Saving…" : "Save quote"}
           </button>

@@ -20,7 +20,7 @@ export default async function AdminLoginPage({ searchParams }: Props) {
 
   return (
     <main className="grid min-h-screen place-items-center bg-sand px-4 py-8">
-      <section className="w-full max-w-md rounded-2xl border border-black/10 bg-paper p-6 shadow-soft">
+      <section className="w-full max-w-md rounded-2xl border border-black/10 bg-paper p-5 shadow-soft sm:p-6">
         <p className="text-[0.7rem] font-bold uppercase tracking-[0.14em] text-brand-copper">
           4Ward Web Design
         </p>

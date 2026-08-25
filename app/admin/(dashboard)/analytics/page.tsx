@@ -39,7 +39,7 @@ export default async function AnalyticsPage() {
         title="Analytics"
         description="Counts from your own onboarding and project records. Site-visit tracking is not connected yet, so those values stay at zero."
       />
-      <section className="mb-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
         <StatCard label="Site visits" value="0" hint="Google Analytics is not connected" />
         <StatCard
           label="Onboarding requests"
@@ -52,11 +52,11 @@ export default async function AnalyticsPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <article className="rounded-2xl border border-black/10 bg-paper p-5 shadow-soft">
           <h2 className="font-display text-lg font-bold">Onboarding trend</h2>
-          <div className="mt-6 flex h-40 items-end gap-2">
+          <div className="mt-6 flex h-40 items-end gap-1.5 overflow-x-auto sm:gap-2">
             {weeks.map((count, i) => (
               <div
                 key={i}
-                className="flex-1 rounded-t-md bg-gradient-to-t from-brand-deep to-brand-copper/80"
+                className="min-w-[0.65rem] flex-1 rounded-t-md bg-gradient-to-t from-brand-deep to-brand-copper/80"
                 style={{ height: `${Math.max(6, Math.round((count / maxWeek) * 100))}%` }}
               />
             ))}
@@ -77,10 +77,10 @@ export default async function AnalyticsPage() {
               {liveSites.map((row) => (
                 <li
                   key={row.id}
-                  className="flex items-center justify-between rounded-xl bg-black/[0.03] px-3 py-2.5 text-sm"
+                  className="flex flex-col gap-1 rounded-xl bg-black/[0.03] px-3 py-2.5 text-sm sm:flex-row sm:items-center sm:justify-between"
                 >
-                  <span className="font-semibold">{row.live_url}</span>
-                  <span className="text-muted">{relatedCompany(row.customers)}</span>
+                  <span className="break-all font-semibold">{row.live_url}</span>
+                  <span className="shrink-0 text-muted">{relatedCompany(row.customers)}</span>
                 </li>
               ))}
             </ul>

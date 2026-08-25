@@ -40,7 +40,7 @@ export function LiveVerificationPanel() {
         <button
           type="submit"
           disabled={pending}
-          className="rounded-full bg-brand-blue px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-deep disabled:opacity-60"
+          className="rounded-full bg-brand-blue px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-deep disabled:opacity-60 min-h-11 inline-flex items-center justify-center"
         >
           {pending ? "Creating…" : "Create $1 live verification Checkout"}
         </button>

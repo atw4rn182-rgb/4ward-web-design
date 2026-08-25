@@ -87,7 +87,7 @@ export function QuoteAutomationPanel({
                 <button
                   type="submit"
                   disabled={retryLinkPending}
-                  className="rounded-full bg-amber-900 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-950 disabled:opacity-60"
+                  className="rounded-full bg-amber-900 px-4 py-2 text-xs font-semibold text-white hover:bg-amber-950 disabled:opacity-60 min-h-10 inline-flex items-center"
                 >
                   {retryLinkPending ? "Retrying…" : "Retry payment link email"}
                 </button>
@@ -99,7 +99,7 @@ export function QuoteAutomationPanel({
                 <button
                   type="submit"
                   disabled={retryConfirmPending}
-                  className="rounded-full border border-amber-900/30 bg-white px-4 py-2 text-xs font-semibold text-amber-950 hover:bg-amber-100 disabled:opacity-60"
+                  className="inline-flex min-h-10 items-center rounded-full border border-amber-900/30 bg-white px-4 py-2 text-xs font-semibold text-amber-950 hover:bg-amber-100 disabled:opacity-60"
                 >
                   {retryConfirmPending ? "Retrying…" : "Retry payment confirmation email"}
                 </button>

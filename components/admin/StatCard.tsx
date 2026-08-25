@@ -7,7 +7,7 @@ type StatCardProps = {
 
 export function StatCard({ label, value, hint, trend }: StatCardProps) {
   return (
-    <article className="rounded-2xl border border-black/10 bg-paper p-5 shadow-soft">
+    <article className="rounded-2xl border border-black/10 bg-paper p-4 shadow-soft sm:p-5">
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-semibold text-muted">{label}</p>
         {trend ? (
@@ -16,7 +16,7 @@ export function StatCard({ label, value, hint, trend }: StatCardProps) {
           </span>
         ) : null}
       </div>
-      <p className="mt-3 font-display text-3xl font-extrabold tracking-tight text-ink">
+      <p className="mt-2 break-words font-display text-2xl font-extrabold tracking-tight text-ink sm:mt-3 sm:text-3xl">
         {value}
       </p>
       <p className="mt-2 text-sm leading-relaxed text-muted">{hint}</p>

@@ -20,7 +20,7 @@ export default async function ProjectsPage() {
         title="Projects"
         description="Website builds from the website_projects table."
       />
-      <section className="mb-6 grid gap-4 sm:grid-cols-3">
+      <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
         <StatCard label="Open projects" value={String(open)} hint="Not live or archived yet" />
         <StatCard label="In review" value={String(inReview)} hint="Waiting on client feedback" />
         <StatCard label="Launched" value={String(launched)} hint="Marked live" />
@@ -35,10 +35,10 @@ export default async function ProjectsPage() {
           {projects.map((project) => (
             <article
               key={project.id}
-              className="rounded-2xl border border-black/10 bg-paper p-5 shadow-soft"
-            >
+                className="rounded-2xl border border-black/10 bg-paper p-4 shadow-soft sm:p-5"
+              >
               <div className="flex items-start justify-between gap-3">
-                <h2 className="font-display text-lg font-bold tracking-tight">
+                <h2 className="min-w-0 break-words font-display text-lg font-bold tracking-tight">
                   {project.name}
                 </h2>
                 <span className="rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800">
@@ -51,7 +51,7 @@ export default async function ProjectsPage() {
               </p>
               {project.live_url ? (
                 <a
-                  className="mt-3 inline-flex text-sm font-semibold text-brand-deep underline-offset-2 hover:underline"
+                  className="mt-3 inline-flex max-w-full break-all text-sm font-semibold text-brand-deep underline-offset-2 hover:underline"
                   href={project.live_url}
                   target="_blank"
                   rel="noopener noreferrer"

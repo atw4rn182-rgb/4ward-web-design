@@ -99,7 +99,7 @@ export default async function DashboardPage() {
       />
       {schemaMissing ? <SchemaNotice /> : null}
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
         <StatCard
           label="Active clients"
           value={String(activeClients)}
@@ -154,9 +154,9 @@ export default async function DashboardPage() {
               {activity.map((item) => (
                 <li
                   key={item.id}
-                  className="flex items-start justify-between gap-4 py-3"
+                  className="flex flex-col gap-1 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4"
                 >
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-sm font-semibold text-ink">{item.title}</p>
                     <p className="mt-0.5 text-sm text-muted">{item.detail}</p>
                   </div>
@@ -231,8 +231,8 @@ export default async function DashboardPage() {
           <h2 className="font-display text-lg font-bold tracking-tight">Quotes awaiting payment</h2>
           <ul className="mt-4 divide-y divide-black/5">
             {awaitingPaymentQuotes.slice(0, 6).map((row) => (
-              <li key={row.id} className="flex items-start justify-between gap-4 py-3">
-                <div>
+              <li key={row.id} className="flex flex-col gap-2 py-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                <div className="min-w-0">
                   <p className="text-sm font-semibold text-ink">
                     {row.company_name || row.contact_name || row.email}
                   </p>
@@ -245,7 +245,7 @@ export default async function DashboardPage() {
                 </div>
                 <a
                   href={`/admin/quotes/${row.id}`}
-                  className="shrink-0 text-sm font-semibold text-brand-deep underline-offset-2 hover:underline"
+                  className="inline-flex min-h-10 shrink-0 items-center text-sm font-semibold text-brand-deep underline-offset-2 hover:underline"
                 >
                   Manage
                 </a>

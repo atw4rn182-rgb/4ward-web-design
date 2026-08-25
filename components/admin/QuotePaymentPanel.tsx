@@ -60,13 +60,13 @@ export function QuotePaymentPanel({ quote }: { quote: QuoteRow }) {
             defaultValue={amountInput(quote.quoted_amount_cents)}
             placeholder="0.00"
             disabled={isPaid}
-            className="w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm disabled:opacity-60"
+            className="min-h-11 w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm disabled:opacity-60"
           />
         </label>
         <button
           type="submit"
           disabled={isPaid || generatePending}
-          className="rounded-full bg-brand-blue px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-deep disabled:opacity-60"
+          className="inline-flex min-h-11 items-center justify-center rounded-full bg-brand-blue px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-brand-deep disabled:opacity-60"
         >
           {generatePending ? "Generating…" : "Generate Stripe payment link"}
         </button>
@@ -97,7 +97,7 @@ export function QuotePaymentPanel({ quote }: { quote: QuoteRow }) {
             <button
               type="submit"
               disabled={isPaid || emailPending}
-              className="rounded-full border border-brand-blue/30 bg-white px-5 py-2.5 text-sm font-semibold text-brand-deep transition hover:bg-brand-blue/5 disabled:opacity-60"
+              className="inline-flex min-h-11 items-center justify-center rounded-full border border-brand-blue/30 bg-white px-5 py-2.5 text-sm font-semibold text-brand-deep transition hover:bg-brand-blue/5 disabled:opacity-60"
             >
               {emailPending ? "Sending…" : `Email link to ${quote.email}`}
             </button>

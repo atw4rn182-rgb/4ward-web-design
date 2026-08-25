@@ -2,6 +2,7 @@ import { PageHeader } from "@/components/admin/PageHeader";
 import { StatCard } from "@/components/admin/StatCard";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { SchemaNotice } from "@/components/admin/SchemaNotice";
+import { AdminTableScroll } from "@/components/admin/AdminTableScroll";
 import { getCustomers, getOnboardings, labelStatus } from "@/lib/supabase/queries";
 import { tierLabel } from "@/lib/pricing/tier-labels";
 
@@ -35,7 +36,7 @@ export default async function ClientsPage() {
         description="Live customer records from Supabase, including portfolio clients with no Stripe subscription."
       />
       {schemaMissing ? <SchemaNotice /> : null}
-      <section className="mb-6 grid gap-4 sm:grid-cols-3">
+      <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
         <StatCard label="Total clients" value={String(customers.length)} hint="All statuses" />
         <StatCard label="Active" value={String(active)} hint="Paid / active clients" />
         <StatCard label="Payment pending" value={String(paymentPending)} hint="Onboarding, awaiting Stripe" />
@@ -46,35 +47,65 @@ export default async function ClientsPage() {
           detail="When a customer finishes onboarding, they will appear in this list."
         />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-black/10 bg-paper shadow-soft">
-          <table className="min-w-full text-left text-sm">
-            <thead className="bg-black/[0.03] text-xs uppercase tracking-wide text-muted">
-              <tr>
-                <th className="px-4 py-3 font-semibold">Company</th>
-                <th className="px-4 py-3 font-semibold">Contact</th>
-                <th className="px-4 py-3 font-semibold">Tier</th>
-                <th className="px-4 py-3 font-semibold">Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-black/5">
-              {customers.map((row) => {
-                const key = (row.email || row.company_name || "").toLowerCase();
-                return (
-                  <tr key={row.id} className="hover:bg-black/[0.02]">
-                    <td className="px-4 py-3 font-semibold text-ink">{row.company_name}</td>
-                    <td className="px-4 py-3 text-muted">{row.contact_name || row.email || "—"}</td>
-                    <td className="px-4 py-3 text-muted">{latestTier.get(key) || "—"}</td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
-                        {labelStatus(row.status)}
-                      </span>
-                    </td>
+        <>
+          <div className="space-y-3 md:hidden">
+            {customers.map((row) => {
+              const key = (row.email || row.company_name || "").toLowerCase();
+              return (
+                <article
+                  key={row.id}
+                  className="rounded-2xl border border-black/10 bg-paper p-4 shadow-soft"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="truncate font-semibold text-ink">{row.company_name}</p>
+                      <p className="mt-0.5 truncate text-sm text-muted">
+                        {row.contact_name || row.email || "—"}
+                      </p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
+                      {labelStatus(row.status)}
+                    </span>
+                  </div>
+                  <p className="mt-3 text-xs font-medium uppercase tracking-wide text-muted">
+                    Tier · {latestTier.get(key) || "—"}
+                  </p>
+                </article>
+              );
+            })}
+          </div>
+          <div className="hidden md:block">
+            <AdminTableScroll>
+              <table className="min-w-[640px] w-full text-left text-sm">
+                <thead className="bg-black/[0.03] text-xs uppercase tracking-wide text-muted">
+                  <tr>
+                    <th className="px-4 py-3 font-semibold">Company</th>
+                    <th className="px-4 py-3 font-semibold">Contact</th>
+                    <th className="px-4 py-3 font-semibold">Tier</th>
+                    <th className="px-4 py-3 font-semibold">Status</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody className="divide-y divide-black/5">
+                  {customers.map((row) => {
+                    const key = (row.email || row.company_name || "").toLowerCase();
+                    return (
+                      <tr key={row.id} className="hover:bg-black/[0.02]">
+                        <td className="px-4 py-3 font-semibold text-ink">{row.company_name}</td>
+                        <td className="px-4 py-3 text-muted">{row.contact_name || row.email || "—"}</td>
+                        <td className="px-4 py-3 text-muted">{latestTier.get(key) || "—"}</td>
+                        <td className="px-4 py-3">
+                          <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
+                            {labelStatus(row.status)}
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </AdminTableScroll>
+          </div>
+        </>
       )}
 
       <section className="mt-8">
@@ -90,41 +121,86 @@ export default async function ClientsPage() {
             />
           </div>
         ) : (
-          <div className="mt-4 overflow-hidden rounded-2xl border border-black/10 bg-paper shadow-soft">
-            <table className="min-w-full text-left text-sm">
-              <thead className="bg-black/[0.03] text-xs uppercase tracking-wide text-muted">
-                <tr>
-                  <th className="px-4 py-3 font-semibold">Client</th>
-                  <th className="px-4 py-3 font-semibold">Tier</th>
-                  <th className="px-4 py-3 font-semibold">Preferred domain</th>
-                  <th className="px-4 py-3 font-semibold">Alternates</th>
-                  <th className="px-4 py-3 font-semibold">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-black/5">
-                {onboardings.slice(0, 20).map((row) => (
-                  <tr key={row.id} className="hover:bg-black/[0.02]">
-                    <td className="px-4 py-3">
-                      <p className="font-semibold text-ink">{row.company_name || row.contact_name || "—"}</p>
-                      <p className="text-xs text-muted">{row.email || "—"}</p>
-                    </td>
-                    <td className="px-4 py-3 text-muted">{tierLabel(row.tier)}</td>
-                    <td className="px-4 py-3 font-medium text-ink">
-                      {row.domain_preferred || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-xs text-muted">
-                      {[row.domain_second_choice, row.domain_third_choice].filter(Boolean).join(" · ") || "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
-                        {labelStatus(row.status)}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+          <>
+            <div className="mt-4 space-y-3 md:hidden">
+              {onboardings.slice(0, 20).map((row) => (
+                <article
+                  key={row.id}
+                  className="rounded-2xl border border-black/10 bg-paper p-4 shadow-soft"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-semibold text-ink">
+                        {row.company_name || row.contact_name || "—"}
+                      </p>
+                      <p className="mt-0.5 truncate text-xs text-muted">{row.email || "—"}</p>
+                    </div>
+                    <span className="shrink-0 rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
+                      {labelStatus(row.status)}
+                    </span>
+                  </div>
+                  <dl className="mt-3 grid gap-1.5 text-sm">
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-muted">Tier</dt>
+                      <dd className="font-medium text-ink">{tierLabel(row.tier)}</dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-muted">Domain</dt>
+                      <dd className="truncate font-medium text-ink">{row.domain_preferred || "—"}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted">Alternates</dt>
+                      <dd className="mt-0.5 break-words text-xs text-ink">
+                        {[row.domain_second_choice, row.domain_third_choice].filter(Boolean).join(" · ") ||
+                          "—"}
+                      </dd>
+                    </div>
+                  </dl>
+                </article>
+              ))}
+            </div>
+            <div className="mt-4 hidden md:block">
+              <AdminTableScroll>
+                <table className="min-w-[760px] w-full text-left text-sm">
+                  <thead className="bg-black/[0.03] text-xs uppercase tracking-wide text-muted">
+                    <tr>
+                      <th className="px-4 py-3 font-semibold">Client</th>
+                      <th className="px-4 py-3 font-semibold">Tier</th>
+                      <th className="px-4 py-3 font-semibold">Preferred domain</th>
+                      <th className="px-4 py-3 font-semibold">Alternates</th>
+                      <th className="px-4 py-3 font-semibold">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-black/5">
+                    {onboardings.slice(0, 20).map((row) => (
+                      <tr key={row.id} className="hover:bg-black/[0.02]">
+                        <td className="px-4 py-3">
+                          <p className="font-semibold text-ink">
+                            {row.company_name || row.contact_name || "—"}
+                          </p>
+                          <p className="text-xs text-muted">{row.email || "—"}</p>
+                        </td>
+                        <td className="px-4 py-3 text-muted">{tierLabel(row.tier)}</td>
+                        <td className="px-4 py-3 font-medium text-ink">
+                          {row.domain_preferred || "—"}
+                        </td>
+                        <td className="px-4 py-3 text-xs text-muted">
+                          {[row.domain_second_choice, row.domain_third_choice]
+                            .filter(Boolean)
+                            .join(" · ") || "—"}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
+                            {labelStatus(row.status)}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </AdminTableScroll>
+            </div>
+          </>
         )}
       </section>
     </div>

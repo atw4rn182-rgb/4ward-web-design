@@ -24,7 +24,7 @@ export default async function FilesPage() {
         title="Files"
         description="Uploaded logos and assets from the uploaded_files table."
       />
-      <section className="mb-6 grid gap-4 sm:grid-cols-3">
+      <section className="mb-6 grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
         <StatCard label="Total files" value={String(files.length)} hint="Across all clients" />
         <StatCard label="Logos" value={String(logos)} hint="Brand marks on file" />
         <StatCard label="Storage used" value={formatBytes(storage)} hint="From recorded file sizes" />
@@ -39,15 +39,15 @@ export default async function FilesPage() {
           {files.map((file) => (
             <article
               key={file.id}
-              className="flex items-center justify-between gap-4 rounded-2xl border border-black/10 bg-paper px-5 py-4 shadow-soft"
+              className="flex flex-col gap-2 rounded-2xl border border-black/10 bg-paper px-4 py-4 shadow-soft sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-5"
             >
-              <div>
-                <p className="font-semibold text-ink">{file.file_name}</p>
+              <div className="min-w-0">
+                <p className="break-words font-semibold text-ink">{file.file_name}</p>
                 <p className="mt-0.5 text-sm text-muted">
                   {relatedCompany(file.customers)} · {labelStatus(file.kind)}
                 </p>
               </div>
-              <span className="text-sm font-medium text-muted">
+              <span className="shrink-0 text-sm font-medium text-muted">
                 {formatBytes(file.byte_size)}
               </span>
             </article>
