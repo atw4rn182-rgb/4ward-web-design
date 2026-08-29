@@ -12,7 +12,9 @@ type Props = {
 export default async function AdminLoginPage({ searchParams }: Props) {
   const params = await searchParams;
   const nextPath =
-    params.next?.startsWith("/admin") && params.next !== "/admin/login"
+    params.next?.startsWith("/admin") &&
+    params.next !== "/admin/login" &&
+    params.next !== "/admin/reset-password"
       ? params.next
       : "/admin/dashboard";
   const unauthorized = params.error === "unauthorized";
@@ -28,7 +30,7 @@ export default async function AdminLoginPage({ searchParams }: Props) {
           Admin sign in
         </h1>
         <p className="mt-2 mb-5 text-sm leading-relaxed text-muted">
-          Enter your email and password. You can also request a sign-in link if email sending is set up.
+          Enter your email and password. You can also request a sign-in link or reset your password.
         </p>
         {unauthorized ? (
           <p className="mb-4 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700">

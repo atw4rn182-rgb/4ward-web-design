@@ -9,11 +9,19 @@ export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const tokenHash = request.nextUrl.searchParams.get("token_hash");
   const type = request.nextUrl.searchParams.get("type");
-  const next = safeAdminNext(request.nextUrl.searchParams.get("next"));
+  const nextParam = request.nextUrl.searchParams.get("next");
+  const isRecovery = type === "recovery";
+  const next = isRecovery
+    ? "/admin/reset-password"
+    : safeAdminNext(nextParam);
   const { url, key, configured } = getSupabasePublicEnv();
 
   const fail = (reason: "link" | "unauthorized") =>
-    NextResponse.redirect(`${origin}/admin/login?error=${reason}`);
+    NextResponse.redirect(
+      isRecovery
+        ? `${origin}/admin/reset-password?error=${reason}`
+        : `${origin}/admin/login?error=${reason}`
+    );
 
   if (!configured || (!code && !tokenHash)) {
     return fail("link");
@@ -57,6 +65,8 @@ export async function GET(request: NextRequest) {
     return fail("link");
   }
 
+  // Password recovery should reach the reset form even before admin_users checks
+  // on dashboard routes; still require an admin row so non-admins cannot recover in.
   const { data: adminRow } = await supabase
     .from("admin_users")
     .select("user_id")

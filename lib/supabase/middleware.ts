@@ -1,14 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { getSupabasePublicEnv } from "@/lib/supabase/env";
+import { isPublicAdminPath } from "@/lib/supabase/origin";
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
   const { url, key, configured } = getSupabasePublicEnv();
   const pathname = request.nextUrl.pathname;
+  const isPublicAdmin = isPublicAdminPath(pathname);
 
   if (!configured) {
-    if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
+    if (pathname.startsWith("/admin") && !isPublicAdmin) {
       const redirectUrl = request.nextUrl.clone();
       redirectUrl.pathname = "/admin/login";
       redirectUrl.searchParams.set("next", pathname);
@@ -40,15 +42,18 @@ export async function updateSession(request: NextRequest) {
 
   const isAdminRoute = pathname.startsWith("/admin");
   const isLoginRoute = pathname === "/admin/login";
+  const isResetPasswordRoute = pathname === "/admin/reset-password";
 
-  if (isAdminRoute && !isLoginRoute && !user) {
+  // Keep recovery/reset publicly reachable so ?code= / hash tokens are not dropped.
+  if (isAdminRoute && !isPublicAdmin && !user) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/admin/login";
     redirectUrl.searchParams.set("next", pathname);
     return NextResponse.redirect(redirectUrl);
   }
 
-  if (isLoginRoute && user) {
+  // Do not bounce recovery sessions away from the reset form.
+  if (isLoginRoute && user && !isResetPasswordRoute) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/admin/dashboard";
     redirectUrl.search = "";

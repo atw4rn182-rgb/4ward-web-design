@@ -1,8 +1,19 @@
+/** Public admin paths that must not require an existing session. */
+export const PUBLIC_ADMIN_PATHS = new Set([
+  "/admin/login",
+  "/admin/reset-password",
+]);
+
+export function isPublicAdminPath(pathname: string) {
+  return PUBLIC_ADMIN_PATHS.has(pathname);
+}
+
 export function safeAdminNext(next: string | null | undefined) {
   const value = String(next || "/admin/dashboard");
-  return value.startsWith("/admin") && value !== "/admin/login"
-    ? value
-    : "/admin/dashboard";
+  if (!value.startsWith("/admin") || isPublicAdminPath(value)) {
+    return "/admin/dashboard";
+  }
+  return value;
 }
 
 export async function getActionOrigin() {
