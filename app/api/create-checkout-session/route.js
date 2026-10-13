@@ -1,3 +1,4 @@
+import crypto from "node:crypto";
 import { NextResponse } from "next/server";
 import {
   supabaseInsert,
@@ -5,6 +6,7 @@ import {
   supabaseSelect,
 } from "@/lib/supabase/service-rest";
 import { recordPendingCheckoutPayment } from "@/lib/payments/sync-stripe-session";
+import { logPaymentPersistenceFailure } from "@/lib/payments/persistence-log";
 import { getStripeEnv } from "@/lib/stripe/env";
 import { stripeCustomerFailure } from "@/lib/stripe/customer-error";
 import { attachLogoToStaticForms } from "@/lib/email/static-forms";
@@ -72,6 +74,15 @@ const PRICE_ENV = {
   tier2: "STRIPE_PRICE_TIER2",
   tier3: "STRIPE_PRICE_TIER3",
 };
+
+const ACCEPTED_AGREEMENT_VERSIONS = new Set(["service-agreement-v1"]);
+const AGREEMENT_REQUIRED_MESSAGE =
+  "Please read and accept the service agreement before continuing to payment.";
+
+// Supabase is not allowed to hold up checkout longer than this; Stripe metadata
+// carries the reconciliation context if the onboarding save does not finish.
+const PRE_CHECKOUT_SUPABASE_TIMEOUT_MS = 6000;
+const PENDING_PAYMENT_SUPABASE_TIMEOUT_MS = 4000;
 
 function normalizeAddOns(raw, tier) {
   return normalizeAddOnIds(raw, tier && tier.mode);
@@ -235,11 +246,12 @@ function first(rows) {
   return Array.isArray(rows) && rows.length ? rows[0] : null;
 }
 
-async function findReusablePendingOnboarding(email) {
+async function findReusablePendingOnboarding(email, options) {
   const customer = first(
     await supabaseSelect(
       "customers",
-      `email=eq.${encodeURIComponent(email)}&status=eq.payment_pending&select=id&order=created_at.desc&limit=1`
+      `email=eq.${encodeURIComponent(email)}&status=eq.payment_pending&select=id&order=created_at.desc&limit=1`,
+      options
     )
   );
   if (!customer || !customer.id) return null;
@@ -247,7 +259,8 @@ async function findReusablePendingOnboarding(email) {
   const onboarding = first(
     await supabaseSelect(
       "onboarding_submissions",
-      `customer_id=eq.${customer.id}&status=eq.payment_pending&select=id&order=created_at.desc&limit=1`
+      `customer_id=eq.${customer.id}&status=eq.payment_pending&select=id&order=created_at.desc&limit=1`,
+      options
     )
   );
   if (!onboarding || !onboarding.id) return null;
@@ -255,7 +268,12 @@ async function findReusablePendingOnboarding(email) {
   return { customer, onboarding };
 }
 
-async function saveOnboardingRecord(record) {
+/**
+ * Returns whatever rows were saved before any failure (`error` is set when the
+ * save did not complete) so partial IDs still reach Stripe metadata.
+ */
+async function saveOnboardingRecord(record, options = {}) {
+  const result = { customer: null, onboarding: null, reused: false, error: null };
   try {
     const customerPayload = {
       company_name: record.companyName,
@@ -283,37 +301,46 @@ async function saveOnboardingRecord(record) {
         domain_preferred: record.domainPreferred,
         domain_second_choice: record.domainSecondChoice || null,
         domain_third_choice: record.domainThirdChoice || null,
+        onboarding_ref: record.onboardingRef,
+        agreement_version: record.agreementVersion,
+        agreement_signed_at: record.agreementSignedAt,
       },
     };
 
-    const reusable = await findReusablePendingOnboarding(record.email);
+    const reusable = await findReusablePendingOnboarding(record.email, options);
     if (reusable) {
+      result.reused = true;
+      result.customer = reusable.customer;
       const customer = await supabasePatch(
         "customers",
         `id=eq.${reusable.customer.id}`,
-        customerPayload
+        customerPayload,
+        options
       );
+      result.customer = customer || reusable.customer;
       const onboarding = await supabasePatch(
         "onboarding_submissions",
         `id=eq.${reusable.onboarding.id}`,
-        { ...onboardingPayload, customer_id: reusable.customer.id }
+        { ...onboardingPayload, customer_id: reusable.customer.id },
+        options
       );
-      return {
-        customer: customer || reusable.customer,
-        onboarding: onboarding || reusable.onboarding,
-        reused: true,
-      };
+      result.onboarding = onboarding || reusable.onboarding;
+      return result;
     }
 
-    const customer = await supabaseInsert("customers", customerPayload);
-    const onboarding = await supabaseInsert("onboarding_submissions", {
-      ...onboardingPayload,
-      customer_id: customer && customer.id ? customer.id : null,
-    });
-    return { customer, onboarding, reused: false };
+    result.customer = await supabaseInsert("customers", customerPayload, options);
+    result.onboarding = await supabaseInsert(
+      "onboarding_submissions",
+      {
+        ...onboardingPayload,
+        customer_id: result.customer && result.customer.id ? result.customer.id : null,
+      },
+      options
+    );
+    return result;
   } catch (error) {
-    console.error("Onboarding record save failed:", error.message);
-    return null;
+    result.error = error;
+    return result;
   }
 }
 
@@ -387,6 +414,10 @@ export async function POST(request) {
     return json(400, { error: "Missing required onboarding fields" });
   }
 
+  if (signedAgreement !== "yes" || !ACCEPTED_AGREEMENT_VERSIONS.has(agreementVersion)) {
+    return json(400, { error: AGREEMENT_REQUIRED_MESSAGE });
+  }
+
   if (!isValidDomain(domainPreferred)) {
     return json(400, {
       error:
@@ -405,6 +436,8 @@ export async function POST(request) {
   }
 
   const origin = siteOrigin(request);
+  const onboardingRef = crypto.randomUUID();
+  const agreementSignedAt = new Date().toISOString();
   const metadata = {
     tier: tier.id,
     company_name: companyName,
@@ -415,8 +448,9 @@ export async function POST(request) {
     existing_links: existingLinks.slice(0, 450),
     signer_name: signerName,
     agreement_version: agreementVersion,
-    agreement_signed_at: new Date().toISOString(),
-    signed_agreement: signedAgreement || "yes",
+    agreement_signed_at: agreementSignedAt,
+    signed_agreement: signedAgreement,
+    onboarding_ref: onboardingRef,
     company_information: companyInformation.slice(0, 450),
     logo_name: logoName,
     logo_provided: logoName ? "yes" : "no",
@@ -432,34 +466,54 @@ export async function POST(request) {
     domain_third_choice: domainThirdChoice || "",
   };
 
-  const saved = await saveOnboardingRecord({
-    companyName,
-    contactName,
-    email,
-    phone,
-    tier: tier.id,
-    companyInformation,
-    signedAgreement: signedAgreement || "yes",
-    addOnIds,
-    existingLinks,
-    logoName,
-    domainPreferred,
-    domainSecondChoice,
-    domainThirdChoice,
-  });
-  const customerRow = saved && saved.customer;
-  const onboardingRow = saved && saved.onboarding;
+  const saved = await saveOnboardingRecord(
+    {
+      companyName,
+      contactName,
+      email,
+      phone,
+      tier: tier.id,
+      companyInformation,
+      signedAgreement,
+      addOnIds,
+      existingLinks,
+      logoName,
+      domainPreferred,
+      domainSecondChoice,
+      domainThirdChoice,
+      onboardingRef,
+      agreementVersion,
+      agreementSignedAt,
+    },
+    { signal: AbortSignal.timeout(PRE_CHECKOUT_SUPABASE_TIMEOUT_MS) }
+  );
+  const customerRow = saved.customer;
+  const onboardingRow = saved.onboarding;
   if (customerRow && customerRow.id) {
     metadata.supabase_customer_id = customerRow.id;
   }
   if (onboardingRow && onboardingRow.id) {
     metadata.supabase_onboarding_id = onboardingRow.id;
   }
+  metadata.supabase_persisted = saved.error
+    ? metadata.supabase_customer_id || metadata.supabase_onboarding_id
+      ? "partial"
+      : "no"
+    : "yes";
 
-  if (!saved || !saved.customer) {
-    return json(503, {
-      error: "Unable to save onboarding information. Please try again.",
-    });
+  if (saved.error) {
+    logPaymentPersistenceFailure(
+      "pre_checkout_onboarding_save_failed",
+      {
+        onboarding_ref: onboardingRef,
+        tier: tier.id,
+        supabase_customer_id: metadata.supabase_customer_id,
+        supabase_onboarding_id: metadata.supabase_onboarding_id,
+        supabase_persisted: metadata.supabase_persisted,
+        continuing_to_stripe: true,
+      },
+      saved.error
+    );
   }
 
   try {
@@ -503,19 +557,35 @@ export async function POST(request) {
       "/checkout/sessions",
       sessionParams
     );
-    try {
-      await recordPendingCheckoutPayment({
-        session,
-        customerId: customerRow && customerRow.id,
-        tierId: tier.id,
-        description: `${companyName} · ${tier.id}`,
-      });
-    } catch (error) {
-      console.error("Pending payment save failed");
+    if (customerRow && customerRow.id) {
+      try {
+        await recordPendingCheckoutPayment(
+          {
+            session,
+            customerId: customerRow.id,
+            tierId: tier.id,
+            description: `${companyName} · ${tier.id}`,
+          },
+          { signal: AbortSignal.timeout(PENDING_PAYMENT_SUPABASE_TIMEOUT_MS) }
+        );
+      } catch (error) {
+        logPaymentPersistenceFailure(
+          "pending_payment_save_failed",
+          {
+            checkout_session_id: session.id,
+            stripe_customer_id: customer.id,
+            onboarding_ref: onboardingRef,
+            supabase_customer_id: customerRow.id,
+            note: "webhook will create the payment row",
+          },
+          error
+        );
+      }
     }
 
     deliverOnboardingPendingEmails({
       onboardingId: onboardingRow && onboardingRow.id,
+      onboardingRef,
       companyName,
       contactName,
       email,

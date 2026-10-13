@@ -14,6 +14,7 @@ import { isQuoteCheckoutSession } from "@/lib/payments/quote-stripe";
 import { isLiveVerificationCheckoutSession } from "@/lib/payments/live-verification-stripe";
 import { applyLiveVerificationCheckoutSessionEvent } from "@/lib/payments/sync-live-verification-session";
 import { sendLiveVerificationConfirmation } from "@/lib/payments/send-live-verification-confirmation";
+import { logPaymentPersistenceFailure } from "@/lib/payments/persistence-log";
 
 export const runtime = "nodejs";
 
@@ -62,7 +63,28 @@ export async function POST(request) {
       await applyInvoiceEvent(event.type, event.data && event.data.object);
     }
   } catch (error) {
-    console.error("Stripe webhook handler failed:", error);
+    // 500 makes Stripe retry the event; handlers are idempotent per Stripe ID.
+    const object = (event.data && event.data.object) || {};
+    const metadata = object.metadata || {};
+    const context = {
+      stripe_event_id: event.id,
+      event_type: event.type,
+      checkout_session_id: object.object === "checkout.session" ? object.id : undefined,
+      invoice_id: object.object === "invoice" ? object.id : object.invoice || undefined,
+      payment_intent_id:
+        typeof object.payment_intent === "string" ? object.payment_intent : undefined,
+      subscription_id: typeof object.subscription === "string" ? object.subscription : undefined,
+      stripe_customer_id: typeof object.customer === "string" ? object.customer : undefined,
+      onboarding_ref: metadata.onboarding_ref,
+      supabase_customer_id: metadata.supabase_customer_id,
+      supabase_onboarding_id: metadata.supabase_onboarding_id,
+      stripe_will_retry: true,
+    };
+    if (error && error.source === "supabase") {
+      logPaymentPersistenceFailure("webhook_supabase_write_failed", context, error);
+    } else {
+      logPaymentPersistenceFailure("webhook_handler_failed", context, error);
+    }
     return NextResponse.json({ error: "Webhook handler failed" }, { status: 500 });
   }
 
