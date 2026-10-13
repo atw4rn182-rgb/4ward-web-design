@@ -788,6 +788,51 @@ p {
   line-height: 1.5;
 }
 
+.ba-project-featured {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.35fr);
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.35rem;
+  border-color: rgba(29, 78, 216, 0.24);
+  background:
+    linear-gradient(165deg, rgba(29, 78, 216, 0.07) 0%, rgba(200, 121, 42, 0.05) 55%, transparent 100%),
+    var(--bg-elevated);
+  box-shadow: var(--shadow), 0 0 0 1px rgba(200, 121, 42, 0.1);
+}
+
+.ba-project-featured:hover {
+  border-color: rgba(29, 78, 216, 0.32);
+}
+
+.ba-project-featured .ba-header {
+  margin-bottom: 0;
+}
+
+.ba-project-featured .ba-header h3 {
+  font-size: 1.45rem;
+  margin-bottom: 0.5rem;
+}
+
+.ba-project-featured .ba-header p {
+  margin-bottom: 1rem;
+}
+
+.ba-header .ba-badge {
+  display: inline-flex;
+  margin-bottom: 0.7rem;
+  background: linear-gradient(135deg, var(--blue), var(--copper));
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0.4rem 0.8rem;
+  border-radius: 999px;
+  box-shadow: 0 6px 16px rgba(29, 78, 216, 0.22);
+}
+
 .ba-compare {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -1901,6 +1946,11 @@ a.ba-frame:hover img {
     grid-template-columns: 1fr;
   }
 
+  .ba-project-featured {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
   .plan-featured {
     transform: none;
   }
@@ -2135,6 +2185,14 @@ a.ba-frame:hover img {
 
   .ba-header h3 {
     font-size: 1.1rem;
+  }
+
+  .ba-project-featured {
+    padding: 1rem 0.85rem 0.85rem;
+  }
+
+  .ba-project-featured .ba-header h3 {
+    font-size: 1.28rem;
   }
 
   .ba-compare {
