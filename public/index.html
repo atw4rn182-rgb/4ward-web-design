@@ -162,7 +162,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=portfolio1" />
+  <link rel="stylesheet" href="styles.css?v=commercial1" />
   <link rel="icon" href="assets/favicon.png?v=5" type="image/png" sizes="64x64" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=5" />
@@ -222,6 +222,37 @@
 
   <main id="main">
     <section class="hero" aria-labelledby="hero-heading">
+      <div class="hero-commercial" id="hero-commercial" role="region" aria-label="4Ward Web Design commercial" aria-hidden="true">
+        <canvas class="hero-commercial-backdrop" width="18" height="32" aria-hidden="true"></canvas>
+        <div class="hero-commercial-frame">
+          <div class="hero-commercial-screen">
+            <video
+              class="hero-commercial-video"
+              id="hero-commercial-video"
+              data-src="assets/4ward-commercial.mp4"
+              playsinline
+              webkit-playsinline
+              preload="none"
+              disablepictureinpicture
+              disableremoteplayback
+              controlslist="nodownload nofullscreen noremoteplayback"
+              aria-label="4Ward Web Design commercial"
+            ></video>
+            <span class="hero-commercial-progress" aria-hidden="true"></span>
+          </div>
+          <div class="hero-commercial-controls">
+            <button class="hero-commercial-btn hero-commercial-sound" type="button" data-commercial-sound aria-pressed="false" aria-label="Turn on commercial sound">
+              <svg class="icon-off" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" /><path d="M16.5 9.5l5 5m0-5l-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+              <svg class="icon-on" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor" /><path d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" /></svg>
+              <span data-commercial-sound-label>Turn on sound</span>
+            </button>
+            <button class="hero-commercial-btn hero-commercial-skip" type="button" data-commercial-skip>
+              Skip
+              <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M9 6l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
+            </button>
+          </div>
+        </div>
+      </div>
       <div class="hero-stage" aria-hidden="true">
         <video
           class="hero-video hero-video--desktop is-active"
@@ -728,6 +759,7 @@
     </div>
   </footer>
 
-  <script src="script.js?v=perf1"></script>
+  <script src="hero-commercial.js?v=commercial1"></script>
+  <script src="script.js?v=commercial1"></script>
 </body>
 </html>

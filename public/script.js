@@ -14,6 +14,7 @@
   const phoneVideo = document.getElementById("hero-video-mobile");
   const heroMontage = document.getElementById("hero-montage");
   const heroSlides = heroMontage ? Array.from(heroMontage.querySelectorAll(".hero-slide")) : [];
+  const commercial = window.fwHeroCommercial || null;
   const SLIDE_MS = 3600;
   const CROSSFADE_MS = 1100;
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -209,7 +210,7 @@
       const onTimeUpdate = () => {
         const duration = video.duration;
         if (!Number.isFinite(duration) || duration <= 0) return;
-        if (video.currentTime >= duration - 0.35) finish();
+        if (commercial && video.currentTime / duration >= 0.3) commercial.load();
         if (duration > 2 && video.currentTime / duration >= 0.55) {
           preloadMontageSlides();
           prepMontageUnderVideo();
@@ -223,7 +224,7 @@
         try {
           video.loop = false;
           video.removeAttribute("loop");
-          if (Number.isFinite(video.currentTime) && video.currentTime > 0.05) {
+          if (video.paused && Number.isFinite(video.currentTime) && video.currentTime > 0.05) {
             video.currentTime = 0;
           }
         } catch (_) {
@@ -263,10 +264,72 @@
     }
   }
 
+  // Resolves true once the commercial has played and is fading out over the
+  // first desert scene; false if it never covered the hero.
+  function playCommercial(video) {
+    if (!commercial) return Promise.resolve(false);
+    return commercial.play(() => {
+      if (heroMontage && heroSlides.length) {
+        setMontageSlide(0);
+        heroMontage.classList.remove("is-prepped");
+        heroMontage.classList.add("is-active");
+        heroMontage.setAttribute("aria-hidden", "false");
+      }
+      if (video) {
+        video.classList.remove("is-active", "is-leaving");
+        try {
+          video.pause();
+          video.currentTime = 0;
+        } catch (_) {
+          /* ignore */
+        }
+      }
+    });
+  }
+
+  function startHeroVideo(video) {
+    return new Promise((resolve) => {
+      let settled = false;
+      const finish = () => {
+        if (settled) return;
+        settled = true;
+        video.removeEventListener("playing", finish);
+        clearTimeout(timer);
+        resolve();
+      };
+      const timer = setTimeout(finish, 4000);
+      video.addEventListener("playing", finish);
+      ensurePlaying(video);
+    });
+  }
+
+  async function crossfadeMontageToVideo(video) {
+    if (!video) return;
+    pauseInactiveVideos(video);
+    video.classList.remove("is-active", "is-leaving");
+    armVideo(video);
+    muteHeroVideo(video);
+    try {
+      if (video.currentTime > 0.05) video.currentTime = 0;
+    } catch (_) {
+      /* ignore */
+    }
+
+    await startHeroVideo(video);
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    video.classList.add("is-active");
+    await wait(CROSSFADE_MS);
+
+    resetMontageClasses();
+    heroSlides.forEach((slide) => slide.classList.remove("is-active"));
+  }
+
   async function runHeroSequence() {
     if (prefersReduced) return;
     const seqId = ++heroSequenceId;
     heroSequenceRunning = true;
+    let firstPass = true;
 
     while (true) {
       if (seqId !== heroSequenceId || prefersReduced) break;
@@ -275,19 +338,26 @@
       const other = inactiveHeroVideo();
       if (other) disarmVideo(other);
 
-      showHeroVideo(video);
+      if (firstPass) {
+        showHeroVideo(video);
+      } else {
+        await crossfadeMontageToVideo(video);
+        if (seqId !== heroSequenceId) break;
+      }
+      firstPass = false;
+
       await playHeroVideoOnce(video);
       if (seqId !== heroSequenceId) break;
 
-      await crossfadeVideoToMontage(video);
+      const covered = await playCommercial(video);
       if (seqId !== heroSequenceId) break;
+      if (!covered) {
+        await crossfadeVideoToMontage(video);
+        if (seqId !== heroSequenceId) break;
+      }
 
       await playDesertLandscapes();
       if (seqId !== heroSequenceId) break;
-
-      resetMontageClasses();
-      heroSlides.forEach((slide) => slide.classList.remove("is-active"));
-      await wait(CROSSFADE_MS);
     }
 
     if (seqId === heroSequenceId) {
@@ -332,6 +402,7 @@
 
   if (typeof mobileHero.addEventListener === "function") {
     mobileHero.addEventListener("change", () => {
+      if (commercial) commercial.abort();
       heroSequenceId += 1;
       heroSequenceRunning = false;
       montagePreloaded = false;
