@@ -43,6 +43,8 @@
 
 html {
   scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
@@ -100,6 +102,8 @@ p {
 .container {
   width: min(1140px, calc(100% - 2.75rem));
   margin-inline: auto;
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 .skip-link {
@@ -144,6 +148,7 @@ p {
   letter-spacing: 0.02em;
   border: 1px solid transparent;
   cursor: pointer;
+  touch-action: manipulation;
   transition:
     transform 0.4s var(--ease),
     background 0.35s var(--ease),
@@ -229,6 +234,7 @@ p {
   display: flex;
   align-items: center;
   background: rgba(238, 235, 231, 0.9);
+  -webkit-backdrop-filter: blur(20px) saturate(1.2);
   backdrop-filter: blur(20px) saturate(1.2);
   border-bottom: 1px solid var(--line);
   transition: background 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
@@ -248,6 +254,8 @@ p {
   gap: 0.75rem;
   width: min(1140px, calc(100% - 2.75rem));
   position: relative;
+  padding-left: env(safe-area-inset-left, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
 }
 
 .brand {
@@ -353,6 +361,7 @@ p {
   display: none;
   width: 44px;
   height: 44px;
+  touch-action: manipulation;
   border: 1px solid var(--line-strong);
   background: #fff;
   padding: 0;
@@ -510,7 +519,7 @@ p {
   width: min(1140px, calc(100% - 2.75rem));
   max-width: none;
   margin: 0;
-  padding: 0.55rem 0;
+  padding: 0.55rem env(safe-area-inset-right, 0px) 0.55rem env(safe-area-inset-left, 0px);
   text-align: center;
   justify-content: center;
   background: transparent;
@@ -1067,6 +1076,12 @@ p {
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.5);
 }
 
+.ba-frame picture {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
 .ba-frame img {
   width: 100%;
   height: 100%;
@@ -1277,6 +1292,7 @@ a.ba-frame:hover img {
   border-radius: 999px;
   gap: 0.25rem;
   margin-bottom: 1.15rem;
+  -webkit-backdrop-filter: blur(12px);
   backdrop-filter: blur(12px);
   box-shadow: var(--shadow-soft);
 }
@@ -1773,6 +1789,7 @@ a.ba-frame:hover img {
   padding: clamp(1.1rem, 2.5vw, 1.6rem);
   background:
     linear-gradient(145deg, var(--bg-elevated) 0%, #f0f2f6 55%, #f7f1e8 100%);
+  -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   box-shadow: var(--shadow);
   color: var(--ink);
@@ -1808,6 +1825,7 @@ a.ba-frame:hover img {
   border-radius: var(--radius-sm);
   background: #f8f9fa;
   border: 1px solid var(--line);
+  -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   box-shadow: var(--shadow-soft);
   transition: border-color 0.3s var(--ease), transform 0.3s var(--ease), box-shadow 0.3s var(--ease);
@@ -1971,6 +1989,7 @@ a.ba-frame:hover img {
   border-radius: var(--radius);
   padding: clamp(1.1rem, 2vw, 1.4rem);
   box-shadow: var(--shadow);
+  -webkit-backdrop-filter: blur(16px) saturate(1.1);
   backdrop-filter: blur(16px) saturate(1.1);
 }
 
@@ -2154,6 +2173,74 @@ a.ba-frame:hover img {
   .contact-layout {
     grid-template-columns: 1fr;
   }
+
+  .onboard-nav {
+    display: none;
+  }
+}
+
+@media (max-width: 1100px) {
+  .nav-toggle {
+    display: inline-flex;
+    border-color: var(--line-strong);
+    background: #fff;
+  }
+
+  .nav-toggle:hover,
+  .nav-toggle[aria-expanded="true"] {
+    border-color: rgba(37, 99, 235, 0.45);
+    background: var(--blue-soft);
+  }
+
+  #site-nav {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    left: 0;
+    right: 0;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0.35rem 1rem 1rem;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(16px);
+    z-index: 220;
+    max-height: min(70vh, 420px);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #site-nav.is-open {
+    display: flex;
+  }
+
+  #site-nav a {
+    padding: 0.95rem 0.25rem;
+    border-bottom: 1px solid var(--line);
+    color: var(--ink);
+    font-size: 1rem;
+    white-space: normal;
+  }
+
+  #site-nav a:last-child {
+    border-bottom: 0;
+  }
+
+  #site-nav .btn {
+    margin-top: 0.65rem;
+    width: 100%;
+  }
+
+  #site-nav .mobile-nav-contact {
+    display: block;
+    padding: 0.85rem 0.25rem 1rem;
+    margin-bottom: 0.15rem;
+    border-bottom: 1px solid var(--line);
+  }
 }
 
 @media (max-width: 760px) {
@@ -2226,6 +2313,7 @@ a.ba-frame:hover img {
     border: 1px solid var(--line);
     border-radius: 14px;
     box-shadow: var(--shadow);
+    -webkit-backdrop-filter: blur(16px);
     backdrop-filter: blur(16px);
     z-index: 220;
     max-height: min(70vh, 420px);
@@ -2255,6 +2343,7 @@ a.ba-frame:hover img {
   .header-contact {
     margin-left: auto;
     margin-right: 0.15rem;
+    flex-shrink: 0;
     max-width: min(46vw, 11.5rem);
   }
 
@@ -2262,6 +2351,10 @@ a.ba-frame:hover img {
     font-size: 0.72rem;
     white-space: normal;
     text-align: right;
+  }
+
+  .header-contact-line a[href^="tel:"] {
+    white-space: nowrap;
   }
 
   .header-contact-note {
@@ -2334,7 +2427,28 @@ a.ba-frame:hover img {
     border-color: rgba(255, 255, 255, 0.4);
     color: var(--ink);
   }
+}
 
+@media (max-width: 340px) {
+  .header-inner {
+    gap: 0.35rem;
+  }
+
+  .brand-wordmark {
+    width: min(124px, 40vw);
+  }
+
+  .header-contact {
+    max-width: 7.1rem;
+  }
+
+  .header-contact-line,
+  .header-contact-note {
+    font-size: 0.62rem;
+  }
+}
+
+@media (max-width: 760px) {
   .service-item {
     grid-template-columns: 2.5rem 1fr;
     gap: 0.65rem;
@@ -2509,7 +2623,22 @@ a.ba-frame:hover img {
   .hero-content {
     width: min(1140px, calc(100% - 1.75rem));
     top: min(calc(100dvh - 8.75rem - env(safe-area-inset-bottom, 0px)), calc(100% - 8.75rem));
-    padding: 0.45rem 0;
+    padding: 0.45rem env(safe-area-inset-right, 0px) 0.45rem env(safe-area-inset-left, 0px);
+  }
+}
+
+@media (hover: none) {
+  .btn:hover,
+  .plan:hover,
+  .buyout-tier:hover,
+  .impact-card:hover,
+  .work-card:hover {
+    transform: none;
+  }
+
+  .work-card:hover .work-thumb img,
+  a.ba-frame:hover img {
+    transform: none;
   }
 }
 

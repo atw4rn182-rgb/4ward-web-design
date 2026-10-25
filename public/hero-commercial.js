@@ -29,7 +29,7 @@
 
   // null = no choice yet; true/false = the visitor's explicit sound choice.
   let soundChoice = null;
-  let audibleAutoplayBlocked = false;
+  let awaitingSound = false;
   let run = null;
   let rafId = 0;
   let lastDraw = 0;
@@ -43,24 +43,17 @@
 
   function syncSoundButton() {
     if (!soundBtn) return;
-    const on = !video.muted;
+    const on = !awaitingSound && !video.paused && !video.muted && video.volume > 0;
     layer.classList.toggle("is-sound-on", on);
     soundBtn.setAttribute("aria-pressed", String(on));
-    soundBtn.setAttribute("aria-label", on ? "Mute commercial" : "Turn on commercial sound");
-    if (soundLabel) soundLabel.textContent = on ? "Mute" : "Turn on sound";
+    soundBtn.setAttribute("aria-label", on ? "Mute commercial" : "Play commercial with sound");
+    if (soundLabel) soundLabel.textContent = on ? "Mute" : "Play with Sound";
   }
 
   function measureBackdrop() {
     if (!screen) return;
     needsBackdrop = screen.getBoundingClientRect().width < layer.clientWidth - 2;
     layer.classList.toggle("has-backdrop", needsBackdrop);
-  }
-
-  function heroInView() {
-    const rect = layer.getBoundingClientRect();
-    if (rect.height <= 0) return false;
-    const visible = Math.min(rect.bottom, window.innerHeight) - Math.max(rect.top, 0);
-    return visible / Math.min(rect.height, window.innerHeight) >= 0.5;
   }
 
   function tick(now) {
@@ -110,31 +103,72 @@
     if (progress) progress.style.transform = "scaleX(0)";
   }
 
-  function wantsSound() {
-    if (soundChoice !== null) return soundChoice;
-    return !audibleAutoplayBlocked && heroInView();
+  function playAudible() {
+    video.defaultMuted = false;
+    video.muted = false;
+    video.removeAttribute("muted");
+    try {
+      video.volume = 1;
+    } catch (_) {
+      /* ignore */
+    }
+    syncSoundButton();
+    let promise;
+    try {
+      promise = video.play();
+    } catch (_) {
+      promise = null;
+    }
+    return promise && typeof promise.then === "function" ? promise : Promise.resolve();
+  }
+
+  function revealLayer(current) {
+    if (!current || current.leaving || current.shown) return;
+    current.shown = true;
+    measureBackdrop();
+    requestAnimationFrame(() => {
+      if (run !== current || current.leaving) return;
+      layer.classList.add("is-active");
+      layer.setAttribute("aria-hidden", "false");
+      setRunTimer(current, "covered", FADE_MS + 50, () => {
+        if (run !== current || current.covered) return;
+        current.covered = true;
+        try {
+          current.onCovered();
+        } catch (_) {
+          /* ignore */
+        }
+      });
+    });
+  }
+
+  function holdForSound(current) {
+    if (run !== current || current.leaving) return;
+    awaitingSound = true;
+    clearTimeout(current.timers.start);
+    try {
+      video.pause();
+      if (video.currentTime > 0.05) video.currentTime = 0;
+    } catch (_) {
+      /* ignore */
+    }
+    video.defaultMuted = false;
+    video.muted = false;
+    video.removeAttribute("muted");
+    try {
+      video.volume = 1;
+    } catch (_) {
+      /* ignore */
+    }
+    syncSoundButton();
+    revealLayer(current);
   }
 
   function startPlayback(current) {
-    const attempt = (muted) => {
-      video.muted = muted;
-      syncSoundButton();
-      let promise;
-      try {
-        promise = video.play();
-      } catch (_) {
-        promise = null;
-      }
-      return promise && typeof promise.then === "function" ? promise : Promise.resolve();
-    };
-
-    attempt(!wantsSound()).catch((err) => {
+    playAudible().catch((err) => {
       if (run !== current) return;
-      if (err && err.name === "NotAllowedError" && !video.muted) {
-        audibleAutoplayBlocked = true;
-        attempt(true).catch(() => {
-          if (run === current) end("autoplay-blocked");
-        });
+      if (err && err.name === "NotAllowedError") {
+        holdForSound(current);
         return;
       }
       if (!err || err.name !== "AbortError") end("play-failed");
@@ -158,25 +192,13 @@
     if (!current || current.leaving) return;
     clearTimeout(current.timers.start);
     clearTimeout(current.timers.stall);
-    if (current.shown) return;
-    current.shown = true;
-    measureBackdrop();
-    lastDraw = 0;
-    stopTick();
-    tick(performance.now());
-    requestAnimationFrame(() => {
-      if (run !== current || current.leaving) return;
-      layer.classList.add("is-active");
-      layer.setAttribute("aria-hidden", "false");
-      setRunTimer(current, "covered", FADE_MS + 50, () => {
-        current.covered = true;
-        try {
-          current.onCovered();
-        } catch (_) {
-          /* ignore */
-        }
-      });
-    });
+    awaitingSound = false;
+    syncSoundButton();
+    if (!rafId) {
+      lastDraw = 0;
+      tick(performance.now());
+    }
+    revealLayer(current);
   }
 
   function onWaiting() {
@@ -261,18 +283,29 @@
   if (soundBtn) {
     soundBtn.addEventListener("click", () => {
       if (!run || run.leaving) return;
-      const turnOn = video.muted;
-      soundChoice = turnOn;
-      video.muted = !turnOn;
-      if (turnOn) {
+      if (awaitingSound) {
+        soundChoice = true;
+        awaitingSound = false;
         try {
-          video.volume = 1;
+          if (video.currentTime > 0.05) video.currentTime = 0;
         } catch (_) {
           /* ignore */
         }
-        if (video.paused) video.play().catch(() => {});
+        playAudible().catch(() => {
+          if (!run || run.leaving) return;
+          awaitingSound = true;
+          syncSoundButton();
+        });
+        return;
       }
-      syncSoundButton();
+      const turnOn = video.muted || video.volume === 0;
+      soundChoice = turnOn;
+      if (!turnOn) {
+        video.muted = true;
+        syncSoundButton();
+        return;
+      }
+      playAudible().catch(() => {});
     });
   }
 

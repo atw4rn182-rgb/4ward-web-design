@@ -264,25 +264,24 @@
     }
   }
 
-  // Resolves true once the commercial has played and is fading out over the
-  // first desert scene; false if it never covered the hero.
+  // Commercial plays first. Once it covers the hero, the next video waits
+  // underneath, paused, until the commercial starts to fade out.
   function playCommercial(video) {
     if (!commercial) return Promise.resolve(false);
     return commercial.play(() => {
-      if (heroMontage && heroSlides.length) {
-        setMontageSlide(0);
-        heroMontage.classList.remove("is-prepped");
-        heroMontage.classList.add("is-active");
-        heroMontage.setAttribute("aria-hidden", "false");
-      }
-      if (video) {
-        video.classList.remove("is-active", "is-leaving");
-        try {
-          video.pause();
-          video.currentTime = 0;
-        } catch (_) {
-          /* ignore */
-        }
+      resetMontageClasses();
+      heroSlides.forEach((slide) => slide.classList.remove("is-active"));
+      if (!video) return;
+      pauseInactiveVideos(video);
+      video.classList.remove("is-leaving");
+      video.classList.add("is-active");
+      armVideo(video);
+      muteHeroVideo(video);
+      try {
+        video.pause();
+        video.currentTime = 0;
+      } catch (_) {
+        /* ignore */
       }
     });
   }
@@ -329,7 +328,7 @@
     if (prefersReduced) return;
     const seqId = ++heroSequenceId;
     heroSequenceRunning = true;
-    let firstPass = true;
+    if (commercial) commercial.load();
 
     while (true) {
       if (seqId !== heroSequenceId || prefersReduced) break;
@@ -338,23 +337,15 @@
       const other = inactiveHeroVideo();
       if (other) disarmVideo(other);
 
-      if (firstPass) {
-        showHeroVideo(video);
-      } else {
-        await crossfadeMontageToVideo(video);
-        if (seqId !== heroSequenceId) break;
-      }
-      firstPass = false;
+      const covered = await playCommercial(video);
+      if (seqId !== heroSequenceId) break;
+      if (!covered) showHeroVideo(video);
 
       await playHeroVideoOnce(video);
       if (seqId !== heroSequenceId) break;
 
-      const covered = await playCommercial(video);
+      await crossfadeVideoToMontage(video);
       if (seqId !== heroSequenceId) break;
-      if (!covered) {
-        await crossfadeVideoToMontage(video);
-        if (seqId !== heroSequenceId) break;
-      }
 
       await playDesertLandscapes();
       if (seqId !== heroSequenceId) break;
@@ -456,7 +447,7 @@
     });
 
     window.addEventListener("resize", () => {
-      if (window.innerWidth > 760) closeNav();
+      if (window.innerWidth > 1100) closeNav();
     });
   }
 
