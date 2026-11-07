@@ -5,7 +5,7 @@ import {
   saveOutreachSettingsAction,
   type ProspectActionState,
 } from "@/app/admin/prospect-actions";
-import { clampDailyTarget, monthlyOutreachVolume } from "@/lib/prospects/model.mjs";
+import { clampDailyTarget, externalOutreachAllowed, monthlyOutreachVolume } from "@/lib/prospects/model.mjs";
 import type { OutreachSettingsRow } from "@/lib/prospects/queries";
 
 const initial: ProspectActionState = {};
@@ -77,6 +77,9 @@ export function OutreachSettingsForm({
           </select>
           <span className="mt-2 block font-normal text-muted">
             Current target: {target} successfully submitted emails each weekday. About {monthly} per month. A successful retry counts toward the limit. Saving waits for the weekday schedule.
+            {externalOutreachAllowed({ mailingAddress: settings?.mailing_address, schedulerActive })
+              ? ""
+              : " External prospect email stays off until a mailing address is saved and a later phase starts the scheduler."}
           </span>
         </label>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">

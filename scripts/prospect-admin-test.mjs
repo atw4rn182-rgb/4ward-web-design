@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { strict as assert } from "node:assert";
 import {
   OUTREACH_SCHEDULER_ACTIVE,
+  externalOutreachAllowed,
   FALLBACK_REQUESTS,
   LIST_SELECT,
   PAGE_SIZE,
@@ -253,8 +254,12 @@ await check("qualification does not invent a contact or a missing website", () =
   assert.match(draft.body, /\$200/);
   assert.match(draft.body, /https:\/\/www\.4wardwebdesign\.com/);
   assert.match(draft.body, /560-2575/);
+  assert.match(draft.body, /free consultation/i);
+  assert.match(draft.body, /ask to be removed/);
+  assert.ok(draft.body.length <= 900);
   assert.doesNotMatch(draft.body, /outdated|ranking|poor website|no website/i);
   assert.equal(buildDraft(missing), null);
+  assert.equal(externalOutreachAllowed({ mailingAddress: "100 Main St", schedulerActive: true }), false);
 });
 
 await check("research reads only permitted public contacts and stays compact", () => {
@@ -281,6 +286,7 @@ await check("research reads only permitted public contacts and stays compact", (
   assert.equal(packed.outreach_eligible, false);
   assert.equal(discoveryProvider().available, false);
   assert.equal(discoveryProvider().tested, false);
+  assert.equal(discoveryProvider().options.every((option) => option.enabled === false), true);
 });
 
 await check("a blocked or failed website is marked for review and not emailed", async () => {

@@ -14,7 +14,18 @@ export function ResearchQueueButton() {
       <h2 className="font-display text-lg font-bold">Research</h2>
       <p className="mt-1 text-sm leading-relaxed text-muted">{discovery.reason}</p>
       <p className="mt-2 text-sm leading-relaxed text-muted">
-        Research pending queue checks up to five queued businesses, manual entries first. It reads a business’s own public website only when that site allows it, then saves a short result and an unsent draft.
+        Provider: {discovery.id}. Available: {discovery.available ? "yes" : "no"}. Tested: {discovery.tested ? "yes" : "no"}.
+      </p>
+      <ul className="mt-3 grid gap-2">
+        {(discovery.options || []).map((option) => (
+          <li key={option.id} className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm text-muted">
+            <span className="font-semibold text-ink">{option.name}. </span>
+            {option.cost} Not enabled.
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-sm leading-relaxed text-muted">
+        Research pending queue checks up to five queued businesses, manual entries first. It reads a business’s own public website only when that site allows it, then saves a short result and an unsent draft. Rejecting a business does not send email.
       </p>
       <form action={action} className="mt-4">
         <button

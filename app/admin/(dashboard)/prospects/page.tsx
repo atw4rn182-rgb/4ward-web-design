@@ -18,6 +18,8 @@ import {
 import { getProspectDashboard } from "@/lib/prospects/queries";
 import { UsagePanel } from "@/components/admin/prospects/UsagePanel";
 import { ResearchQueueButton } from "@/components/admin/prospects/ResearchActions";
+import { ProspectDecision } from "@/components/admin/prospects/ProspectDecision";
+import { listQualification } from "@/lib/prospects/research.mjs";
 import { GmailConnection } from "@/components/admin/prospects/GmailConnection";
 import { gmailConnectionStatus } from "@/lib/gmail/mailbox.mjs";
 
@@ -175,7 +177,11 @@ export default async function ProspectsPage({
                 {row.manual_priority ? (
                   <p className="mt-2 text-xs font-semibold text-brand-deep">Manual priority</p>
                 ) : null}
+                {listQualification(row.research_notes) ? (
+                  <p className="mt-2 text-xs font-semibold text-ink">{listQualification(row.research_notes)}</p>
+                ) : null}
                 {row.notes ? <p className="mt-2 line-clamp-2 text-sm text-muted">{row.notes}</p> : null}
+                <ProspectDecision id={row.id} />
               </li>
             ))}
           </ul>
@@ -204,6 +210,10 @@ export default async function ProspectsPage({
                         {row.manual_priority ? (
                           <p className="mt-1 text-xs font-semibold text-brand-deep">Priority</p>
                         ) : null}
+                        {listQualification(row.research_notes) ? (
+                          <p className="mt-1 text-xs text-muted">{listQualification(row.research_notes)}</p>
+                        ) : null}
+                        <ProspectDecision id={row.id} />
                       </td>
                       <td className="px-4 py-3">{row.city || row.service_area || "—"}</td>
                       <td className="px-4 py-3">{row.public_email || "Not recorded"}</td>

@@ -27,6 +27,7 @@ export type ProspectListRow = {
   last_activity_at: string;
   notes: string | null;
   manual_priority: boolean;
+  research_notes?: string | null;
 };
 
 export type ProspectRow = ProspectListRow & {
