@@ -50,7 +50,7 @@ export function ProspectEditor({
         </label>
         <label className="mt-3 block text-sm font-semibold">
           Activity note
-          <textarea name="note" rows={3} maxLength={1000} className={field} />
+          <textarea name="note" rows={3} maxLength={500} className={field} />
         </label>
         {statusState.error ? <p className="mt-3 text-sm text-red-800" role="alert">{statusState.error}</p> : null}
         {statusState.message ? <p className="mt-3 text-sm text-emerald-900">{statusState.message}</p> : null}
@@ -112,24 +112,24 @@ export function ProspectEditor({
             </select>
           </label>
           <label className="text-sm font-semibold sm:col-span-2">
-            Research notes and sources
-            <textarea name="researchNotes" rows={3} defaultValue={prospect.research_notes || ""} className={field} />
+            Research summary
+            <textarea name="researchNotes" rows={3} maxLength={1000} defaultValue={prospect.research_notes || ""} className={field} />
           </label>
           <label className="text-sm font-semibold sm:col-span-2">
-            Sources
-            <textarea name="researchSources" rows={2} defaultValue={prospect.research_sources || ""} className={field} />
+            Source URLs
+            <textarea name="researchSources" rows={2} maxLength={800} defaultValue={prospect.research_sources || ""} className={field} />
           </label>
           <label className="text-sm font-semibold sm:col-span-2">
             Website improvement opportunities
-            <textarea name="websiteOpportunities" rows={3} defaultValue={prospect.website_opportunities || ""} className={field} />
+            <textarea name="websiteOpportunities" rows={3} maxLength={1000} defaultValue={prospect.website_opportunities || ""} className={field} />
           </label>
           <label className="text-sm font-semibold sm:col-span-2">
             Google Business Profile observations
-            <textarea name="gbpObservations" rows={3} defaultValue={prospect.gbp_observations || ""} className={field} />
+            <textarea name="gbpObservations" rows={3} maxLength={1000} defaultValue={prospect.gbp_observations || ""} className={field} />
           </label>
           <label className="text-sm font-semibold sm:col-span-2">
             Notes
-            <textarea name="notes" rows={3} defaultValue={prospect.notes || ""} className={field} />
+            <textarea name="notes" rows={3} maxLength={2000} defaultValue={prospect.notes || ""} className={field} />
           </label>
         </div>
         <label className="mt-3 flex min-h-11 items-center gap-3 text-sm font-semibold">

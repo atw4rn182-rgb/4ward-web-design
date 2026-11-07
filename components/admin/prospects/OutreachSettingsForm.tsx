@@ -55,7 +55,11 @@ export function OutreachSettingsForm({
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
           <span className="block font-semibold text-ink">Schedule</span>
-          9:00 AM America/Denver
+          9:00 AM America/Denver, and only if a later phase starts it
+        </p>
+        <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
+          <span className="block font-semibold text-ink">Retry limit</span>
+          {settings?.max_retries ?? 2} attempts, {settings?.request_timeout_seconds ?? 8}s timeout
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
           <span className="block font-semibold text-ink">Last run</span>

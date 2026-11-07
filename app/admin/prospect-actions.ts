@@ -5,10 +5,6 @@ import { getAdminUser } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import {
-  findDuplicate,
-  findSuppression,
-  statusTimestampColumn,
-  suppressesOutreach,
   validateManualProspect,
   validateOutreachSettings,
   validateResearch,
@@ -30,13 +26,22 @@ async function adminWriteClient() {
 
 function schemaMessage(error: { code?: string; message?: string } | null) {
   const text = `${error?.code || ""} ${error?.message || ""}`;
-  if (/PGRST205|42P01|does not exist|schema cache/i.test(text)) {
-    return "The prospect tables are not in the database yet. Review and run migration 011 before saving. Nothing was emailed.";
-  }
-  if (/23505|duplicate/i.test(text)) {
-    return "A prospect with that business, website, or email already exists.";
+  if (/PGRST202|PGRST205|42883|42P01|does not exist|schema cache/i.test(text)) {
+    return "The prospect tables are not ready. Review and run migrations 011 and 012 before saving. Nothing was emailed.";
   }
   return "";
+}
+
+function resultMessage(code: string) {
+  if (code === "suppressed") {
+    return "This business is on the do-not-contact list and was not added.";
+  }
+  if (code === "duplicate") return "That business is already in the prospect list.";
+  if (code === "not_eligible") {
+    return "Mark the business eligible for outreach before setting it to Ready.";
+  }
+  if (code === "missing") return "Prospect not found.";
+  return "Unable to save that change.";
 }
 
 function revalidateProspects(id?: string) {
@@ -60,61 +65,19 @@ export async function addProspectAction(
   const { error, client } = await adminWriteClient();
   if (error || !client) return { error: error || "Unauthorized." };
 
-  const { data: existing, error: existingError } = await client
-    .from("prospects")
-    .select("id, business_name, city, public_email, website_host, website_url");
-  const existingSchema = schemaMessage(existingError);
-  if (existingError && existingSchema) return { error: existingSchema };
-  if (existingError) return { error: "Unable to check existing prospects." };
-
-  const { data: suppressed, error: suppressionError } = await client
-    .from("prospect_suppressions")
-    .select("business_name, city, email, website_host, reason");
-  const suppressionSchema = schemaMessage(suppressionError);
-  if (suppressionError && suppressionSchema) return { error: suppressionSchema };
-  if (suppressionError) return { error: "Unable to check the do-not-contact list." };
-
-  const blocked = findSuppression(suppressed || [], parsed.value);
-  if (blocked) {
-    return { error: "This business is on the do-not-contact list and was not added." };
-  }
-  const duplicate = findDuplicate(existing || [], parsed.value);
-  if (duplicate) {
-    return { error: "That business is already in the prospect list." };
-  }
-
-  const now = new Date().toISOString();
-  const { data: created, error: insertError } = await client
-    .from("prospects")
-    .insert({
-      business_name: parsed.value.businessName,
-      city: parsed.value.city || null,
-      website_url: parsed.value.websiteUrl || null,
-      website_host: parsed.value.websiteHost || null,
-      public_email: parsed.value.email || null,
-      notes: parsed.value.notes || null,
-      status: "queued",
-      source: "manual",
-      manual_priority: true,
-      outreach_eligible: false,
-      last_activity_at: now,
-      queued_at: now,
-    })
-    .select("id")
-    .single();
-
-  const insertSchema = schemaMessage(insertError);
-  if (insertError && insertSchema) return { error: insertSchema };
-  if (insertError || !created) return { error: "Unable to add the business." };
-
-  await client.from("prospect_activity").insert({
-    prospect_id: created.id,
-    event_type: "queued",
-    to_status: "queued",
-    note: "Added manually. Priority is set for the next scheduled batch. No email was sent.",
+  const { data, error: rpcError } = await client.rpc("admin_add_prospect", {
+    p_business_name: parsed.value.businessName,
+    p_city: parsed.value.city,
+    p_website_url: parsed.value.websiteUrl,
+    p_website_host: parsed.value.websiteHost,
+    p_email: parsed.value.email,
+    p_notes: parsed.value.notes,
   });
+  const schema = schemaMessage(rpcError);
+  if (rpcError && schema) return { error: schema };
+  if (rpcError || !data?.ok) return { error: resultMessage(data?.error || "") };
 
-  revalidateProspects(created.id);
+  revalidateProspects(data.id);
   return { ok: true, message: "Business added to the queue. No email was sent." };
 }
 
@@ -125,65 +88,22 @@ export async function updateProspectStatusAction(
   const id = String(formData.get("id") || "");
   const status = String(formData.get("status") || "");
   const eligible = formData.get("outreachEligible") === "on";
-  const note = String(formData.get("note") || "").trim();
+  const note = String(formData.get("note") || "").trim().slice(0, 500);
   const check = validateStatusChange(status, eligible);
   if (!id || !check.ok) return { error: check.error || "Choose a prospect." };
 
   const { error, client } = await adminWriteClient();
   if (error || !client) return { error: error || "Unauthorized." };
 
-  const { data: current, error: readError } = await client
-    .from("prospects")
-    .select("id, status, business_name, city, public_email, website_host")
-    .eq("id", id)
-    .maybeSingle();
-  const readSchema = schemaMessage(readError);
-  if (readError && readSchema) return { error: readSchema };
-  if (readError || !current) return { error: "Prospect not found." };
-
-  const now = new Date().toISOString();
-  const patch: Record<string, string | boolean | null> = {
-    status,
-    outreach_eligible: suppressesOutreach(status) ? false : eligible,
-    last_activity_at: now,
-  };
-  const stamp = statusTimestampColumn(status);
-  if (stamp) patch[stamp] = now;
-
-  const { error: updateError } = await client.from("prospects").update(patch).eq("id", id);
-  const updateSchema = schemaMessage(updateError);
-  if (updateError && updateSchema) return { error: updateSchema };
-  if (updateError) return { error: "Unable to update the status." };
-
-  await client.from("prospect_activity").insert({
-    prospect_id: id,
-    event_type: "status",
-    from_status: current.status,
-    to_status: status,
-    note: note || "Status updated. No email was sent.",
+  const { data, error: rpcError } = await client.rpc("admin_update_prospect_status", {
+    p_id: id,
+    p_status: status,
+    p_eligible: eligible,
+    p_note: note,
   });
-
-  if (suppressesOutreach(status)) {
-    const { data: already } = await client
-      .from("prospect_suppressions")
-      .select("business_name, city, email, website_host");
-    const covered = findSuppression(already || [], {
-      businessName: current.business_name,
-      city: current.city,
-      email: current.public_email,
-      websiteHost: current.website_host,
-    });
-    if (!covered) {
-      await client.from("prospect_suppressions").insert({
-        prospect_id: id,
-        business_name: current.business_name,
-        city: current.city,
-        email: current.public_email,
-        website_host: current.website_host,
-        reason: status,
-      });
-    }
-  }
+  const schema = schemaMessage(rpcError);
+  if (rpcError && schema) return { error: schema };
+  if (rpcError || !data?.ok) return { error: resultMessage(data?.error || "") };
 
   revalidateProspects(id);
   return { ok: true, message: "Status saved. No email was sent." };
@@ -215,9 +135,6 @@ export async function updateProspectResearchAction(
   if (!parsed.ok) return { error: parsed.errors[0] };
   if (parsed.value.businessName.length < 2) return { error: "Enter the business name." };
 
-  const { error, client } = await adminWriteClient();
-  if (error || !client) return { error: error || "Unauthorized." };
-
   const researchedAt = parsed.value.researchedAt
     ? new Date(`${parsed.value.researchedAt}T12:00:00`).toISOString()
     : null;
@@ -225,39 +142,31 @@ export async function updateProspectResearchAction(
     return { error: "Research date is not valid." };
   }
 
-  const now = new Date().toISOString();
-  const { error: updateError } = await client
-    .from("prospects")
-    .update({
-      business_name: parsed.value.businessName,
-      city: parsed.value.city || null,
-      service_area: parsed.value.serviceArea || null,
-      industry: parsed.value.industry || null,
-      website_url: parsed.value.websiteUrl || null,
-      website_host: parsed.value.websiteHost || null,
-      public_email: parsed.value.publicEmail || null,
-      secondary_email: parsed.value.secondaryEmail || null,
-      research_notes: parsed.value.researchNotes || null,
-      research_sources: parsed.value.researchSources || null,
-      website_opportunities: parsed.value.websiteOpportunities || null,
-      gbp_observations: parsed.value.gbpObservations || null,
-      researched_at: researchedAt,
-      research_confidence: parsed.value.researchConfidence || null,
-      outreach_eligible: parsed.value.outreachEligible,
-      notes: parsed.value.notes || null,
-      last_activity_at: now,
-    })
-    .eq("id", id);
+  const { error, client } = await adminWriteClient();
+  if (error || !client) return { error: error || "Unauthorized." };
 
-  const updateSchema = schemaMessage(updateError);
-  if (updateError && updateSchema) return { error: updateSchema };
-  if (updateError) return { error: "Unable to save research." };
-
-  await client.from("prospect_activity").insert({
-    prospect_id: id,
-    event_type: "research",
-    note: "Research notes saved. No contact details were generated and no email was sent.",
+  const { data, error: rpcError } = await client.rpc("admin_update_prospect_research", {
+    p_id: id,
+    p_business_name: parsed.value.businessName,
+    p_city: parsed.value.city,
+    p_service_area: parsed.value.serviceArea,
+    p_industry: parsed.value.industry,
+    p_website_url: parsed.value.websiteUrl,
+    p_website_host: parsed.value.websiteHost,
+    p_public_email: parsed.value.publicEmail,
+    p_secondary_email: parsed.value.secondaryEmail,
+    p_research_notes: parsed.value.researchNotes,
+    p_research_sources: parsed.value.researchSources,
+    p_website_opportunities: parsed.value.websiteOpportunities,
+    p_gbp_observations: parsed.value.gbpObservations,
+    p_researched_at: researchedAt,
+    p_research_confidence: parsed.value.researchConfidence || null,
+    p_outreach_eligible: parsed.value.outreachEligible,
+    p_notes: parsed.value.notes,
   });
+  const schema = schemaMessage(rpcError);
+  if (rpcError && schema) return { error: schema };
+  if (rpcError || !data?.ok) return { error: resultMessage(data?.error || "") };
 
   revalidateProspects(id);
   return { ok: true, message: "Research saved." };
@@ -277,23 +186,14 @@ export async function saveOutreachSettingsAction(
   const { error, client } = await adminWriteClient();
   if (error || !client) return { error: error || "Unauthorized." };
 
-  const { error: updateError } = await client
-    .from("outreach_settings")
-    .update({
-      automation_enabled: parsed.value.automation_enabled,
-      weekday_target: parsed.value.weekday_target,
-      timezone: parsed.value.timezone,
-      send_hour: parsed.value.send_hour,
-      send_minute: parsed.value.send_minute,
-      weekdays: parsed.value.weekdays,
-      manual_priority: parsed.value.manual_priority,
-      mailing_address: parsed.value.mailing_address || null,
-    })
-    .eq("id", 1);
-
-  const updateSchema = schemaMessage(updateError);
-  if (updateError && updateSchema) return { error: updateSchema };
-  if (updateError) return { error: "Unable to save outreach settings." };
+  const { data, error: rpcError } = await client.rpc("admin_save_outreach_settings", {
+    p_enabled: parsed.value.automation_enabled,
+    p_manual_priority: parsed.value.manual_priority,
+    p_mailing_address: parsed.value.mailing_address,
+  });
+  const schema = schemaMessage(rpcError);
+  if (rpcError && schema) return { error: schema };
+  if (rpcError || !data?.ok) return { error: resultMessage(data?.error || "") };
 
   revalidateProspects();
   return {
@@ -301,5 +201,23 @@ export async function saveOutreachSettingsAction(
     message: parsed.value.automation_enabled
       ? "Automation is marked on. The scheduler is still off, so no emails will be sent."
       : "Automation is paused. No emails will be sent.",
+  };
+}
+
+export async function cleanupProspectLogsAction(
+  _prev: ProspectActionState
+): Promise<ProspectActionState> {
+  const { error, client } = await adminWriteClient();
+  if (error || !client) return { error: error || "Unauthorized." };
+
+  const { data, error: rpcError } = await client.rpc("cleanup_prospect_operations");
+  const schema = schemaMessage(rpcError);
+  if (rpcError && schema) return { error: schema };
+  if (rpcError || !data?.ok) return { error: "Unable to clean up old logs." };
+
+  revalidateProspects();
+  return {
+    ok: true,
+    message: `Removed ${data.activityDeleted || 0} old log entries. Suppression records were kept.`,
   };
 }

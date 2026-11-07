@@ -5,7 +5,7 @@ import { EmptyState } from "@/components/admin/EmptyState";
 import { ProspectEditor } from "@/components/admin/prospects/ProspectEditor";
 import { formatWhen } from "@/lib/format";
 import { STATUS_LABELS } from "@/lib/prospects/model.mjs";
-import { getProspect, getProspectActivity } from "@/lib/prospects/queries";
+import { getProspectDetail } from "@/lib/prospects/queries";
 
 export const metadata = {
   title: "Prospect | 4Ward Admin",
@@ -30,24 +30,21 @@ export default async function ProspectDetailPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const [prospectResult, activityResult] = await Promise.all([
-    getProspect(id),
-    getProspectActivity(id),
-  ]);
+  const detail = await getProspectDetail(id);
 
-  if (prospectResult.missing) {
+  if (detail.missing) {
     return (
       <>
         <PageHeader title="Prospect" description="Research and status for one business." />
         <EmptyState
           title="Prospect tables are not available"
-          detail="Review supabase/migrations/011_prospective_clients.sql before using this record."
+          detail="Review migrations 011 and 012 before using this record."
         />
       </>
     );
   }
 
-  const prospect = prospectResult.data;
+  const prospect = detail.prospect;
   if (!prospect) notFound();
 
   return (
@@ -65,11 +62,12 @@ export default async function ProspectDetailPage({
 
       <section className="mt-5 rounded-2xl border border-black/10 bg-paper p-4 shadow-soft sm:p-5">
         <h2 className="font-display text-lg font-bold">Activity</h2>
-        {activityResult.data.length === 0 ? (
+        <p className="mt-1 text-sm text-muted">Latest 20 events. Older operational notes can be cleaned up; opt-out history stays.</p>
+        {detail.activity.length === 0 ? (
           <p className="mt-2 text-sm text-muted">No activity recorded yet.</p>
         ) : (
           <ol className="mt-3 space-y-3">
-            {activityResult.data.map((event) => (
+            {detail.activity.map((event) => (
               <li key={event.id} className="border-b border-black/5 pb-3 text-sm last:border-0">
                 <p className="font-semibold text-ink">
                   {event.to_status

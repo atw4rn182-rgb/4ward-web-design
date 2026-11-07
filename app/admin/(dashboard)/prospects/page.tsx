@@ -8,14 +8,15 @@ import { OutreachSettingsForm } from "@/components/admin/prospects/OutreachSetti
 import { ProspectFilters } from "@/components/admin/prospects/ProspectFilters";
 import { formatWhen } from "@/lib/format";
 import {
-  countProspects,
-  filterProspects,
+  listWindow,
   nextScheduledRun,
   OUTREACH_SCHEDULER_ACTIVE,
-  sortProspects,
+  sanitizeSearch,
   STATUS_LABELS,
+  sumRecentWrites,
 } from "@/lib/prospects/model.mjs";
-import { getOutreachSettings, getProspects } from "@/lib/prospects/queries";
+import { getProspectDashboard } from "@/lib/prospects/queries";
+import { UsagePanel } from "@/components/admin/prospects/UsagePanel";
 
 export const metadata = {
   title: "Prospective Clients | 4Ward Admin",
@@ -41,21 +42,30 @@ function statusLabel(status: string) {
   return STATUS_LABELS[status as keyof typeof STATUS_LABELS] || status;
 }
 
+function pageHref(q: string, status: string, page: number) {
+  const params = new URLSearchParams();
+  if (q) params.set("q", q);
+  if (status && status !== "all") params.set("status", status);
+  if (page > 1) params.set("page", String(page));
+  const query = params.toString();
+  return query ? `/admin/prospects?${query}` : "/admin/prospects";
+}
+
 export default async function ProspectsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; page?: string }>;
 }) {
   const params = await searchParams;
-  const q = params.q || "";
+  const q = sanitizeSearch(params.q || "");
   const status = params.status || "all";
-  const [prospectsResult, settingsResult] = await Promise.all([
-    getProspects(),
-    getOutreachSettings(),
-  ]);
-  const schemaMissing = prospectsResult.missing || settingsResult.missing;
-  const counts = countProspects(prospectsResult.data);
-  const visible = sortProspects(filterProspects(prospectsResult.data, { q, status }));
+  const window = listWindow(params.page);
+  const dashboard = await getProspectDashboard({ q, status, offset: window.offset });
+  const schemaMissing = dashboard.missing;
+  const counts = dashboard.data.counts;
+  const visible = dashboard.data.rows;
+  const pageCount = Math.max(1, Math.ceil(dashboard.data.total / dashboard.data.limit));
+  const currentPage = Math.min(window.page, pageCount);
   const nextRun = formatDenver(nextScheduledRun());
 
   return (
@@ -69,8 +79,7 @@ export default async function ProspectsPage({
         <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-950">
           <p className="font-semibold">Prospect tables are not in the database yet</p>
           <p className="mt-1 leading-relaxed">
-            Review <code className="rounded bg-white px-1.5 py-0.5">supabase/migrations/011_prospective_clients.sql</code> and
-            run it only after approval. Counts stay at zero until then.
+            Review migrations 011 and 012 and run them only after approval. Counts stay at zero until then.
           </p>
         </div>
       ) : null}
@@ -87,11 +96,20 @@ export default async function ProspectsPage({
 
       <div className="mb-5">
         <OutreachSettingsForm
-          settings={settingsResult.data}
+          settings={dashboard.data.settings}
           nextRun={nextRun}
           schedulerActive={OUTREACH_SCHEDULER_ACTIVE}
         />
       </div>
+
+      <UsagePanel
+        requests={dashboard.requests}
+        totalProspects={counts.total}
+        recentWrites={sumRecentWrites(dashboard.data.usage)}
+        usage={dashboard.data.usage}
+        lastRun={dashboard.data.settings?.last_run_at ? formatDenver(dashboard.data.settings.last_run_at) : "No runs yet"}
+        lastCleanup={dashboard.data.settings?.last_cleanup_at ? formatDenver(dashboard.data.settings.last_cleanup_at) : "Not run"}
+      />
 
       <AddBusinessForm />
       <ProspectFilters q={q} status={status} />
@@ -169,7 +187,7 @@ export default async function ProspectsPage({
                         ) : null}
                       </td>
                       <td className="px-4 py-3">{row.city || row.service_area || "—"}</td>
-                      <td className="px-4 py-3">{row.public_email || row.secondary_email || "Not recorded"}</td>
+                      <td className="px-4 py-3">{row.public_email || "Not recorded"}</td>
                       <td className="px-4 py-3">{row.website_host || "—"}</td>
                       <td className="px-4 py-3">
                         <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
@@ -186,6 +204,38 @@ export default async function ProspectsPage({
           </div>
         </>
       )}
+
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+        <p className="text-muted">
+          {dashboard.data.total === 0
+            ? "No rows in this view"
+            : `Showing ${dashboard.data.offset + 1}–${Math.min(dashboard.data.offset + visible.length, dashboard.data.total)} of ${dashboard.data.total}`}
+        </p>
+        <div className="flex gap-2">
+          <Link
+            href={pageHref(q, status, currentPage)}
+            className="inline-flex min-h-11 items-center rounded-full border border-black/10 bg-white px-4 font-semibold"
+          >
+            Refresh
+          </Link>
+          {currentPage > 1 ? (
+            <Link
+              href={pageHref(q, status, currentPage - 1)}
+              className="inline-flex min-h-11 items-center rounded-full border border-black/10 bg-white px-4 font-semibold"
+            >
+              Previous
+            </Link>
+          ) : null}
+          {currentPage < pageCount ? (
+            <Link
+              href={pageHref(q, status, currentPage + 1)}
+              className="inline-flex min-h-11 items-center rounded-full border border-black/10 bg-white px-4 font-semibold"
+            >
+              Next
+            </Link>
+          ) : null}
+        </div>
+      </div>
     </>
   );
 }

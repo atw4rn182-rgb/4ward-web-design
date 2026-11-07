@@ -2,16 +2,27 @@ import { readFileSync } from "node:fs";
 import { strict as assert } from "node:assert";
 import {
   OUTREACH_SCHEDULER_ACTIVE,
+  PAGE_SIZE,
+  PHASE_RULES,
+  QUERY_BUDGET_PER_VIEW,
   WEEKDAY_TARGET,
   countProspects,
   filterProspects,
   findDuplicate,
   findSuppression,
+  listWindow,
   nextScheduledRun,
   parseWebsite,
+  retentionPlan,
+  retryBudget,
+  sanitizeSearch,
+  shouldPollProspects,
+  shouldSubscribeToProspects,
   sortProspects,
+  sumRecentWrites,
   validateManualProspect,
   validateOutreachSettings,
+  validateResearch,
   validateStatusChange,
 } from "../lib/prospects/model.mjs";
 import { outreachMailer } from "../lib/prospects/mailer.mjs";
@@ -140,12 +151,56 @@ await check("mailer has no provider and refuses to send", async () => {
   await assert.rejects(() => mailer.submit(), /disabled/);
 });
 
+await check("pages stay within one query and do not poll", () => {
+  assert.equal(shouldPollProspects(), false);
+  assert.equal(shouldSubscribeToProspects(), false);
+  assert.equal(QUERY_BUDGET_PER_VIEW, 1);
+  assert.equal(PAGE_SIZE, 25);
+  assert.deepEqual(listWindow(1), { page: 1, limit: 25, offset: 0 });
+  assert.equal(listWindow("3").offset, 50);
+  assert.equal(sanitizeSearch("  cafe_% "), "cafe");
+  const research = validateResearch({
+    businessName: "Acme",
+    researchNotes: "x".repeat(1001),
+    researchSources: "https://example.com",
+  });
+  assert.equal(research.ok, false);
+  const compact = validateResearch({
+    businessName: "Acme",
+    researchNotes: "Short summary",
+    researchSources: "https://example.com/menu",
+  });
+  assert.equal(compact.ok, true);
+  assert.equal(compact.value.researchNotes, "Short summary");
+  const plan = retentionPlan();
+  assert.ok(plan.preserve.includes("prospect_suppressions"));
+  assert.ok(plan.preserve.includes("customers"));
+  assert.equal(plan.storageObjects, 0);
+  assert.equal(retryBudget(0).allowed, true);
+  assert.equal(retryBudget(2).allowed, false);
+  assert.equal(retryBudget(2).timeoutMs, 8000);
+  assert.equal(sumRecentWrites([{ writes: 2 }, { writes: 3 }]), 5);
+  assert.match(PHASE_RULES.x7, /summary/i);
+  assert.match(PHASE_RULES.x8, /not the email body/i);
+  assert.match(PHASE_RULES.x9, /suppression/i);
+});
+
 await check("prospect admin code does not send mail or store a password", () => {
   const action = readFileSync(new URL("../app/admin/prospect-actions.ts", import.meta.url), "utf8");
+  const queries = readFileSync(new URL("../lib/prospects/queries.ts", import.meta.url), "utf8");
+  const page = readFileSync(new URL("../app/admin/(dashboard)/prospects/page.tsx", import.meta.url), "utf8");
   const migration = readFileSync(new URL("../supabase/migrations/011_prospective_clients.sql", import.meta.url), "utf8");
+  const limits = readFileSync(new URL("../supabase/migrations/012_prospect_free_plan.sql", import.meta.url), "utf8");
   const shell = readFileSync(new URL("../components/admin/AdminShell.tsx", import.meta.url), "utf8");
   assert.match(action, /getAdminUser/);
-  assert.doesNotMatch(action, /static-forms|outreachMailer|SUPABASE_SERVICE_ROLE_KEY|password/);
+  assert.match(action, /admin_add_prospect/);
+  assert.doesNotMatch(action, /static-forms|outreachMailer|claim_outreach_run|setInterval|SUPABASE_SERVICE_ROLE_KEY|\bpassword\b/);
+  assert.doesNotMatch(queries, /select\("\*"\)|channel\(|setInterval/);
+  assert.match(queries, /prospect_dashboard/);
+  assert.doesNotMatch(page, /setInterval|channel\(/);
+  assert.match(limits, /scheduler_live = false/);
+  assert.match(limits, /cleanup_prospect_operations/);
+  assert.doesNotMatch(limits, /alter table public\.customers|create publication|supabase_realtime|storage\.buckets/i);
   assert.match(shell, /Prospective Clients/);
   assert.match(migration, /is_admin\(\)/);
   assert.match(migration, /unsubscribe_token/);

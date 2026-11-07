@@ -1,15 +1,24 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { QUERY_BUDGET_PER_VIEW } from "@/lib/prospects/model.mjs";
 
-export type ProspectRow = {
+export type ProspectListRow = {
   id: string;
   business_name: string;
   city: string | null;
   service_area: string | null;
+  public_email: string | null;
+  website_host: string | null;
+  status: string;
+  last_activity_at: string;
+  notes: string | null;
+  manual_priority: boolean;
+};
+
+export type ProspectRow = ProspectListRow & {
   industry: string | null;
   website_url: string | null;
-  website_host: string | null;
-  public_email: string | null;
   secondary_email: string | null;
   research_notes: string | null;
   research_sources: string | null;
@@ -18,27 +27,12 @@ export type ProspectRow = {
   researched_at: string | null;
   research_confidence: string | null;
   outreach_eligible: boolean;
-  status: string;
   source: string;
-  manual_priority: boolean;
-  notes: string | null;
-  last_activity_at: string;
-  queued_at: string | null;
-  ready_at: string | null;
-  sent_at: string | null;
-  interested_at: string | null;
-  opted_out_at: string | null;
-  bounced_at: string | null;
-  failed_at: string | null;
-  do_not_contact_at: string | null;
   unsubscribe_token: string;
-  created_at: string;
-  updated_at: string;
 };
 
 export type ProspectActivityRow = {
   id: string;
-  prospect_id: string;
   event_type: string;
   from_status: string | null;
   to_status: string | null;
@@ -46,19 +40,7 @@ export type ProspectActivityRow = {
   created_at: string;
 };
 
-export type SuppressionRow = {
-  id: string;
-  prospect_id: string | null;
-  business_name: string | null;
-  city: string | null;
-  email: string | null;
-  website_host: string | null;
-  reason: string;
-  created_at: string;
-};
-
 export type OutreachSettingsRow = {
-  id: number;
   automation_enabled: boolean;
   weekday_target: number;
   timezone: string;
@@ -69,14 +51,50 @@ export type OutreachSettingsRow = {
   mailing_address: string | null;
   last_run_at: string | null;
   last_run_summary: Record<string, unknown> | null;
-  updated_at: string;
+  last_cleanup_at: string | null;
+  consecutive_failures: number;
+  max_retries: number;
+  request_timeout_seconds: number;
+  scheduler_live: boolean;
+  run_lock_until: string | null;
+};
+
+export type UsageDay = {
+  day: string;
+  writes: number;
+  prospects_added: number;
+  status_changes: number;
+  research_saves: number;
+  settings_saves: number;
+  cleanups: number;
+};
+
+export type ProspectCounts = {
+  total: number;
+  awaitingResearch: number;
+  ready: number;
+  emailsSent: number;
+  interested: number;
+  optedOut: number;
+  failed: number;
+};
+
+export type ProspectDashboard = {
+  rows: ProspectListRow[];
+  total: number;
+  counts: ProspectCounts;
+  settings: OutreachSettingsRow | null;
+  usage: UsageDay[];
+  limit: number;
+  offset: number;
+  requests: number;
 };
 
 type QueryError = { code?: string; message?: string } | null;
 
 function missing(error: QueryError) {
   if (!error) return false;
-  return /PGRST205|42P01|does not exist|schema cache/i.test(
+  return /PGRST202|PGRST205|42883|42P01|does not exist|schema cache/i.test(
     `${error.code || ""} ${error.message || ""}`
   );
 }
@@ -85,45 +103,79 @@ async function adminDb() {
   return createServiceClient() || (await createClient());
 }
 
-export async function getProspects() {
-  const supabase = await adminDb();
-  const { data, error } = await supabase
-    .from("prospects")
-    .select("*")
-    .order("created_at", { ascending: false });
-  if (error) return { data: [] as ProspectRow[], missing: missing(error) };
-  return { data: (data || []) as ProspectRow[], missing: false };
-}
+const emptyCounts: ProspectCounts = {
+  total: 0,
+  awaitingResearch: 0,
+  ready: 0,
+  emailsSent: 0,
+  interested: 0,
+  optedOut: 0,
+  failed: 0,
+};
 
-export async function getProspect(id: string) {
+export const getProspectDashboard = cache(async function getProspectDashboard(input: {
+  q: string;
+  status: string;
+  offset: number;
+}): Promise<{ data: ProspectDashboard; missing: boolean; requests: number }> {
   const supabase = await adminDb();
-  const { data, error } = await supabase
-    .from("prospects")
-    .select("*")
-    .eq("id", id)
-    .maybeSingle();
-  if (error) return { data: null as ProspectRow | null, missing: missing(error) };
-  return { data: (data as ProspectRow | null) || null, missing: false };
-}
+  const { data, error } = await supabase.rpc("prospect_dashboard", {
+    p_q: input.q,
+    p_status: input.status,
+    p_limit: 25,
+    p_offset: input.offset,
+  });
 
-export async function getProspectActivity(prospectId: string) {
-  const supabase = await adminDb();
-  const { data, error } = await supabase
-    .from("prospect_activity")
-    .select("*")
-    .eq("prospect_id", prospectId)
-    .order("created_at", { ascending: false });
-  if (error) return { data: [] as ProspectActivityRow[], missing: missing(error) };
-  return { data: (data || []) as ProspectActivityRow[], missing: false };
-}
+  if (error || !data) {
+    return {
+      data: {
+        rows: [],
+        total: 0,
+        counts: emptyCounts,
+        settings: null,
+        usage: [],
+        limit: 25,
+        offset: input.offset,
+        requests: QUERY_BUDGET_PER_VIEW,
+      },
+      missing: missing(error),
+      requests: QUERY_BUDGET_PER_VIEW,
+    };
+  }
 
-export async function getOutreachSettings() {
+  const payload = data as ProspectDashboard;
+  return {
+    data: {
+      rows: payload.rows || [],
+      total: Number(payload.total || 0),
+      counts: { ...emptyCounts, ...(payload.counts || {}) },
+      settings: payload.settings || null,
+      usage: payload.usage || [],
+      limit: Number(payload.limit || 25),
+      offset: Number(payload.offset || 0),
+      requests: QUERY_BUDGET_PER_VIEW,
+    },
+    missing: false,
+    requests: QUERY_BUDGET_PER_VIEW,
+  };
+});
+
+export const getProspectDetail = cache(async function getProspectDetail(id: string) {
   const supabase = await adminDb();
-  const { data, error } = await supabase
-    .from("outreach_settings")
-    .select("*")
-    .eq("id", 1)
-    .maybeSingle();
-  if (error) return { data: null as OutreachSettingsRow | null, missing: missing(error) };
-  return { data: (data as OutreachSettingsRow | null) || null, missing: false };
-}
+  const { data, error } = await supabase.rpc("prospect_detail", { p_id: id });
+  if (error) {
+    return {
+      prospect: null as ProspectRow | null,
+      activity: [] as ProspectActivityRow[],
+      missing: missing(error),
+      requests: QUERY_BUDGET_PER_VIEW,
+    };
+  }
+  const payload = (data || {}) as { prospect?: ProspectRow | null; activity?: ProspectActivityRow[] };
+  return {
+    prospect: payload.prospect || null,
+    activity: payload.activity || [],
+    missing: false,
+    requests: QUERY_BUDGET_PER_VIEW,
+  };
+});
