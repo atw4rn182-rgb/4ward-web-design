@@ -20,9 +20,15 @@
   const requestedTier = allowedTiers[params.get("tier") || ""] || "";
   if (requestedTier && tierSelect) tierSelect.value = requestedTier;
 
+  const offer = ["local", "service", "both"].includes(params.get("offer") || "") ? params.get("offer") : "";
+
   function checkoutHref() {
     const tier = tierSelect ? tierSelect.value : "";
-    return tier ? "onboarding.html?tier=" + encodeURIComponent(tier) : "onboarding.html";
+    const query = new URLSearchParams();
+    if (tier) query.set("tier", tier);
+    if (offer) query.set("offer", offer);
+    const text = query.toString();
+    return text ? "onboarding.html?" + text : "onboarding.html";
   }
 
   function syncCheckoutLinks() {

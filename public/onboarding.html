@@ -20,7 +20,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=x45a" />
+  <link rel="stylesheet" href="styles.css?v=x46promo" />
   <link rel="icon" href="assets/favicon.png?v=5" type="image/png" sizes="64x64" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=5" />
@@ -161,6 +161,32 @@
               <option value="buyout-tier3">Tier 4 Buy-Out — 2 years of Tier 3 ($9,576)</option>
             </select>
           </div>
+
+          <fieldset class="onboard-addons" id="offer-fields">
+            <legend>First-month offer</legend>
+            <p class="onboard-hint">Choose the offer that matches what you can confirm. Checkout checks the address, attestation, and branch or service. It ignores any price or coupon sent by the browser. The $200 launch fee stays $200. The regular monthly price returns on the next bill.</p>
+            <div class="form-row">
+              <label for="offer-select">Offer</label>
+              <select id="offer-select" name="offer">
+                <option value="">No first-month offer</option>
+                <option value="local">Southeastern New Mexico address — 10% off the first month</option>
+                <option value="service">Military or first responder — 20% off the first month</option>
+                <option value="both">Both offers — 30% off the first month</option>
+              </select>
+            </div>
+            <div class="form-row" id="offer-address-row">
+              <label for="offer-address">Business address in southeastern New Mexico</label>
+              <textarea id="offer-address" name="businessAddress" rows="3" maxlength="300"></textarea>
+            </div>
+            <label class="onboard-check" id="offer-attest-row">
+              <input id="offer-attest" name="addressAttested" type="checkbox" value="yes" />
+              <span>This business address is in southeastern New Mexico.</span>
+            </label>
+            <div class="form-row" id="offer-service-row">
+              <label for="offer-service">Branch or service</label>
+              <input id="offer-service" name="serviceBranch" type="text" maxlength="120" />
+            </div>
+          </fieldset>
 
           <fieldset class="onboard-addons" id="recurring-addons">
             <legend>Optional recurring website add-ons</legend>
@@ -328,6 +354,6 @@
 
   <script src="https://js.stripe.com/v3/"></script>
   <script src="pricing-addons.js"></script>
-  <script src="onboarding.js?v=4"></script>
+  <script src="onboarding.js?v=5"></script>
 </body>
 </html>

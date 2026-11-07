@@ -234,7 +234,18 @@ async function fakeSupabase(url, init) {
 // ---------------------------------------------------------------------------
 // Fake Stripe + Static Forms
 // ---------------------------------------------------------------------------
-const stripe = { calls: [], sessions: new Map(), failCheckout: false, counter: 0 };
+const stripe = { calls: [], sessions: new Map(), failCheckout: false, counter: 0, subscriptionsByEmail: {} };
+const TEST_PRICES = {
+  price_test_tier1: { unit_amount: 9900, product: "prod_tier1" },
+  price_test_tier2: { unit_amount: 22500, product: "prod_tier2" },
+  price_test_tier3: { unit_amount: 39900, product: "prod_tier3" },
+};
+const TEST_COUPONS = {
+  coupon_test_10: { id: "coupon_test_10", percent_off: 10, duration: "once", applies_to: { products: ["prod_tier1", "prod_tier2", "prod_tier3"] } },
+  coupon_test_20: { id: "coupon_test_20", percent_off: 20, duration: "once", applies_to: { products: ["prod_tier1", "prod_tier2", "prod_tier3"] } },
+  coupon_test_30: { id: "coupon_test_30", percent_off: 30, duration: "once", applies_to: { products: ["prod_tier1", "prod_tier2", "prod_tier3"] } },
+  coupon_test_broad: { id: "coupon_test_broad", percent_off: 10, duration: "once", applies_to: { products: ["prod_tier2", "prod_launch"] } },
+};
 const emails = [];
 
 function parseStripeForm(body) {
@@ -252,10 +263,27 @@ function nested(params, prefix) {
   return out;
 }
 
+function lineAmount(params, index) {
+  const priceId = params[`line_items[${index}][price]`];
+  if (priceId && TEST_PRICES[priceId]) return TEST_PRICES[priceId].unit_amount;
+  return Number(params[`line_items[${index}][price_data][unit_amount]`] || 0);
+}
+
+function lineProduct(params, index) {
+  const priceId = params[`line_items[${index}][price]`];
+  return priceId && TEST_PRICES[priceId] ? TEST_PRICES[priceId].product : "";
+}
+
 function lineItemsTotal(params) {
+  const coupon = TEST_COUPONS[params["discounts[0][coupon]"] || ""] || null;
   let total = 0;
   for (let i = 0; params[`line_items[${i}][quantity]`] !== undefined; i += 1) {
-    total += Number(params[`line_items[${i}][price_data][unit_amount]`] || 0) * Number(params[`line_items[${i}][quantity]`]);
+    let amount = lineAmount(params, i);
+    const product = lineProduct(params, i);
+    const kind = params[`line_items[${i}][price_data][product_data][metadata][kind]`] || "";
+    const discounted = coupon && product && coupon.applies_to.products.includes(product) && kind !== "launch_fee" && kind !== "addon";
+    if (discounted) amount -= Math.round((amount * coupon.percent_off) / 100);
+    total += amount * Number(params[`line_items[${i}][quantity]`]);
   }
   return total;
 }
@@ -266,6 +294,28 @@ async function fakeStripe(url, init) {
   stripe.calls.push({ method, path: url.pathname, params });
   const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
+  if (method === "GET" && url.pathname === "/v1/customers") {
+    const email = url.searchParams.get("email");
+    if (stripe.truncateEmail === email) {
+      const page = url.searchParams.get("starting_after") || "start";
+      return json(200, { data: [{ id: `cus_page_${page}`, email }], has_more: true });
+    }
+    const known = stripe.subscriptionsByEmail[email];
+    return json(200, { data: known ? [{ id: known.customerId, email }] : [] });
+  }
+  if (method === "GET" && url.pathname === "/v1/subscriptions") {
+    const customer = url.searchParams.get("customer");
+    const known = Object.values(stripe.subscriptionsByEmail).find((row) => row.customerId === customer);
+    return json(200, { data: known && known.status ? [{ id: known.subscriptionId || "sub_existing", status: known.status }] : [] });
+  }
+  if (method === "GET" && url.pathname.startsWith("/v1/prices/")) {
+    const price = TEST_PRICES[decodeURIComponent(url.pathname.split("/").pop())];
+    return price ? json(200, { id: url.pathname.split("/").pop(), ...price }) : json(404, { error: { message: "missing price" } });
+  }
+  if (method === "GET" && url.pathname.startsWith("/v1/coupons/")) {
+    const coupon = TEST_COUPONS[decodeURIComponent(url.pathname.split("/").pop())];
+    return coupon ? json(200, coupon) : json(404, { error: { message: "missing coupon" } });
+  }
   if (method === "POST" && url.pathname === "/v1/customers") {
     stripe.counter += 1;
     return json(200, { id: `cus_test_${stripe.counter}`, email: params.email, metadata: nested(params, "metadata") });
@@ -330,6 +380,7 @@ const out = (line) => process.stdout.write(line + "\n");
 // Helpers
 // ---------------------------------------------------------------------------
 const checkout = await import("../app/api/create-checkout-session/route.js");
+const offerPreview = await import("../app/api/offer-preview/route.js");
 const webhook = await import("../app/api/stripe-webhook/route.js");
 
 let ipCounter = 0;
@@ -624,6 +675,126 @@ check("checkout.session.expired → payment canceled", expRes.status === 200 && 
 test("SECURITY — webhook signature still enforced");
 const forged = await webhook.POST(new Request("https://offline.test/api/stripe-webhook", { method: "POST", headers: { "stripe-signature": "t=1,v1=deadbeef" }, body: JSON.stringify(t4Event) }));
 check("forged signature rejected with 400", forged.status === 400);
+
+async function previewTotals(body) {
+  const res = await offerPreview.POST(
+    new Request("https://offline.test/api/offer-preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "x-forwarded-for": "10.9.0.8" },
+      body: JSON.stringify(body),
+    })
+  );
+  return { status: res.status, body: await res.json() };
+}
+
+function useOfferEnv() {
+  process.env.STRIPE_PRICE_TIER1 = "price_test_tier1";
+  process.env.STRIPE_PRICE_TIER2 = "price_test_tier2";
+  process.env.STRIPE_PRICE_TIER3 = "price_test_tier3";
+  process.env.STRIPE_COUPON_FIRST_MONTH_10 = "coupon_test_10";
+  process.env.STRIPE_COUPON_FIRST_MONTH_20 = "coupon_test_20";
+  process.env.STRIPE_COUPON_FIRST_MONTH_30 = "coupon_test_30";
+}
+
+function clearOfferEnv() {
+  delete process.env.STRIPE_PRICE_TIER1;
+  delete process.env.STRIPE_PRICE_TIER2;
+  delete process.env.STRIPE_PRICE_TIER3;
+  delete process.env.STRIPE_COUPON_FIRST_MONTH_10;
+  delete process.env.STRIPE_COUPON_FIRST_MONTH_20;
+  delete process.env.STRIPE_COUPON_FIRST_MONTH_30;
+  stripe.subscriptionsByEmail = {};
+}
+
+test("TEST 9 — First-month offers discount only the new subscription plan");
+resetDb();
+supa.mode = "up";
+stripe.failCheckout = false;
+useOfferEnv();
+const qualified = {
+  businessAddress: "100 Main St, Carlsbad, NM 88220",
+  addressAttested: "yes",
+  serviceBranch: "U.S. Air Force",
+};
+const cases = [
+  { name: "10%", offer: "local", tier: "tier1", addOns: [], percent: 10, tierCents: 9900, addonCents: 0 },
+  { name: "20%", offer: "service", tier: "tier2", addOns: ["performance_reports"], percent: 20, tierCents: 22500, addonCents: 2000 },
+  { name: "30%", offer: "both", tier: "tier3", addOns: ["admin_dashboard"], percent: 30, tierCents: 39900, addonCents: 5000 },
+];
+for (const sample of cases) {
+  const fields = {
+    ...qualified,
+    offer: sample.offer,
+    tier: sample.tier,
+    addOns: sample.addOns,
+    serviceBranch: sample.offer === "local" ? "" : qualified.serviceBranch,
+    businessAddress: sample.offer === "service" ? "" : qualified.businessAddress,
+    addressAttested: sample.offer === "service" ? "no" : "yes",
+  };
+  const shown = await previewTotals(fields);
+  const paid = await callCheckout({ ...fields, percent: 90, coupon: "coupon_attacker", amount: 100, price: 1 });
+  const session = stripe.sessions.get(paid.body.sessionId);
+  const discount = Math.round((sample.tierCents * sample.percent) / 100);
+  const due = sample.tierCents - discount + sample.addonCents + 20000;
+  const renewal = sample.tierCents + sample.addonCents;
+  check(`${sample.name} preview matches Stripe checkout`, shown.status === 200 && shown.body.dueTodayCents === due && session && session.amount_total === due, `preview=${shown.body.dueTodayCents} stripe=${session && session.amount_total} expected=${due}`);
+  check(`${sample.name} uses the server coupon and keeps the full plan price`, session && session._params["discounts[0][coupon]"] === `coupon_test_${sample.percent}` && session._params["discounts[0][coupon]"] !== "coupon_attacker" && lineAmount(session._params, 0) === sample.tierCents);
+  check(`${sample.name} launch fee stays $200 and renewal returns to full price`, session && lineAmount(session._params, session._params["line_items[2][quantity]"] !== undefined ? 2 : 1) === 20000 && shown.body.renewalCents === renewal && shown.body.launchFeeCents === 20000);
+  check(`${sample.name} coupon is one invoice and limited to plan products`, TEST_COUPONS[`coupon_test_${sample.percent}`].duration === "once" && TEST_COUPONS[`coupon_test_${sample.percent}`].applies_to.products.includes(`prod_${sample.tier}`));
+}
+const missing = await callCheckout({ offer: "both", businessAddress: "", addressAttested: "no", serviceBranch: " ", percent: 30, coupon: "coupon_test_30" });
+const missingSession = stripe.sessions.get(missing.body.sessionId);
+check("missing eligibility details leave the full price and no coupon", missing.status === 200 && missingSession && missingSession.amount_total === 22500 + 2000 + 20000 && !missingSession._params["discounts[0][coupon]"], `amount=${missingSession && missingSession.amount_total}`);
+const partial = await callCheckout({ offer: "both", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes", serviceBranch: "", percent: 30 });
+const partialSession = stripe.sessions.get(partial.body.sessionId);
+check("an incomplete combined offer applies only the eligible 10%", partial.status === 200 && partialSession && partialSession._params["discounts[0][coupon]"] === "coupon_test_10" && partialSession.amount_total === 22500 - 2250 + 2000 + 20000);
+const sessionsBeforeReject = stripe.calls.filter((call) => call.path === "/v1/checkout/sessions").length;
+db.customers.push({ id: "cus_active_existing", company_name: "Existing Co", email: "existing-sub@example.com", status: "active", created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+const rejected = await callCheckout({ email: "existing-sub@example.com", offer: "local", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes", serviceBranch: "" });
+const sessionsAfterReject = stripe.calls.filter((call) => call.path === "/v1/checkout/sessions").length;
+check("an existing subscriber is rejected before checkout", rejected.status === 400 && /current or former subscription/i.test(rejected.body.error || "") && sessionsAfterReject === sessionsBeforeReject);
+db.customers.push({ id: "cus_churned_existing", company_name: "Former Co", email: "churned-sub@example.com", status: "churned", created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+const churned = await callCheckout({ email: "churned-sub@example.com", offer: "local", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes", serviceBranch: "" });
+check("a former local subscriber is rejected before checkout", churned.status === 400 && /current or former subscription/i.test(churned.body.error || "") && stripe.calls.filter((call) => call.path === "/v1/checkout/sessions").length === sessionsAfterReject);
+stripe.subscriptionsByEmail["stripe-sub@example.com"] = { customerId: "cus_stripe_existing", status: "active" };
+const stripeRejected = await callCheckout({ email: "stripe-sub@example.com", offer: "service", businessAddress: "", addressAttested: "no", serviceBranch: "Carlsbad Fire Department" });
+check("Stripe subscription history rejects the offer", stripeRejected.status === 400 && /current or former subscription/i.test(stripeRejected.body.error || ""));
+stripe.subscriptionsByEmail["canceled-sub@example.com"] = { customerId: "cus_stripe_canceled", status: "canceled" };
+const sessionsBeforeCanceled = stripe.calls.filter((call) => call.path === "/v1/checkout/sessions").length;
+const canceledRejected = await callCheckout({ email: "canceled-sub@example.com", tier: "tier1", addOns: [], offer: "local", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes" });
+check("a canceled Stripe subscription cannot claim the new-subscription offer", canceledRejected.status === 400 && /current or former subscription/i.test(canceledRejected.body.error || "") && stripe.calls.filter((call) => call.path === "/v1/checkout/sessions").length === sessionsBeforeCanceled);
+stripe.subscriptionsByEmail["expired-sub@example.com"] = { customerId: "cus_stripe_expired", status: "incomplete_expired" };
+const expiredRejected = await callCheckout({ email: "expired-sub@example.com", tier: "tier1", addOns: [], offer: "service", businessAddress: "", addressAttested: "no", serviceBranch: "Carlsbad Fire Department" });
+check("an expired incomplete subscription cannot claim the offer", expiredRejected.status === 400 && /current or former subscription/i.test(expiredRejected.body.error || ""));
+db.customers.push({ id: "cus_abandoned", company_name: "Abandoned Co", email: "abandoned@example.com", status: "payment_pending", created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+db.payments.push({ id: "pay_abandoned", customer_id: "cus_abandoned", status: "canceled", payment_type: "subscription", amount_cents: 42500, created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
+stripe.subscriptionsByEmail["abandoned@example.com"] = { customerId: "cus_stripe_abandoned", status: "" };
+const abandoned = await callCheckout({ email: "abandoned@example.com", tier: "tier1", addOns: [], offer: "local", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes" });
+const abandonedSession = stripe.sessions.get(abandoned.body.sessionId);
+check("an abandoned checkout with no subscription can use the offer", abandoned.status === 200 && abandonedSession && abandonedSession.amount_total === 9900 - 990 + 20000 && abandonedSession._params["discounts[0][coupon]"] === "coupon_test_10");
+const stripeWrites = () => stripe.calls.filter((call) => call.method === "POST" && (call.path === "/v1/customers" || call.path === "/v1/checkout/sessions")).length;
+const writesBeforeTruncated = stripeWrites();
+stripe.truncateEmail = "truncated-history@example.com";
+const truncated = await callCheckout({ email: "truncated-history@example.com", tier: "tier1", addOns: [], offer: "local", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes", serviceBranch: "" });
+stripe.truncateEmail = "";
+check("unreadable subscription history stops checkout without charging", truncated.status === 503 && /could not be confirmed/i.test(truncated.body.error || "") && stripeWrites() === writesBeforeTruncated);
+const writesBeforeMissingCoupon = stripeWrites();
+delete process.env.STRIPE_COUPON_FIRST_MONTH_20;
+const missingCoupon = await callCheckout({ tier: "tier2", addOns: ["performance_reports"], offer: "service", businessAddress: "", addressAttested: "no", serviceBranch: "Carlsbad Fire Department" });
+check("a missing coupon stops checkout without charging", missingCoupon.status === 503 && /not configured/i.test(missingCoupon.body.error || "") && stripeWrites() === writesBeforeMissingCoupon);
+process.env.STRIPE_COUPON_FIRST_MONTH_20 = "coupon_test_20";
+const writesBeforeMissingPrice = stripeWrites();
+delete process.env.STRIPE_PRICE_TIER1;
+const missingPrice = await callCheckout({ tier: "tier1", addOns: [], offer: "local", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes", serviceBranch: "" });
+check("a missing plan price stops the discounted checkout without charging", missingPrice.status === 503 && /not configured/i.test(missingPrice.body.error || "") && stripeWrites() === writesBeforeMissingPrice);
+process.env.STRIPE_PRICE_TIER1 = "price_test_tier1";
+process.env.STRIPE_COUPON_FIRST_MONTH_10 = "coupon_test_broad";
+const unsafe = await callCheckout({ tier: "tier2", addOns: [], offer: "local", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes" });
+check("a coupon that can reach another product does not start checkout", unsafe.status === 503 && /not be applied safely|could not be confirmed/i.test(unsafe.body.error || ""));
+clearOfferEnv();
+const buyout = await callCheckout({ tier: "buyout-tier2", addOns: [], offer: "both", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes", serviceBranch: "U.S. Air Force", percent: 30 });
+const buyoutSession = stripe.sessions.get(buyout.body.sessionId);
+check("buy-out keeps the full prepaid price and the $200 launch fee", buyout.status === 200 && buyoutSession && buyoutSession.amount_total === 22500 * 24 + 20000 && !buyoutSession._params["discounts[0][coupon]"]);
 
 // ---------------------------------------------------------------------------
 const all = results.flatMap((r) => r.checks);

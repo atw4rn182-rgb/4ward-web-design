@@ -260,11 +260,41 @@
     return pricingAddons.addOnSummaryLines(ids);
   }
 
+  const offerSelect = document.getElementById("offer-select");
+  const offerAddress = document.getElementById("offer-address");
+  const offerAttest = document.getElementById("offer-attest");
+  const offerService = document.getElementById("offer-service");
+  const offerAddressRow = document.getElementById("offer-address-row");
+  const offerAttestRow = document.getElementById("offer-attest-row");
+  const offerServiceRow = document.getElementById("offer-service-row");
+  let previewRequest = 0;
+
+  function selectedOfferPayload() {
+    return {
+      offer: offerSelect ? offerSelect.value : "",
+      businessAddress: offerAddress ? offerAddress.value : "",
+      addressAttested: offerAttest && offerAttest.checked ? "yes" : "no",
+      serviceBranch: offerService ? offerService.value : "",
+    };
+  }
+
+  function syncOfferFields() {
+    const offer = offerSelect ? offerSelect.value : "";
+    const local = offer === "local" || offer === "both";
+    const service = offer === "service" || offer === "both";
+    if (offerAddressRow) offerAddressRow.hidden = !local;
+    if (offerAttestRow) offerAttestRow.hidden = !local;
+    if (offerServiceRow) offerServiceRow.hidden = !service;
+  }
+
   function renderTier() {
     const tierKey = tierSelect.value;
     const tier = TIERS[tierKey] || TIERS.tier2;
     const isMonthly = tier.mode === "subscription";
     if (addonsField) addonsField.hidden = !isMonthly;
+    const offerFields = document.getElementById("offer-fields");
+    if (offerFields) offerFields.hidden = !isMonthly;
+    syncOfferFields();
 
     const addOnIds = selectedAddOnIds(tier);
     const addonCents = addOnMonthlyCents(tierKey, addOnIds);
@@ -306,41 +336,70 @@
       .map((line) => "<div><dt>Add-on</dt><dd>" + line + "</dd></div>")
       .join("");
 
-    paymentSummary.innerHTML =
-      "<h3>Order summary</h3><dl>" +
-      "<div><dt>Plan</dt><dd>" +
-      tier.label +
-      "</dd></div>" +
-      "<div><dt>Launch Fee</dt><dd>$200 one-time</dd></div>" +
-      "<div><dt>First month</dt><dd>" +
-      (isMonthly ? money(monthlyTotal) : "Included in buy-out") +
-      "</dd></div>" +
-      addonDl +
-      "<div><dt>Due today</dt><dd>" +
-      dueLabel +
-      "</dd></div>" +
-      "<div><dt>Then</dt><dd>" +
-      thenLabel +
-      "</dd></div>" +
-      "<div><dt>Name</dt><dd>" +
-      (form.name.value || "—") +
-      "</dd></div>" +
-      "<div><dt>Email</dt><dd>" +
-      (form.email.value || "—") +
-      "</dd></div>" +
-      "<div><dt>Phone</dt><dd>" +
-      (formatUsPhone(form.phone && form.phone.value) || form.phone.value || "—") +
-      "</dd></div>" +
-      "<div><dt>Preferred domain</dt><dd>" +
-      (normalizeDomain(form.domainPreferred && form.domainPreferred.value) || "—") +
-      "</dd></div>" +
-      "<div><dt>Agreement</dt><dd>" +
-      (document.getElementById("signed-agreement")?.checked ? "Signed" : "Not signed") +
-      "</dd></div>" +
-      "<div><dt>Logo</dt><dd>" +
-      (logoMeta.name || (logoInput && logoInput.files && logoInput.files[0] && logoInput.files[0].name) || "Not uploaded") +
-      "</dd></div>" +
-      "</dl>";
+    function writeSummary(firstMonth, dueText, thenText) {
+      paymentSummary.innerHTML =
+        "<h3>Order summary</h3><dl>" +
+        "<div><dt>Plan</dt><dd>" +
+        tier.label +
+        "</dd></div>" +
+        "<div><dt>Launch Fee</dt><dd>$200 one-time</dd></div>" +
+        "<div><dt>First month</dt><dd>" +
+        firstMonth +
+        "</dd></div>" +
+        addonDl +
+        "<div><dt>Due today</dt><dd>" +
+        dueText +
+        "</dd></div>" +
+        "<div><dt>Then</dt><dd>" +
+        thenText +
+        "</dd></div>" +
+        "<div><dt>Name</dt><dd>" +
+        (form.name.value || "—") +
+        "</dd></div>" +
+        "<div><dt>Email</dt><dd>" +
+        (form.email.value || "—") +
+        "</dd></div>" +
+        "<div><dt>Phone</dt><dd>" +
+        (formatUsPhone(form.phone && form.phone.value) || form.phone.value || "—") +
+        "</dd></div>" +
+        "<div><dt>Preferred domain</dt><dd>" +
+        (normalizeDomain(form.domainPreferred && form.domainPreferred.value) || "—") +
+        "</dd></div>" +
+        "<div><dt>Agreement</dt><dd>" +
+        (document.getElementById("signed-agreement")?.checked ? "Signed" : "Not signed") +
+        "</dd></div>" +
+        "<div><dt>Logo</dt><dd>" +
+        (logoMeta.name || (logoInput && logoInput.files && logoInput.files[0] && logoInput.files[0].name) || "Not uploaded") +
+        "</dd></div>" +
+        "</dl>";
+    }
+
+    writeSummary(isMonthly ? money(monthlyTotal) : "Included in buy-out", dueLabel, thenLabel);
+    const requestId = ++previewRequest;
+    const offerPayload = selectedOfferPayload();
+    fetch("/api/offer-preview", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tier: tierKey,
+        addOns: addOnIds,
+        offer: offerPayload.offer,
+        businessAddress: offerPayload.businessAddress,
+        addressAttested: offerPayload.addressAttested,
+        serviceBranch: offerPayload.serviceBranch,
+      }),
+    })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data) => {
+        if (!data || requestId !== previewRequest) return;
+        const firstMonth = isMonthly
+          ? data.percent > 0
+            ? data.firstMonthLabel + " after " + data.percent + "% off the plan"
+            : data.firstMonthLabel
+          : "Included in buy-out";
+        writeSummary(firstMonth, data.dueLabel, data.thenLabel);
+      })
+      .catch(() => {});
   }
 
   function setStep(step) {
@@ -474,6 +533,10 @@
       domainThirdChoice: normalizeDomain(data.get("domainThirdChoice") || ""),
       signedAgreement: document.getElementById("signed-agreement")?.checked ? "yes" : "no",
       addOns: selectedAddOnIds(TIERS[tierSelect.value]),
+      offer: offerSelect ? offerSelect.value : "",
+      businessAddress: offerAddress ? offerAddress.value : "",
+      addressAttested: offerAttest && offerAttest.checked ? "yes" : "no",
+      serviceBranch: offerService ? offerService.value : "",
       _hp_ref: "",
     };
 
@@ -555,6 +618,17 @@
     renderTier();
     saveState();
   });
+  [offerSelect, offerAddress, offerAttest, offerService].forEach((field) => {
+    if (!field) return;
+    field.addEventListener("input", () => {
+      renderTier();
+      saveState();
+    });
+    field.addEventListener("change", () => {
+      renderTier();
+      saveState();
+    });
+  });
 
   form?.phone?.addEventListener("blur", () => {
     const formatted = formatUsPhone(form.phone.value);
@@ -618,6 +692,18 @@
   });
 
   const saved = loadState();
+  const storedOffer = (() => {
+    try {
+      return JSON.parse(sessionStorage.getItem("fwSelectedOffer") || "null");
+    } catch {
+      return null;
+    }
+  })();
+  const offerParam = params.get("offer") || (storedOffer && storedOffer.offer) || "";
+  if (offerSelect && ["local", "service", "both"].includes(offerParam)) offerSelect.value = offerParam;
+  if (offerAddress && storedOffer && storedOffer.address) offerAddress.value = storedOffer.address;
+  if (offerAttest && storedOffer && storedOffer.attested) offerAttest.checked = true;
+  if (offerService && storedOffer && storedOffer.service) offerService.value = storedOffer.service;
   const tierParam = params.get("tier");
   if (tierParam && initialTier[tierParam]) {
     tierSelect.value = initialTier[tierParam];

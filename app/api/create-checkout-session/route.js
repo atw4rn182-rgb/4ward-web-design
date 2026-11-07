@@ -22,6 +22,14 @@ import {
   normalizeAddOnIds,
 } from "@/lib/pricing/add-ons";
 import { checkRateLimit, clientIp } from "@/lib/api/rate-limit";
+import {
+  COUPON_ENV_BY_PERCENT,
+  couponIsSafe,
+  checkoutTotals,
+  resolveFirstMonthOffer,
+  RECORDED_SUBSCRIBER_STATUSES,
+  subscriptionBlocksOffer,
+} from "@/lib/pricing/first-month-offer";
 
 const TIERS = {
   tier1: {
@@ -121,6 +129,19 @@ function encodeForm(params) {
   return body;
 }
 
+async function stripeGet(secret, path) {
+  const response = await fetch(`https://api.stripe.com/v1${path}`, {
+    headers: { Authorization: `Bearer ${secret}` },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(data?.error?.message || "Stripe request failed");
+    error.status = response.status;
+    throw error;
+  }
+  return data;
+}
+
 async function stripeRequest(secret, path, params) {
   const response = await fetch(`https://api.stripe.com/v1${path}`, {
     method: "POST",
@@ -141,6 +162,76 @@ async function stripeRequest(secret, path, params) {
     throw error;
   }
   return data;
+}
+
+function addonCents(addOnIds) {
+  return addOnIds.reduce((sum, id) => sum + (addonById(id)?.cents || 0), 0);
+}
+
+function stripeProductId(product) {
+  if (typeof product === "string") return product;
+  if (product && typeof product.id === "string") return product.id;
+  return "";
+}
+
+async function listStripePages(secret, path) {
+  const rows = [];
+  let startingAfter = "";
+  for (let page = 0; page < 3; page += 1) {
+    const separator = path.includes("?") ? "&" : "?";
+    const cursor = startingAfter ? `&starting_after=${encodeURIComponent(startingAfter)}` : "";
+    const listed = await stripeGet(secret, `${path}${separator}limit=100${cursor}`);
+    const data = Array.isArray(listed.data) ? listed.data : [];
+    rows.push(...data);
+    if (!listed.has_more) return rows;
+    const next = data.length ? data[data.length - 1].id : "";
+    if (!next || next === startingAfter) break;
+    startingAfter = next;
+  }
+  const error = new Error("Stripe history was truncated");
+  throw error;
+}
+
+async function offerBlockedByHistory(email, secret) {
+  const customers = await supabaseSelect(
+    "customers",
+    `email=eq.${encodeURIComponent(email)}&select=id,status&limit=20`,
+    { signal: AbortSignal.timeout(PRE_CHECKOUT_SUPABASE_TIMEOUT_MS) }
+  );
+  if (customers.some((row) => RECORDED_SUBSCRIBER_STATUSES.has(row.status))) return "customer";
+  for (const row of customers) {
+    if (!row.id) continue;
+    const payments = await supabaseSelect(
+      "payments",
+      `customer_id=eq.${row.id}&status=eq.paid&payment_type=eq.subscription&select=id&limit=1`,
+      { signal: AbortSignal.timeout(PRE_CHECKOUT_SUPABASE_TIMEOUT_MS) }
+    );
+    if (payments.length) return "payment";
+  }
+  const listed = await listStripePages(secret, `/customers?email=${encodeURIComponent(email)}`);
+  for (const customer of listed) {
+    if (!customer.id) continue;
+    const subscriptions = await listStripePages(
+      secret,
+      `/subscriptions?customer=${encodeURIComponent(customer.id)}&status=all`
+    );
+    if (subscriptions.some((subscription) => subscription?.id || subscriptionBlocksOffer(subscription?.status))) {
+      return "stripe";
+    }
+  }
+  return "";
+}
+
+async function tierProductIds(secret) {
+  const products = new Map();
+  for (const [tierId, envName] of Object.entries(PRICE_ENV)) {
+    const priceId = String(process.env[envName] || "").trim();
+    if (!priceId) continue;
+    const price = await stripeGet(secret, `/prices/${encodeURIComponent(priceId)}`);
+    const productId = stripeProductId(price && price.product);
+    if (productId) products.set(tierId, { priceId, productId });
+  }
+  return products;
 }
 
 function launchFeeLineItem(index) {
@@ -435,6 +526,57 @@ export async function POST(request) {
     return json(400, { error: "Invalid email address" });
   }
 
+  const offer = resolveFirstMonthOffer({
+    offer: body.offer,
+    businessAddress: body.businessAddress,
+    addressAttested: body.addressAttested,
+    serviceBranch: body.serviceBranch,
+    mode: tier.mode,
+  });
+  const totals = checkoutTotals({
+    tierCents: tier.amount,
+    addonCents: addonCents(addOnIds),
+    percent: offer.percent,
+    mode: tier.mode,
+  });
+  let offerCouponId = "";
+  if (offer.percent > 0) {
+    try {
+      const blocked = await offerBlockedByHistory(email, secret);
+      if (blocked) {
+        return json(400, {
+          error: "This first-month offer is only for a new subscription. A current or former subscription is already on file for this email.",
+        });
+      }
+      const products = await tierProductIds(secret);
+      const tierPrice = products.get(tier.id);
+      const couponId = String(process.env[COUPON_ENV_BY_PERCENT[offer.percent]] || "").trim();
+      if (!tierPrice || !couponId) {
+        return json(503, {
+          error: "The first-month offer is not configured yet. Checkout was not started.",
+        });
+      }
+      const coupon = await stripeGet(secret, `/coupons/${encodeURIComponent(couponId)}?expand[]=applies_to`);
+      if (
+        Number(coupon.percent_off) !== offer.percent ||
+        !couponIsSafe({
+          coupon,
+          tierProductId: tierPrice.productId,
+          allowedProductIds: [...products.values()].map((item) => item.productId),
+        })
+      ) {
+        return json(503, {
+          error: "The first-month offer cannot be applied safely. Checkout was not started.",
+        });
+      }
+      offerCouponId = couponId;
+    } catch {
+      return json(503, {
+        error: "The first-month offer could not be confirmed. Checkout was not started.",
+      });
+    }
+  }
+
   const origin = siteOrigin(request);
   const onboardingRef = crypto.randomUUID();
   const agreementSignedAt = new Date().toISOString();
@@ -464,6 +606,11 @@ export async function POST(request) {
     domain_preferred: domainPreferred,
     domain_second_choice: domainSecondChoice || "",
     domain_third_choice: domainThirdChoice || "",
+    offer: offer.offer,
+    offer_address: offer.address,
+    offer_attested: offer.attested ? "yes" : "no",
+    offer_service: offer.service,
+    first_month_percent: String(totals.discountPercent),
   };
 
   const saved = await saveOnboardingRecord(
@@ -531,10 +678,12 @@ export async function POST(request) {
       success_url: `${origin}/onboarding.html?success=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/onboarding.html?canceled=1&tier=${encodeURIComponent(tierKey)}`,
       billing_address_collection: "required",
-      allow_promotion_codes: "true",
+      ...(offerCouponId ? { "discounts[0][coupon]": offerCouponId } : { allow_promotion_codes: "true" }),
       "custom_text[submit][message]":
         tier.mode === "subscription"
-          ? "Today you pay the $200 Launch Fee plus the first month of your plan."
+          ? totals.discountPercent > 0
+            ? `Today you pay the $200 Launch Fee plus the first month after ${totals.discountPercent}% off the plan. The regular monthly price starts on the next bill. The launch fee is not discounted.`
+            : "Today you pay the $200 Launch Fee plus the first month of your plan."
           : "Today you pay the $200 Launch Fee plus two years of your chosen tier.",
       ...buildLineItemParams(tier, addOnIds),
       ...metadataParams("metadata", metadata),

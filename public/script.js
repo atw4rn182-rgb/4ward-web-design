@@ -658,9 +658,47 @@
           })
         );
         status.textContent = ready
-          ? "The offer details are saved in this browser for when you choose a plan."
+          ? "Checking the first-month total…"
           : "Add the required details to show how this offer applies.";
+        refreshPlanTotals(ready);
       };
+      let priceRequest = 0;
+      document.querySelectorAll(".plan-due").forEach((due) => {
+        if (!due.dataset.standardDue) due.dataset.standardDue = due.textContent.trim();
+      });
+      async function refreshPlanTotals(ready) {
+        const requestId = ++priceRequest;
+        if (!ready) {
+          document.querySelectorAll(".plan-due").forEach((due) => {
+            if (due.dataset.standardDue) due.textContent = due.dataset.standardDue;
+          });
+          return;
+        }
+        const plans = ["tier1", "tier2", "tier3"];
+        await Promise.all(
+          plans.map(async (tier) => {
+            const due = document.querySelector(`#plan-${tier} .plan-due`);
+            if (!due) return;
+            const response = await fetch("/api/offer-preview", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                tier,
+                addOns: [],
+                offer,
+                businessAddress: address.value,
+                addressAttested: attest.checked ? "yes" : "no",
+                serviceBranch: service.value,
+              }),
+            });
+            if (requestId !== priceRequest || !response.ok) return;
+            const data = await response.json();
+            due.textContent = data.percent > 0 ? `${data.dueLabel}. ${data.thenLabel}.` : due.dataset.standardDue;
+          })
+        );
+        if (requestId !== priceRequest) return;
+        status.textContent = "The offer details are saved in this browser. The plan totals above match checkout for a new subscription with no add-ons.";
+      }
       document.getElementById("selected-offer-form").addEventListener("submit", (event) => event.preventDefault());
       [address, attest, service].forEach((field) => field.addEventListener("input", remember));
       attest.addEventListener("change", remember);
