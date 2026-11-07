@@ -18,6 +18,8 @@ import {
 import { getProspectDashboard } from "@/lib/prospects/queries";
 import { UsagePanel } from "@/components/admin/prospects/UsagePanel";
 import { ResearchQueueButton } from "@/components/admin/prospects/ResearchActions";
+import { GmailConnection } from "@/components/admin/prospects/GmailConnection";
+import { gmailConnectionStatus } from "@/lib/gmail/mailbox.mjs";
 
 export const metadata = {
   title: "Prospective Clients | 4Ward Admin",
@@ -55,13 +57,16 @@ function pageHref(q: string, status: string, page: number) {
 export default async function ProspectsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; page?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; page?: string; gmail?: string }>;
 }) {
   const params = await searchParams;
   const q = sanitizeSearch(params.q || "");
   const status = params.status || "all";
   const window = listWindow(params.page);
-  const dashboard = await getProspectDashboard({ q, status, offset: window.offset });
+  const [dashboard, mailbox] = await Promise.all([
+    getProspectDashboard({ q, status, offset: window.offset }),
+    gmailConnectionStatus(),
+  ]);
   const schemaMissing = dashboard.missing;
   const counts = dashboard.data.counts;
   const visible = dashboard.data.rows;
@@ -73,7 +78,7 @@ export default async function ProspectsPage({
     <>
       <PageHeader
         title="Prospective Clients"
-        description="Queue and review businesses for a future weekday outreach batch. Nothing on this page sends email."
+        description="Queue and review businesses for a future weekday outreach batch. Prospect email stays off. A mailbox test goes only to the signed-in administrator."
       />
 
       {schemaMissing ? (
@@ -93,6 +98,16 @@ export default async function ProspectsPage({
         <StatCard label="Interested prospects" value={String(counts.interested)} hint="Positive replies" />
         <StatCard label="Not interested / opted out" value={String(counts.optedOut)} hint="Kept on the suppression list" />
         <StatCard label="Failed or bounced" value={String(counts.failed)} hint="Needs review before any retry" />
+      </div>
+
+      <div className="mb-5">
+        <GmailConnection
+          connected={mailbox.connected}
+          email={mailbox.email}
+          pendingMigration={mailbox.pendingMigration}
+          configured={mailbox.configured}
+          notice={params.gmail || ""}
+        />
       </div>
 
       <div className="mb-5">
