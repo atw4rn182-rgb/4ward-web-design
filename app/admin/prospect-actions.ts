@@ -347,7 +347,7 @@ export async function updateProspectResearchAction(
   if (!parsed.ok) return { error: parsed.errors[0] };
   const qualification = String(formData.get("qualification") || "");
   const draftBody = String(formData.get("draftBody") || "").trim();
-  if (draftBody.length > 900) return { error: "The draft is too long." };
+  if (draftBody.length > 2000) return { error: "The draft is too long." };
   if (qualification && !isQualification(qualification)) return { error: "Choose a valid qualification." };
   const packed = packResearchRecord({
     qualification,

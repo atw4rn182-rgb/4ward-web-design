@@ -6,6 +6,7 @@ import {
   type ProspectActionState,
 } from "@/app/admin/prospect-actions";
 import { clampDailyTarget, externalOutreachAllowed, monthlyOutreachVolume } from "@/lib/prospects/model.mjs";
+import { BUSINESS_POSTAL_ADDRESS } from "@/lib/prospects/research.mjs";
 import type { OutreachSettingsRow } from "@/lib/prospects/queries";
 
 const initial: ProspectActionState = {};
@@ -113,12 +114,15 @@ export function OutreachSettingsForm({
           Business mailing address
           <textarea
             name="mailingAddress"
-            rows={2}
+            rows={4}
             maxLength={300}
-            defaultValue={settings?.mailing_address || ""}
-            placeholder="Required later for CAN-SPAM. Leave blank until the address is confirmed."
+            defaultValue={settings?.mailing_address || BUSINESS_POSTAL_ADDRESS}
+            placeholder="PO BOX address used on prospect email"
             className="mt-1 min-h-11 w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm"
           />
+          <span className="mt-1 block font-normal text-muted">
+            USPS PO Box format. The post office street address is not part of this mailing address. Save it before any prospect email. Sending stays off.
+          </span>
         </label>
       </div>
       {state.error ? (

@@ -144,7 +144,7 @@ export function ProspectEditor({
           </label>
           <label className="text-sm font-semibold sm:col-span-2">
             Unsent draft
-            <textarea name="draftBody" rows={6} maxLength={900} defaultValue={research.draftBody} className={field} />
+            <textarea name="draftBody" rows={8} maxLength={2000} defaultValue={research.draftBody} className={field} />
           </label>
           <label className="text-sm font-semibold sm:col-span-2">
             Google Business Profile observations

@@ -249,17 +249,25 @@ await check("qualification does not invent a contact or a missing website", () =
   const ready = qualifyProspect({ businessName: "Carlsbad Welding", city: "Carlsbad", publicEmail: "info@carlsbadwelding.com", websiteHost: "carlsbadwelding.com" });
   assert.equal(ready.qualification, "qualified");
   const draft = buildDraft({ ...ready, businessName: "Carlsbad Welding", city: "Carlsbad", websiteHost: "carlsbadwelding.com", mailingAddress: "" });
-  assert.match(draft.body, /\$99/);
-  assert.match(draft.body, /\$50/);
-  assert.match(draft.body, /\$200/);
-  assert.match(draft.body, /https:\/\/www\.4wardwebdesign\.com/);
+  assert.match(draft.body, /Adam Windhorst/);
+  assert.match(draft.body, /Carlsbad Welding/);
+  assert.match(draft.body, /carlsbadwelding\.com/);
+  assert.match(draft.body, /free, no-obligation consultation/);
+  assert.match(draft.body, /View Our Website: https:\/\/www\.4wardwebdesign\.com/);
+  assert.match(draft.body, /Watch Our Commercial: https:\/\/www\.4wardwebdesign\.com\/assets\/4ward-commercial\.mp4/);
+  assert.match(draft.body, /4wardwebdesigns@gmail\.com/);
   assert.match(draft.body, /560-2575/);
-  assert.match(draft.body, /free consultation/i);
+  assert.match(draft.body, /PO BOX 1161/);
+  assert.match(draft.body, /CARLSBAD NM 88220/);
   assert.match(draft.body, /ask to be removed/);
-  assert.ok(draft.body.length <= 900);
-  assert.doesNotMatch(draft.body, /outdated|ranking|poor website|no website/i);
+  assert.doesNotMatch(draft.body, /204 Shaw/);
+  assert.doesNotMatch(draft.body, /outdated|ranking|poor website|no website|Google Business Profile issue/i);
+  const custom = buildDraft({ ...ready, businessName: "Carlsbad Welding", city: "Carlsbad", websiteHost: "carlsbadwelding.com", mailingAddress: "100 Main St\nCarlsbad, NM 88220" });
+  assert.match(custom.body, /100 Main St/);
+  assert.doesNotMatch(custom.body, /PO BOX 1161/);
   assert.equal(buildDraft(missing), null);
-  assert.equal(externalOutreachAllowed({ mailingAddress: "100 Main St", schedulerActive: true }), false);
+  assert.equal(externalOutreachAllowed({ mailingAddress: "", schedulerActive: true }), false);
+  assert.equal(externalOutreachAllowed({ mailingAddress: "PO BOX 1161", schedulerActive: true }), false);
 });
 
 await check("research reads only permitted public contacts and stays compact", () => {
