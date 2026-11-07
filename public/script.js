@@ -568,4 +568,38 @@
       setAddonsOpen(!open);
     });
   });
+
+  function trackEvent(name, params) {
+    if (typeof window.gtag !== "function") return;
+    window.gtag("event", name, params);
+  }
+
+  document.addEventListener("click", (event) => {
+    const badge = event.target.closest("[data-tier-badge]");
+    if (badge) {
+      trackEvent("tier_badge_click", {
+        tier: badge.getAttribute("data-tier-badge") || "",
+      });
+      return;
+    }
+
+    const portfolioLink = event.target.closest("#work a[href^='http']");
+    if (portfolioLink) {
+      const project = portfolioLink.closest(".ba-project");
+      const heading = project ? project.querySelector("h3") : null;
+      trackEvent("portfolio_website_click", {
+        project_name: heading ? heading.textContent.trim() : "",
+        link_url: portfolioLink.href,
+      });
+      return;
+    }
+
+    const pricingCta = event.target.closest("#pricing .plan-actions a, .hero-actions a[href='#pricing']");
+    if (!pricingCta) return;
+    const plan = pricingCta.closest(".plan");
+    trackEvent("pricing_cta_click", {
+      cta_label: pricingCta.textContent.replace(/\s+/g, " ").trim(),
+      tier: plan && plan.id ? plan.id.replace(/^plan-/, "") : "",
+    });
+  });
 })();
