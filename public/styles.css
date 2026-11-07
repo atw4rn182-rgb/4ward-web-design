@@ -556,7 +556,7 @@ p {
   color: var(--blue-strong);
 }
 
-/* Hero commercial — plays between the deer video and the desert scenes */
+/* Hero commercial — still frame until Learn More, then one full play */
 .hero-commercial {
   position: absolute;
   inset: 0;
@@ -639,6 +639,28 @@ p {
   object-fit: contain;
   object-position: center center;
   background: transparent;
+  z-index: 1;
+}
+
+.hero-commercial-poster {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  object-fit: contain;
+  object-position: center center;
+  display: none;
+  pointer-events: none;
+}
+
+.hero-commercial.is-poster .hero-commercial-poster[src] {
+  display: block;
+}
+
+.hero-commercial.is-poster .hero-commercial-video {
+  opacity: 0;
 }
 
 .hero-commercial-progress {
@@ -716,6 +738,84 @@ p {
   margin-left: auto;
 }
 
+.hero-commercial-intro {
+  position: absolute;
+  z-index: 6;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: none;
+  pointer-events: none;
+}
+
+.hero-commercial.is-poster .hero-commercial-intro {
+  display: block;
+}
+
+.hero-commercial.is-poster .hero-commercial-controls {
+  display: none;
+}
+
+.hero-learn-more {
+  pointer-events: auto;
+  min-height: 52px;
+  padding: 0.9rem 1.75rem;
+  font-size: 1.05rem;
+  box-shadow:
+    0 0 0 8px rgba(8, 14, 26, 0.28),
+    0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.hero-learn-more:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 4px;
+}
+
+.hero-scroll-cue[hidden] {
+  display: none !important;
+}
+
+.hero-scroll-cue {
+  position: absolute;
+  z-index: 30;
+  left: 50%;
+  bottom: calc(10.25rem + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  margin: 0;
+  padding: 0.4rem 0.85rem 0.3rem;
+  border-radius: 999px;
+  background: rgba(8, 14, 26, 0.42);
+  color: rgba(255, 255, 255, 0.94);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 700ms ease;
+}
+
+.hero-scroll-cue.is-visible {
+  opacity: 1;
+}
+
+.hero-scroll-cue svg {
+  width: 22px;
+  height: 22px;
+  animation: hero-cue-arrow 1.6s ease-in-out infinite;
+}
+
+@keyframes hero-cue-arrow {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(5px); }
+}
+
 @media (max-width: 760px) {
   .hero-commercial-frame {
     bottom: 1.15rem;
@@ -736,11 +836,25 @@ p {
   .hero-commercial-btn {
     min-height: 44px;
   }
+
+  .hero-learn-more {
+    min-height: 52px;
+  }
+
+  .hero-scroll-cue {
+    bottom: calc(12.25rem + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-commercial {
-    display: none !important;
+  .hero-commercial,
+  .hero-commercial.is-active,
+  .hero-scroll-cue {
+    transition: none;
+  }
+
+  .hero-scroll-cue svg {
+    animation: none;
   }
 }
 

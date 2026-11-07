@@ -17,10 +17,18 @@
   const commercial = window.fwHeroCommercial || null;
   const SLIDE_MS = 3600;
   const CROSSFADE_MS = 1100;
+  const DECISION_MS = 10000;
+  const SCROLL_CUE_MS = 5000;
   const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   let heroSequenceRunning = false;
   let montagePreloaded = false;
   let heroSequenceId = 0;
+  let phase = "poster";
+  let sequenceStarted = false;
+  let decisionTimer = 0;
+  const heroContent = document.querySelector(".hero-content");
+  const learnBtn = document.querySelector("[data-commercial-learn]");
+  const scrollCue = document.getElementById("hero-scroll-cue");
 
   function muteHeroVideo(heroVideo) {
     if (!heroVideo) return;
@@ -189,7 +197,7 @@
     heroMontage.classList.remove("is-prepped");
   }
 
-  function playHeroVideoOnce(video) {
+  function playHeroVideoOnce(video, seqId) {
     return new Promise((resolve) => {
       if (!video) {
         resolve();
@@ -197,12 +205,14 @@
       }
 
       let settled = false;
+      let cancelWatch = 0;
       const finish = () => {
         if (settled) return;
         settled = true;
         video.removeEventListener("ended", onEnded);
         video.removeEventListener("timeupdate", onTimeUpdate);
         clearTimeout(fallback);
+        clearInterval(cancelWatch);
         resolve();
       };
 
@@ -210,7 +220,10 @@
       const onTimeUpdate = () => {
         const duration = video.duration;
         if (!Number.isFinite(duration) || duration <= 0) return;
-        if (commercial && video.currentTime / duration >= 0.3) commercial.load();
+        if (seqId !== heroSequenceId) {
+          finish();
+          return;
+        }
         if (duration > 2 && video.currentTime / duration >= 0.55) {
           preloadMontageSlides();
           prepMontageUnderVideo();
@@ -219,6 +232,9 @@
 
       video.addEventListener("ended", onEnded);
       video.addEventListener("timeupdate", onTimeUpdate);
+      cancelWatch = setInterval(() => {
+        if (seqId !== heroSequenceId) finish();
+      }, 200);
 
       const startPlayback = () => {
         try {
@@ -255,35 +271,90 @@
     });
   }
 
-  async function playDesertLandscapes() {
+  async function playDesertLandscapes(seqId) {
     if (!heroSlides.length) return;
 
     for (let i = 0; i < heroSlides.length; i += 1) {
+      if (seqId !== heroSequenceId) return;
       setMontageSlide(i);
       await wait(SLIDE_MS);
     }
   }
 
-  // Commercial plays first. Once it covers the hero, the next video waits
-  // underneath, paused, until the commercial starts to fade out.
-  function playCommercial(video) {
-    if (!commercial) return Promise.resolve(false);
-    return commercial.play(() => {
-      resetMontageClasses();
-      heroSlides.forEach((slide) => slide.classList.remove("is-active"));
-      if (!video) return;
-      pauseInactiveVideos(video);
-      video.classList.remove("is-leaving");
-      video.classList.add("is-active");
-      armVideo(video);
-      muteHeroVideo(video);
-      try {
-        video.pause();
-        video.currentTime = 0;
-      } catch (_) {
-        /* ignore */
-      }
+  function blockBrandingClicks(blocked) {
+    if (!heroContent) return;
+    if (blocked) heroContent.setAttribute("inert", "");
+    else heroContent.removeAttribute("inert");
+  }
+
+  function revealScrollCue() {
+    if (!scrollCue || scrollCue.classList.contains("is-visible")) return;
+    scrollCue.hidden = false;
+    requestAnimationFrame(() => {
+      if (scrollCue) scrollCue.classList.add("is-visible");
     });
+  }
+
+  function prepareUnderneath(video) {
+    resetMontageClasses();
+    heroSlides.forEach((slide) => slide.classList.remove("is-active"));
+    if (!video) return;
+    pauseInactiveVideos(video);
+    video.classList.remove("is-leaving");
+    video.classList.add("is-active");
+    armVideo(video);
+    muteHeroVideo(video);
+    try {
+      video.pause();
+      if (video.currentTime > 0.05) video.currentTime = 0;
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
+  function runBrandingLoop(alreadyPrepared) {
+    if (prefersReduced) {
+      initReducedHero();
+      return;
+    }
+    const seqId = ++heroSequenceId;
+    heroSequenceRunning = true;
+    let prepared = Boolean(alreadyPrepared);
+    (async () => {
+      while (true) {
+        if (seqId !== heroSequenceId || prefersReduced) break;
+        const video = activeHeroVideo();
+        const other = inactiveHeroVideo();
+        if (other) disarmVideo(other);
+        if (!prepared) {
+          await crossfadeMontageToVideo(video);
+          if (seqId !== heroSequenceId) break;
+        }
+        prepared = false;
+        await playHeroVideoOnce(video, seqId);
+        if (seqId !== heroSequenceId) break;
+        await crossfadeVideoToMontage(video);
+        if (seqId !== heroSequenceId) break;
+        await playDesertLandscapes(seqId);
+        if (seqId !== heroSequenceId) break;
+      }
+      if (seqId === heroSequenceId) heroSequenceRunning = false;
+    })();
+  }
+
+  function beginBranding(alreadyPrepared) {
+    if (sequenceStarted) return;
+    sequenceStarted = true;
+    phase = "sequence";
+    clearTimeout(decisionTimer);
+    decisionTimer = 0;
+    if (learnBtn) learnBtn.disabled = true;
+    blockBrandingClicks(false);
+    if (prefersReduced) {
+      initReducedHero();
+      return;
+    }
+    runBrandingLoop(alreadyPrepared);
   }
 
   function startHeroVideo(video) {
@@ -324,38 +395,6 @@
     heroSlides.forEach((slide) => slide.classList.remove("is-active"));
   }
 
-  async function runHeroSequence() {
-    if (prefersReduced) return;
-    const seqId = ++heroSequenceId;
-    heroSequenceRunning = true;
-    if (commercial) commercial.load();
-
-    while (true) {
-      if (seqId !== heroSequenceId || prefersReduced) break;
-
-      const video = activeHeroVideo();
-      const other = inactiveHeroVideo();
-      if (other) disarmVideo(other);
-
-      const covered = await playCommercial(video);
-      if (seqId !== heroSequenceId) break;
-      if (!covered) showHeroVideo(video);
-
-      await playHeroVideoOnce(video);
-      if (seqId !== heroSequenceId) break;
-
-      await crossfadeVideoToMontage(video);
-      if (seqId !== heroSequenceId) break;
-
-      await playDesertLandscapes();
-      if (seqId !== heroSequenceId) break;
-    }
-
-    if (seqId === heroSequenceId) {
-      heroSequenceRunning = false;
-    }
-  }
-
   function initReducedHero() {
     const video = activeHeroVideo();
     if (video) {
@@ -382,35 +421,69 @@
 
   resetMontageClasses();
   heroSlides.forEach((slide) => slide.classList.remove("is-active"));
+  blockBrandingClicks(true);
 
-  if (prefersReduced) {
-    initReducedHero();
+  if (commercial && typeof commercial.showPoster === "function") {
+    commercial.showPoster();
   } else {
-    const video = activeHeroVideo();
-    if (video) showHeroVideo(video);
-    runHeroSequence();
+    phase = "sequence";
+    sequenceStarted = true;
+    blockBrandingClicks(false);
+    if (prefersReduced) initReducedHero();
+    else {
+      const video = activeHeroVideo();
+      if (video) prepareUnderneath(video);
+      runBrandingLoop(true);
+    }
+  }
+
+  setTimeout(revealScrollCue, SCROLL_CUE_MS);
+
+  if (phase === "poster") {
+    decisionTimer = setTimeout(() => {
+      if (phase !== "poster") return;
+      const video = activeHeroVideo();
+      if (!prefersReduced && video) prepareUnderneath(video);
+      if (prefersReduced) initReducedHero();
+      if (commercial && typeof commercial.dismiss === "function") commercial.dismiss();
+      beginBranding(!prefersReduced);
+    }, DECISION_MS);
+  }
+
+  if (learnBtn) {
+    learnBtn.addEventListener("click", () => {
+      if (phase !== "poster") return;
+      phase = "commercial";
+      clearTimeout(decisionTimer);
+      decisionTimer = 0;
+      learnBtn.disabled = true;
+      const video = activeHeroVideo();
+      if (!commercial || typeof commercial.play !== "function") {
+        beginBranding(false);
+        return;
+      }
+      commercial.play(() => prepareUnderneath(video)).then((covered) => {
+        if (sequenceStarted) return;
+        if (!covered && !prefersReduced && video) prepareUnderneath(video);
+        if (commercial.silence) commercial.silence();
+        if (prefersReduced) initReducedHero();
+        beginBranding(!prefersReduced);
+      });
+    });
   }
 
   if (typeof mobileHero.addEventListener === "function") {
     mobileHero.addEventListener("change", () => {
-      if (commercial) commercial.abort();
-      heroSequenceId += 1;
-      heroSequenceRunning = false;
-      montagePreloaded = false;
-      resetMontageClasses();
-      heroSlides.forEach((slide) => slide.classList.remove("is-active"));
-      [desktopVideo, phoneVideo].forEach((video) => {
-        if (video) disarmVideo(video);
-      });
-
-      if (prefersReduced) {
-        initReducedHero();
+      if (phase === "poster" || phase === "commercial") return;
+      if (!sequenceStarted || prefersReduced) {
+        if (prefersReduced) initReducedHero();
         return;
       }
-
+      heroSequenceId += 1;
+      heroSequenceRunning = false;
       const video = activeHeroVideo();
-      if (video) showHeroVideo(video);
-      runHeroSequence();
+      if (video) prepareUnderneath(video);
+      runBrandingLoop(true);
     });
   }
 

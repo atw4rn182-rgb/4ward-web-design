@@ -31,6 +31,12 @@ yarn-error.log*
 *.tsbuildinfo
 
 .env*
+*.env
+*.env.*
+
+# Local audit probes and secret copies. Never commit.
+.tmp-*
+.tmp*/
 
 # Local unused media (not referenced by the site)
 public/assets/3129671-hd_1920_1080_30fps.mp4

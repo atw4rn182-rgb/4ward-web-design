@@ -6,8 +6,7 @@
     !layer ||
     !video ||
     typeof video.canPlayType !== "function" ||
-    !video.canPlayType("video/mp4") ||
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+    !video.canPlayType("video/mp4")
   ) {
     return;
   }
@@ -17,8 +16,11 @@
   const START_TIMEOUT_MS = 5000;
   const STALL_TIMEOUT_MS = 5000;
   const BACKDROP_FRAME_MS = 90;
+  // Opening frame of the corrected commercial, past any empty decoder frame.
+  const POSTER_TIME = 4;
 
   const screen = layer.querySelector(".hero-commercial-screen");
+  const poster = layer.querySelector(".hero-commercial-poster");
   const canvas = layer.querySelector(".hero-commercial-backdrop");
   const progress = layer.querySelector(".hero-commercial-progress");
   const soundBtn = layer.querySelector("[data-commercial-sound]");
@@ -27,23 +29,43 @@
   const heroContent = document.querySelector(".hero-content");
   const ctx = canvas && canvas.getContext ? canvas.getContext("2d", { alpha: false }) : null;
 
-  // null = no choice yet; true/false = the visitor's explicit sound choice.
-  let soundChoice = null;
   let awaitingSound = false;
   let run = null;
+  let activePromise = null;
   let rafId = 0;
   let lastDraw = 0;
   let needsBackdrop = false;
+  // idle → poster (still) → active (one play) → finished. Never restarts.
+  let playbackState = "idle";
 
   function load() {
-    if (video.getAttribute("src")) return;
+    if (video.getAttribute("src")) {
+      video.preload = "auto";
+      return;
+    }
     video.preload = "auto";
     video.src = video.getAttribute("data-src");
   }
 
+  function silence() {
+    awaitingSound = false;
+    try {
+      video.pause();
+      video.defaultMuted = true;
+      video.muted = true;
+      video.volume = 0;
+      video.setAttribute("muted", "");
+      video.loop = false;
+      video.removeAttribute("loop");
+    } catch (_) {
+      /* ignore */
+    }
+    syncSoundButton();
+  }
+
   function syncSoundButton() {
     if (!soundBtn) return;
-    const on = !awaitingSound && !video.paused && !video.muted && video.volume > 0;
+    const on = playbackState === "active" && !awaitingSound && !video.paused && !video.muted && video.volume > 0;
     layer.classList.toggle("is-sound-on", on);
     soundBtn.setAttribute("aria-pressed", String(on));
     soundBtn.setAttribute("aria-label", on ? "Mute commercial" : "Play commercial with sound");
@@ -77,30 +99,61 @@
     rafId = 0;
   }
 
-  function fadeAudioOut() {
-    const startVolume = video.volume;
-    const startTime = performance.now();
-    const step = (now) => {
-      const t = Math.min(Math.max((now - startTime) / FADE_MS, 0), 1);
+  function capturePoster() {
+    if (playbackState !== "poster" || !poster || video.readyState < 2) return;
+    const width = video.videoWidth || 720;
+    const height = video.videoHeight || 1280;
+    if (!width || !height) return;
+    const shot = document.createElement("canvas");
+    shot.width = width;
+    shot.height = height;
+    const shotCtx = shot.getContext("2d", { alpha: false });
+    if (!shotCtx) return;
+    try {
+      shotCtx.drawImage(video, 0, 0, width, height);
+      poster.src = shot.toDataURL("image/jpeg", 0.82);
+    } catch (_) {
+      return;
+    }
+    if (ctx) {
       try {
-        video.volume = startVolume * (1 - t);
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       } catch (_) {
-        return;
+        /* ignore */
       }
-      if (t < 1 && run && run.leaving) requestAnimationFrame(step);
-    };
-    requestAnimationFrame(step);
+    }
+    measureBackdrop();
   }
 
-  function resetVideo() {
+  function paintPoster() {
+    if (playbackState !== "poster") return;
+    silence();
+    const duration = video.duration;
+    const target = Number.isFinite(duration) && duration > 0.4
+      ? Math.min(POSTER_TIME, duration - 0.15)
+      : POSTER_TIME;
     try {
-      video.pause();
-      video.currentTime = 0;
-      video.volume = 1;
+      if (Math.abs((video.currentTime || 0) - target) > 0.08) {
+        video.currentTime = target;
+      } else {
+        capturePoster();
+      }
     } catch (_) {
       /* ignore */
     }
+    measureBackdrop();
+  }
+
+  function showPoster() {
+    if (playbackState === "active" || playbackState === "finished") return;
+    playbackState = "poster";
+    load();
+    silence();
     if (progress) progress.style.transform = "scaleX(0)";
+    layer.classList.add("is-active", "is-poster");
+    layer.setAttribute("aria-hidden", "false");
+    if (video.readyState >= 2) paintPoster();
+    else video.addEventListener("loadeddata", paintPoster, { once: true });
   }
 
   function playAudible() {
@@ -129,6 +182,7 @@
     requestAnimationFrame(() => {
       if (run !== current || current.leaving) return;
       layer.classList.add("is-active");
+      layer.classList.remove("is-poster");
       layer.setAttribute("aria-hidden", "false");
       setRunTimer(current, "covered", FADE_MS + 50, () => {
         if (run !== current || current.covered) return;
@@ -207,26 +261,24 @@
     setRunTimer(current, "stall", STALL_TIMEOUT_MS, () => end("stalled"));
   }
 
-  // Hides the layer and resolves the run. A run that never covered the hero
-  // resolves `false` so the caller can use its normal transition instead.
   function end(reason) {
     const current = run;
     if (!current || current.leaving) return;
     current.leaving = true;
+    playbackState = "finished";
     clearRunTimers(current);
+    silence();
+    stopTick();
 
     if (!current.covered) {
-      layer.classList.remove("is-active");
+      layer.classList.remove("is-active", "is-poster");
       layer.setAttribute("aria-hidden", "true");
-      stopTick();
-      resetVideo();
       run = null;
       current.resolve(false);
       return;
     }
 
-    if (reason !== "ended" && !video.muted) fadeAudioOut();
-    layer.classList.remove("is-active");
+    layer.classList.remove("is-active", "is-poster");
     layer.setAttribute("aria-hidden", "true");
     if (layer.contains(document.activeElement)) {
       const target = document.querySelector(".hero-actions a");
@@ -235,40 +287,88 @@
     current.resolve(true);
     setTimeout(() => {
       if (run !== current) return;
-      stopTick();
-      resetVideo();
+      silence();
       run = null;
     }, FADE_MS + 50);
   }
 
-  // Plays the commercial once over the hero. `onCovered` runs once the layer is
-  // fully opaque so the caller can swap what sits underneath without it showing.
-  // Resolves when the layer starts fading out (true) or if it never showed (false).
-  function play(onCovered) {
-    if (run) end("replaced");
-    load();
-    return new Promise((resolve) => {
-      const current = { resolve, onCovered, timers: {}, shown: false, covered: false, leaving: false };
-      run = current;
-      try {
-        if (video.currentTime > 0.05) video.currentTime = 0;
-      } catch (_) {
-        /* ignore */
+  function rewindThen(fn) {
+    let settled = false;
+    const done = () => {
+      if (settled) return;
+      settled = true;
+      video.removeEventListener("seeked", done);
+      fn();
+    };
+    try {
+      video.pause();
+      if (video.currentTime > 0.05) {
+        video.addEventListener("seeked", done);
+        video.currentTime = 0;
+        setTimeout(done, 500);
+        return;
       }
-      setRunTimer(current, "start", START_TIMEOUT_MS, () => end("start-timeout"));
-      startPlayback(current);
+    } catch (_) {
+      /* ignore */
+    }
+    done();
+  }
+
+  function play(onCovered) {
+    if (activePromise) return activePromise;
+    if (playbackState === "finished") return Promise.resolve(false);
+    if (run) return Promise.resolve(false);
+
+    playbackState = "active";
+    load();
+    layer.classList.remove("is-poster");
+    layer.classList.add("is-active");
+    layer.setAttribute("aria-hidden", "false");
+
+    activePromise = new Promise((resolve) => {
+      const current = {
+        resolve,
+        onCovered: onCovered || function () {},
+        timers: {},
+        shown: false,
+        covered: false,
+        leaving: false,
+        promise: null,
+      };
+      current.promise = activePromise;
+      run = current;
+      rewindThen(() => {
+        if (run !== current || current.leaving) return;
+        setRunTimer(current, "start", START_TIMEOUT_MS, () => end("start-timeout"));
+        startPlayback(current);
+      });
     });
+    return activePromise;
+  }
+
+  function dismiss() {
+    if (playbackState === "active") {
+      end("dismiss");
+      return new Promise((resolve) => setTimeout(resolve, FADE_MS));
+    }
+    if (playbackState !== "finished") playbackState = "finished";
+    silence();
+    stopTick();
+    layer.classList.remove("is-poster", "is-active");
+    layer.setAttribute("aria-hidden", "true");
+    return new Promise((resolve) => setTimeout(resolve, FADE_MS));
   }
 
   function abort() {
     const current = run;
+    playbackState = "finished";
+    silence();
+    stopTick();
+    layer.classList.remove("is-active", "is-poster");
+    layer.setAttribute("aria-hidden", "true");
     if (!current) return;
     current.leaving = true;
     clearRunTimers(current);
-    layer.classList.remove("is-active");
-    layer.setAttribute("aria-hidden", "true");
-    stopTick();
-    resetVideo();
     run = null;
     current.resolve(false);
   }
@@ -276,15 +376,32 @@
   video.addEventListener("playing", onPlaying);
   video.addEventListener("waiting", onWaiting);
   video.addEventListener("ended", () => end("ended"));
+  video.addEventListener("play", () => {
+    if (playbackState === "poster") silence();
+  });
+  video.addEventListener("seeked", () => {
+    if (playbackState === "poster") {
+      silence();
+      capturePoster();
+      return;
+    }
+    // A late poster seek must not skip the opening of an explicit play.
+    if (playbackState === "active" && run && !run.shown && video.currentTime > 0.12) {
+      try {
+        video.currentTime = 0;
+      } catch (_) {
+        /* ignore */
+      }
+    }
+  });
   video.addEventListener("error", () => {
-    if (video.getAttribute("src")) end("error");
+    if (playbackState === "active" && video.getAttribute("src")) end("error");
   });
 
   if (soundBtn) {
     soundBtn.addEventListener("click", () => {
-      if (!run || run.leaving) return;
+      if (!run || run.leaving || playbackState !== "active") return;
       if (awaitingSound) {
-        soundChoice = true;
         awaitingSound = false;
         try {
           if (video.currentTime > 0.05) video.currentTime = 0;
@@ -299,9 +416,9 @@
         return;
       }
       const turnOn = video.muted || video.volume === 0;
-      soundChoice = turnOn;
       if (!turnOn) {
         video.muted = true;
+        video.volume = 0;
         syncSoundButton();
         return;
       }
@@ -316,7 +433,18 @@
   });
   window.addEventListener("resize", measureBackdrop, { passive: true });
 
+  silence();
   syncSoundButton();
 
-  window.fwHeroCommercial = { load, play, abort };
+  window.fwHeroCommercial = {
+    load,
+    showPoster,
+    play,
+    dismiss,
+    abort,
+    silence,
+    isPlaying: function () {
+      return playbackState === "active";
+    },
+  };
 })();
