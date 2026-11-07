@@ -16,6 +16,7 @@ const nextConfig = {
       // Consolidate clean aliases onto the canonical .html URLs used in links/canonicals.
       { source: "/quote", destination: "/quote.html", permanent: true },
       { source: "/onboarding", destination: "/onboarding.html", permanent: true },
+      { source: "/consultation", destination: "/consultation.html", permanent: true },
     ];
   },
   async rewrites() {

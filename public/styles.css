@@ -2765,6 +2765,15 @@ a.ba-frame:hover img {
     min-height: 96px;
   }
 
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .consult-form .btn {
+    width: 100%;
+    min-height: 52px;
+  }
+
   .footer-inner {
     flex-direction: column;
     align-items: flex-start;
@@ -3087,6 +3096,61 @@ a.ba-frame:hover img {
 .optional {
   color: var(--muted);
   font-weight: 500;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 0.9rem;
+}
+
+.form-span {
+  grid-column: 1 / -1;
+}
+
+.choice-list {
+  margin: 0 0 0.7rem;
+  padding: 0;
+  border: 0;
+  min-width: 0;
+}
+
+.choice-list legend {
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--muted-soft);
+  margin-bottom: 0.4rem;
+}
+
+.choice-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.choice-options label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 44px;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.choice-options input {
+  accent-color: var(--blue);
+  width: 1rem;
+  height: 1rem;
+}
+
+.privacy-note {
+  color: var(--muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
 }
 
 .onboard-actions {

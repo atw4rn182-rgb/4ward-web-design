@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Start a Consultation | 4Ward Web Design</title>
+  <meta name="description" content="Tell 4Ward Web Design about your business. We'll help you choose a website package, answer questions, and explain the next steps. No pressure, no obligation." />
+  <meta name="robots" content="noindex, follow" />
+  <link rel="canonical" href="https://www.4wardwebdesign.com/consultation.html" />
+  <meta name="theme-color" content="#F8F9FA" />
+
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-B2NNE9XPW9"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-B2NNE9XPW9');
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css?v=x4a" />
+  <link rel="icon" href="assets/favicon.png?v=5" type="image/png" sizes="64x64" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=5" />
+</head>
+<body class="onboard-page">
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <header class="site-header" id="top">
+    <div class="container header-inner">
+      <a class="brand" href="/" aria-label="4Ward Web Designs, LLC home — Carlsbad, New Mexico">
+        <svg class="brand-wordmark" viewBox="0 0 300 28" width="300" height="28" role="img" aria-label="4Ward Web Designs, LLC" focusable="false">
+          <defs>
+            <linearGradient id="brandWordmarkGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+              <stop offset="0%" stop-color="#0b3d91" />
+              <stop offset="32%" stop-color="#1d4ed8" />
+              <stop offset="62%" stop-color="#c8792a" />
+              <stop offset="100%" stop-color="#b45309" />
+            </linearGradient>
+          </defs>
+          <text x="0" y="21" fill="url(#brandWordmarkGrad)" font-family="Outfit, Figtree, system-ui, sans-serif" font-size="18" font-weight="700" letter-spacing="-0.4">4Ward Web Designs, LLC</text>
+        </svg>
+      </a>
+      <div class="header-contact" aria-label="Contact 4Ward Web Designs">
+        <span class="header-contact-line">Call/Text: Adam — <a href="tel:+19705602575">(970) 560-2575</a></span>
+        <span class="header-contact-note"><a href="sms:+19705602575">Texting preferred</a></span>
+      </div>
+      <nav class="site-nav onboard-nav" aria-label="Primary">
+        <a href="/#pricing">Pricing</a>
+        <a href="onboarding.html" id="nav-checkout">Checkout</a>
+        <a class="btn btn-outline btn-sm" href="/">Back to site</a>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main" class="onboard has-motifs">
+    <div class="section-motifs" aria-hidden="true">
+      <span class="nm-motif nm-motif--tr"></span>
+      <span class="nm-motif nm-motif--roadrunner nm-motif--bl nm-motif--sm"></span>
+    </div>
+    <div class="container onboard-shell">
+      <header class="onboard-intro">
+        <p class="eyebrow">Consultation</p>
+        <h1>Let's Build Something Great for Your Business.</h1>
+        <p class="section-lead">Tell us a little about your business and what you're looking for. We'll help you find the right website package, answer your questions, and explain the next steps. No pressure, no obligation.</p>
+        <p class="page-contact-hint">Prefer to talk first? Call or text Adam at <a href="tel:+19705602575">(970) 560-2575</a> — <a href="sms:+19705602575">texting preferred</a>.</p>
+      </header>
+
+      <div class="onboard-panel" id="consult-success" tabindex="-1" hidden>
+        <p class="eyebrow">Request received</p>
+        <h2>Thank You! We've Received Your Request.</h2>
+        <p class="section-lead">We'll review your information and aim to get back to you within one business day. We're looking forward to learning more about your business.</p>
+        <div class="onboard-actions">
+          <a class="btn btn-accent" id="success-checkout" href="onboarding.html">Continue to checkout</a>
+          <a class="btn btn-outline" href="/">Return home</a>
+        </div>
+      </div>
+
+      <form class="onboard-form consult-form" id="consult-form" novalidate>
+        <input type="text" name="_hp_ref" class="sf-honeypot" tabindex="-1" autocomplete="off" aria-hidden="true" inputmode="none" />
+
+        <div class="form-grid">
+          <div class="form-row">
+            <label for="consult-business">Business name</label>
+            <input id="consult-business" name="businessName" type="text" autocomplete="organization" required placeholder="Your business" />
+          </div>
+          <div class="form-row">
+            <label for="consult-name">Contact name</label>
+            <input id="consult-name" name="contactName" type="text" autocomplete="name" required placeholder="Your name" />
+          </div>
+          <div class="form-row">
+            <label for="consult-email">Email address</label>
+            <input id="consult-email" name="email" type="email" autocomplete="email" required inputmode="email" placeholder="you@business.com" />
+          </div>
+          <div class="form-row">
+            <label for="consult-phone">Phone number</label>
+            <input id="consult-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required placeholder="(575) 555-1234" />
+          </div>
+          <div class="form-row">
+            <label for="consult-city">City or service area <span class="optional">(optional)</span></label>
+            <input id="consult-city" name="city" type="text" autocomplete="address-level2" placeholder="Carlsbad, NM" />
+          </div>
+          <div class="form-row">
+            <label for="consult-industry">Business industry <span class="optional">(optional)</span></label>
+            <input id="consult-industry" name="industry" type="text" placeholder="What you do" />
+          </div>
+          <div class="form-row form-span">
+            <label for="consult-website">Existing website <span class="optional">(optional)</span></label>
+            <input id="consult-website" name="website" type="text" inputmode="url" autocomplete="url" placeholder="https://yourbusiness.com" />
+          </div>
+          <div class="form-row form-span">
+            <label for="consult-tier">Preferred website tier</label>
+            <select id="consult-tier" name="tier">
+              <option value="">Not sure yet — help me choose</option>
+              <option value="tier1">Tier 1 — Single Page Website ($99/mo)</option>
+              <option value="tier2">Tier 2 — Two-Page Customized Site ($225/mo)</option>
+              <option value="tier3">Tier 3 — Multi-Page Multi-Department ($399/mo)</option>
+              <option value="buyout">Tier 4 — Buy-Out</option>
+            </select>
+          </div>
+          <div class="form-row form-span">
+            <label for="consult-description">What do you need?</label>
+            <textarea id="consult-description" name="description" rows="6" required placeholder="Tell us about your business and what you want the website to do."></textarea>
+          </div>
+        </div>
+
+        <fieldset class="choice-list">
+          <legend>Preferred contact method</legend>
+          <div class="choice-options">
+            <label><input type="radio" name="contactMethod" value="call" /> Call</label>
+            <label><input type="radio" name="contactMethod" value="text" checked /> Text</label>
+            <label><input type="radio" name="contactMethod" value="email" /> Email</label>
+          </div>
+        </fieldset>
+
+        <div class="form-row">
+          <label for="consult-time">Preferred contact time <span class="optional">(optional)</span></label>
+          <input id="consult-time" name="contactTime" type="text" placeholder="Weekday afternoons" />
+        </div>
+
+        <p class="privacy-note">We use this information to respond to your inquiry and follow up about your website. We do not sell it or share it for unrelated marketing.</p>
+        <p class="onboard-hint">This form does not charge a card. If you already know the package you want, you can <a id="direct-checkout" href="onboarding.html">continue to checkout</a>.</p>
+        <p class="form-status" id="consult-status" role="status" aria-live="polite"></p>
+        <div class="onboard-actions">
+          <button class="btn btn-accent" type="submit" id="consult-submit">Request a consultation</button>
+        </div>
+      </form>
+    </div>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container footer-inner">
+      <a class="brand brand-footer" href="/">
+        <img src="assets/4ward-logo-header.png?v=5" alt="4Ward Web Design logo" width="110" height="118" loading="lazy" decoding="async" />
+      </a>
+      <div class="footer-meta">
+        <p>&copy; <span id="consult-year"></span> 4Ward Web Design. All rights reserved.</p>
+        <p class="footer-contact">Questions or scheduling? <a href="sms:+19705602575">Text</a> or <a href="tel:+19705602575">call Adam — (970) 560-2575</a> — texting preferred.</p>
+        <p class="footer-locale">Consultations · Carlsbad, New Mexico</p>
+      </div>
+      <a class="footer-top" href="#top">Back to top</a>
+    </div>
+  </footer>
+
+  <script src="consultation.js?v=x4a"></script>
+</body>
+</html>
