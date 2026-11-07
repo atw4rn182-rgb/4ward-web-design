@@ -602,4 +602,69 @@
       tier: plan && plan.id ? plan.id.replace(/^plan-/, "") : "",
     });
   });
+
+  const selectedOffer = document.getElementById("selected-offer");
+  if (selectedOffer) {
+    const offers = {
+      local: {
+        title: "10% off the first month",
+        copy: "This southeastern New Mexico offer is selected. Add the business address and confirm that it is in southeastern New Mexico.",
+        address: true,
+        service: false,
+      },
+      service: {
+        title: "20% off the first month",
+        copy: "This military and first responder offer is selected. List the branch or service in the description.",
+        address: false,
+        service: true,
+      },
+      both: {
+        title: "30% off the first month",
+        copy: "Both offers are selected. Add the southeastern New Mexico business address and list the branch or service. Together they take 30% off the first month.",
+        address: true,
+        service: true,
+      },
+    };
+    const offer = new URLSearchParams(window.location.search).get("offer");
+    const choice = offers[offer];
+    if (choice) {
+      selectedOffer.hidden = false;
+      document.getElementById("selected-offer-title").textContent = choice.title;
+      document.getElementById("selected-offer-copy").textContent = choice.copy;
+      const addressLabel = document.getElementById("offer-address-label");
+      const attestLabel = document.getElementById("offer-attest-label");
+      const serviceLabel = document.getElementById("offer-service-label");
+      const address = document.getElementById("offer-address");
+      const attest = document.getElementById("offer-attest");
+      const service = document.getElementById("offer-service");
+      const status = document.getElementById("selected-offer-status");
+      addressLabel.hidden = !choice.address;
+      attestLabel.hidden = !choice.address;
+      serviceLabel.hidden = !choice.service;
+      document.querySelectorAll('a[href^="consultation.html"]').forEach((link) => {
+        const url = new URL(link.getAttribute("href"), window.location.href);
+        url.searchParams.set("offer", offer);
+        link.setAttribute("href", `${url.pathname.split("/").pop()}${url.search}`);
+      });
+      const remember = () => {
+        const ready = (!choice.address || (address.value.trim() && attest.checked)) && (!choice.service || service.value.trim());
+        sessionStorage.setItem(
+          "fwSelectedOffer",
+          JSON.stringify({
+            offer,
+            address: choice.address ? address.value.trim() : "",
+            attested: choice.address ? attest.checked : false,
+            service: choice.service ? service.value.trim() : "",
+          })
+        );
+        status.textContent = ready
+          ? "The offer details are saved in this browser for when you choose a plan."
+          : "Add the required details to show how this offer applies.";
+      };
+      document.getElementById("selected-offer-form").addEventListener("submit", (event) => event.preventDefault());
+      [address, attest, service].forEach((field) => field.addEventListener("input", remember));
+      attest.addEventListener("change", remember);
+      remember();
+    }
+  }
 })();

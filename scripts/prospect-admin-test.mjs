@@ -259,6 +259,13 @@ await check("qualification does not invent a contact or a missing website", () =
   assert.match(draft.body, /560-2575/);
   assert.match(draft.body, /PO BOX 1161/);
   assert.match(draft.body, /CARLSBAD NM 88220/);
+  assert.match(draft.body, /30% off the first month/);
+  assert.match(draft.body, /offer=local#pricing/);
+  assert.match(draft.body, /offer=service#pricing/);
+  assert.match(draft.body, /offer=both#pricing/);
+  assert.match(draft.body, /within 14 days/);
+  assert.match(draft.body, /\$200 launch fee stays \$200/);
+  assert.ok(draft.body.length <= 2000);
   assert.match(draft.body, /ask to be removed/);
   assert.doesNotMatch(draft.body, /204 Shaw/);
   assert.doesNotMatch(draft.body, /outdated|ranking|poor website|no website|Google Business Profile issue/i);

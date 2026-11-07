@@ -132,6 +132,11 @@ await check("a sample uses the outreach letter and is not retried", async () => 
   assert.match(text, /Google Search and Maps/);
   assert.match(text, /free, no-obligation consultation/);
   assert.match(text, /PO BOX 1161/);
+  assert.match(text, /30% off the first month/);
+  assert.match(text, /offer=local#pricing/);
+  assert.match(text, /offer=service#pricing/);
+  assert.match(text, /offer=both#pricing/);
+  assert.match(text, /<a href="https:\/\/www\.4wardwebdesign\.com\/\?offer=both#pricing"/);
   assert.match(text, /ask to be removed/);
   assert.equal(buildSampleOutreachMessage("").ok, false);
 

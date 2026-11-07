@@ -162,7 +162,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=x45a" />
+  <link rel="stylesheet" href="styles.css?v=x46promo" />
   <link rel="icon" href="assets/favicon.png?v=5" type="image/png" sizes="64x64" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=5" />
@@ -658,17 +658,36 @@
 
         <aside class="community-support reveal" aria-labelledby="community-heading">
           <p class="eyebrow">Local support</p>
-          <h3 id="community-heading">Proud to Support Our Local Community</h3>
+          <h3 id="community-heading">First-month offers for new subscriptions</h3>
           <ul class="community-offers">
-            <li><strong>Eddy County businesses:</strong> 10% off the first monthly payment.</li>
-            <li><strong>Military members, veterans, firefighters, and first responders:</strong> 20% off the first monthly payment.</li>
+            <li><strong>Southeastern New Mexico:</strong> 10% off the first month when the business address is in southeastern New Mexico.</li>
+            <li><strong>Military members and first responders:</strong> 20% off the first month when you list your branch or service.</li>
+            <li><strong>Both offers:</strong> eligible customers can use both, for 30% off the first month.</li>
           </ul>
           <ul class="community-notes">
-            <li>Discounts apply to the first month only.</li>
-            <li>Discounts cannot be combined.</li>
-            <li>The $200 launch fee is not discounted.</li>
-            <li>Eligibility is subject to confirmation.</li>
+            <li>New subscriptions only. The regular monthly price returns after the first month.</li>
+            <li>The $200 launch fee stays $200 and is nonrefundable.</li>
+            <li>The first monthly payment can be refunded within 14 days if you change your mind.</li>
+            <li>You qualify by providing the address, the branch or service, or both.</li>
           </ul>
+          <div id="selected-offer" class="selected-offer" hidden>
+            <p class="eyebrow">Selected offer</p>
+            <h3 id="selected-offer-title"></h3>
+            <p id="selected-offer-copy"></p>
+            <form id="selected-offer-form" class="selected-offer-form">
+              <label id="offer-address-label">Business address in southeastern New Mexico
+                <textarea id="offer-address" rows="3" maxlength="300" autocomplete="street-address"></textarea>
+              </label>
+              <label id="offer-attest-label" class="selected-offer-check">
+                <input id="offer-attest" type="checkbox" />
+                This business address is in southeastern New Mexico.
+              </label>
+              <label id="offer-service-label">Branch or service
+                <input id="offer-service" type="text" maxlength="120" autocomplete="off" />
+              </label>
+              <p id="selected-offer-status" class="selected-offer-status" role="status"></p>
+            </form>
+          </div>
         </aside>
 
         <p class="pricing-note reveal">Not sure which fit is right? Tell us about your business and we’ll recommend a plan.</p>
@@ -809,6 +828,6 @@
   </footer>
 
   <script src="hero-commercial.js?v=hero-x2c"></script>
-  <script src="script.js?v=x3a"></script>
+  <script src="script.js?v=x46promo"></script>
 </body>
 </html>
