@@ -8,6 +8,7 @@ import { logoutAction } from "@/app/admin/actions";
 export const ADMIN_NAV = [
   { href: "/admin/dashboard", label: "Dashboard", icon: "▣", short: "Home" },
   { href: "/admin/clients", label: "Clients", icon: "◎", short: "Clients" },
+  { href: "/admin/prospects", label: "Prospective Clients", icon: "⌕", short: "Prospects" },
   { href: "/admin/quotes", label: "Quotes", icon: "❝", short: "Quotes" },
   { href: "/admin/projects", label: "Projects", icon: "◇", short: "Projects" },
   { href: "/admin/payments", label: "Payments", icon: "$", short: "Pay" },
