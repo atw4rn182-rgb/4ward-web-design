@@ -38,7 +38,7 @@ export default async function ProspectDetailPage({
         <PageHeader title="Prospect" description="Research and status for one business." />
         <EmptyState
           title="Prospect tables are not available"
-          detail="Review migrations 011 and 012 before using this record."
+          detail="Review migration 011 before using this record."
         />
       </>
     );

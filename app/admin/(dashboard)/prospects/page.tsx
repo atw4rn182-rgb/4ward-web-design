@@ -79,7 +79,7 @@ export default async function ProspectsPage({
         <div className="mb-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-950">
           <p className="font-semibold">Prospect tables are not in the database yet</p>
           <p className="mt-1 leading-relaxed">
-            Review migrations 011 and 012 and run them only after approval. Counts stay at zero until then.
+            The prospect tables are not available yet. Review migration 011 before using this page.
           </p>
         </div>
       ) : null}

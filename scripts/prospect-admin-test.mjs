@@ -2,6 +2,8 @@ import { readFileSync } from "node:fs";
 import { strict as assert } from "node:assert";
 import {
   OUTREACH_SCHEDULER_ACTIVE,
+  FALLBACK_REQUESTS,
+  LIST_SELECT,
   PAGE_SIZE,
   PHASE_RULES,
   QUERY_BUDGET_PER_VIEW,
@@ -16,10 +18,13 @@ import {
   retentionPlan,
   retryBudget,
   sanitizeSearch,
+  searchOr,
+  settingsFromRow,
   shouldPollProspects,
   shouldSubscribeToProspects,
   sortProspects,
   sumRecentWrites,
+  suppressionOr,
   validateManualProspect,
   validateOutreachSettings,
   validateResearch,
@@ -155,7 +160,13 @@ await check("pages stay within one query and do not poll", () => {
   assert.equal(shouldPollProspects(), false);
   assert.equal(shouldSubscribeToProspects(), false);
   assert.equal(QUERY_BUDGET_PER_VIEW, 1);
+  assert.equal(FALLBACK_REQUESTS, 3);
   assert.equal(PAGE_SIZE, 25);
+  assert.equal(LIST_SELECT.includes("*"), false);
+  assert.equal(searchOr("cafe_%,").startsWith('business_name.ilike."%cafe%"'), true);
+  assert.equal(searchOr("%_,"), "");
+  assert.match(suppressionOr({ businessName: "Acme", city: "", email: "a@b.co", websiteHost: "acme.com" }), /email.eq."a@b.co"/);
+  assert.equal(settingsFromRow({ automation_enabled: true, manual_priority: true }).scheduler_live, false);
   assert.deepEqual(listWindow(1), { page: 1, limit: 25, offset: 0 });
   assert.equal(listWindow("3").offset, 50);
   assert.equal(sanitizeSearch("  cafe_% "), "cafe");
@@ -194,9 +205,11 @@ await check("prospect admin code does not send mail or store a password", () => 
   const shell = readFileSync(new URL("../components/admin/AdminShell.tsx", import.meta.url), "utf8");
   assert.match(action, /getAdminUser/);
   assert.match(action, /admin_add_prospect/);
-  assert.doesNotMatch(action, /static-forms|outreachMailer|claim_outreach_run|setInterval|SUPABASE_SERVICE_ROLE_KEY|\bpassword\b/);
+  assert.doesNotMatch(action, /static-forms|outreachMailer|claim_outreach_run|setInterval|SUPABASE_SERVICE_ROLE_KEY|\bpassword\b|scheduler_live/);
   assert.doesNotMatch(queries, /select\("\*"\)|channel\(|setInterval/);
   assert.match(queries, /prospect_dashboard/);
+  assert.match(queries, /LIST_SELECT/);
+  assert.match(action, /addProspectInTables/);
   assert.doesNotMatch(page, /setInterval|channel\(/);
   assert.match(limits, /scheduler_live = false/);
   assert.match(limits, /cleanup_prospect_operations/);

@@ -1,7 +1,20 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { QUERY_BUDGET_PER_VIEW } from "@/lib/prospects/model.mjs";
+import {
+  ACTIVITY_LIMIT,
+  ACTIVITY_SELECT,
+  COUNT_SELECT,
+  DETAIL_SELECT,
+  FALLBACK_REQUESTS,
+  LIST_SELECT,
+  PAGE_SIZE,
+  QUERY_BUDGET_PER_VIEW,
+  SETTINGS_SELECT,
+  countProspects,
+  searchOr,
+  settingsFromRow,
+} from "@/lib/prospects/model.mjs";
 
 export type ProspectListRow = {
   id: string;
@@ -92,9 +105,14 @@ export type ProspectDashboard = {
 
 type QueryError = { code?: string; message?: string } | null;
 
-function missing(error: QueryError) {
+function missingFunction(error: QueryError) {
   if (!error) return false;
-  return /PGRST202|PGRST205|42883|42P01|does not exist|schema cache/i.test(
+  return /PGRST202|42883|could not find the function/i.test(`${error.code || ""} ${error.message || ""}`);
+}
+
+function missingTable(error: QueryError) {
+  if (!error) return false;
+  return /PGRST205|42P01|could not find the table|does not exist|schema cache/i.test(
     `${error.code || ""} ${error.message || ""}`
   );
 }
@@ -113,6 +131,42 @@ const emptyCounts: ProspectCounts = {
   failed: 0,
 };
 
+async function dashboardFromTables(input: { q: string; status: string; offset: number }) {
+  const supabase = await adminDb();
+  const from = input.offset;
+  const to = input.offset + PAGE_SIZE - 1;
+  let listQuery = supabase
+    .from("prospects")
+    .select(LIST_SELECT, { count: "exact" })
+    .order("manual_priority", { ascending: false })
+    .order("last_activity_at", { ascending: false })
+    .range(from, to);
+  if (input.status && input.status !== "all") listQuery = listQuery.eq("status", input.status);
+  const filter = searchOr(input.q);
+  if (filter) listQuery = listQuery.or(filter);
+
+  const [listResult, countResult, settingsResult] = await Promise.all([
+    listQuery,
+    supabase.from("prospects").select(COUNT_SELECT).limit(2000),
+    supabase.from("outreach_settings").select(SETTINGS_SELECT).eq("id", 1).maybeSingle(),
+  ]);
+  const tableError = listResult.error || countResult.error || settingsResult.error;
+  return {
+    data: {
+      rows: (listResult.data || []) as ProspectListRow[],
+      total: listResult.count || 0,
+      counts: { ...emptyCounts, ...countProspects(countResult.data || []) },
+      settings: settingsFromRow(settingsResult.data),
+      usage: [] as UsageDay[],
+      limit: PAGE_SIZE,
+      offset: input.offset,
+      requests: FALLBACK_REQUESTS,
+    },
+    missing: missingTable(tableError),
+    requests: FALLBACK_REQUESTS,
+  };
+}
+
 export const getProspectDashboard = cache(async function getProspectDashboard(input: {
   q: string;
   status: string;
@@ -122,9 +176,11 @@ export const getProspectDashboard = cache(async function getProspectDashboard(in
   const { data, error } = await supabase.rpc("prospect_dashboard", {
     p_q: input.q,
     p_status: input.status,
-    p_limit: 25,
+    p_limit: PAGE_SIZE,
     p_offset: input.offset,
   });
+
+  if (missingFunction(error)) return dashboardFromTables(input);
 
   if (error || !data) {
     return {
@@ -134,11 +190,11 @@ export const getProspectDashboard = cache(async function getProspectDashboard(in
         counts: emptyCounts,
         settings: null,
         usage: [],
-        limit: 25,
+        limit: PAGE_SIZE,
         offset: input.offset,
         requests: QUERY_BUDGET_PER_VIEW,
       },
-      missing: missing(error),
+      missing: missingTable(error),
       requests: QUERY_BUDGET_PER_VIEW,
     };
   }
@@ -160,14 +216,35 @@ export const getProspectDashboard = cache(async function getProspectDashboard(in
   };
 });
 
+async function detailFromTables(id: string) {
+  const supabase = await adminDb();
+  const [prospectResult, activityResult] = await Promise.all([
+    supabase.from("prospects").select(DETAIL_SELECT).eq("id", id).maybeSingle(),
+    supabase
+      .from("prospect_activity")
+      .select(ACTIVITY_SELECT)
+      .eq("prospect_id", id)
+      .order("created_at", { ascending: false })
+      .limit(ACTIVITY_LIMIT),
+  ]);
+  const tableError = prospectResult.error || activityResult.error;
+  return {
+    prospect: (prospectResult.data as ProspectRow | null) || null,
+    activity: (activityResult.data || []) as ProspectActivityRow[],
+    missing: missingTable(tableError),
+    requests: 2,
+  };
+}
+
 export const getProspectDetail = cache(async function getProspectDetail(id: string) {
   const supabase = await adminDb();
   const { data, error } = await supabase.rpc("prospect_detail", { p_id: id });
+  if (missingFunction(error)) return detailFromTables(id);
   if (error) {
     return {
       prospect: null as ProspectRow | null,
       activity: [] as ProspectActivityRow[],
-      missing: missing(error),
+      missing: missingTable(error),
       requests: QUERY_BUDGET_PER_VIEW,
     };
   }
