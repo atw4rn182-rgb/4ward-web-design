@@ -8,8 +8,10 @@ import {
   PHASE_RULES,
   QUERY_BUDGET_PER_VIEW,
   WEEKDAY_TARGET,
+  canSubmitOutreach,
   countProspects,
   filterProspects,
+  monthlyOutreachVolume,
   findDuplicate,
   findSuppression,
   listWindow,
@@ -149,6 +151,18 @@ await check("ready requires eligibility and settings cannot start the scheduler"
   assert.equal(OUTREACH_SCHEDULER_ACTIVE, false);
   const paused = validateOutreachSettings({ automationEnabled: undefined, manualPriority: undefined, mailingAddress: "" });
   assert.equal(paused.value.automation_enabled, false);
+  const chosen = validateOutreachSettings({ weekdayTarget: "7", pauseAutomation: "on", automationEnabled: "on", manualPriority: "on" });
+  assert.equal(chosen.ok, true);
+  assert.equal(chosen.value.weekday_target, 7);
+  assert.equal(chosen.value.automation_enabled, false);
+  assert.equal(chosen.value.timezone, "America/Denver");
+  assert.equal(validateOutreachSettings({ weekdayTarget: "11" }).ok, false);
+  assert.equal(monthlyOutreachVolume(5), 110);
+  assert.equal(monthlyOutreachVolume(10), 220);
+  assert.equal(canSubmitOutreach({ target: 5, submittedToday: 4 }).allowed, true);
+  assert.equal(canSubmitOutreach({ target: 5, submittedToday: 5 }).allowed, false);
+  assert.equal(canSubmitOutreach({ target: 5, submittedToday: 5 }).remaining, 0);
+  assert.equal(settingsFromRow({ automation_enabled: false, manual_priority: true, weekday_target: 8 }).weekday_target, 8);
 });
 
 await check("next run is the next weekday at 9:00 AM Denver", () => {
@@ -313,6 +327,9 @@ await check("prospect admin code does not send mail or store a password", () => 
   assert.match(action, /researchQueueAction/);
   assert.doesNotMatch(action, /discover\(/);
   assert.doesNotMatch(action, /static-forms|outreachMailer|claim_outreach_run|setInterval|SUPABASE_SERVICE_ROLE_KEY|\bpassword\b|scheduler_live/);
+  const targetMigration = readFileSync(new URL("../supabase/migrations/013_outreach_daily_target.sql", import.meta.url), "utf8");
+  assert.match(targetMigration, /weekday_target >= 1 and weekday_target <= 10/);
+  assert.doesNotMatch(targetMigration, /alter table public\.customers|alter table public\.payments|alter table public\.consultations/i);
   assert.doesNotMatch(queries, /select\("\*"\)|channel\(|setInterval/);
   assert.match(queries, /prospect_dashboard/);
   assert.match(queries, /LIST_SELECT/);

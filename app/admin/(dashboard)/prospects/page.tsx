@@ -97,9 +97,11 @@ export default async function ProspectsPage({
 
       <div className="mb-5">
         <OutreachSettingsForm
+          key={`${dashboard.data.settings?.weekday_target ?? 5}-${dashboard.data.settings?.automation_enabled ? "on" : "off"}`}
           settings={dashboard.data.settings}
           nextRun={nextRun}
           schedulerActive={OUTREACH_SCHEDULER_ACTIVE}
+          interestedLeads={counts.interested}
         />
       </div>
 

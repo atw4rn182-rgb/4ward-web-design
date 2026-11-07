@@ -1,10 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect, useState } from "react";
 import {
   saveOutreachSettingsAction,
   type ProspectActionState,
 } from "@/app/admin/prospect-actions";
+import { clampDailyTarget, monthlyOutreachVolume } from "@/lib/prospects/model.mjs";
 import type { OutreachSettingsRow } from "@/lib/prospects/queries";
 
 const initial: ProspectActionState = {};
@@ -13,10 +14,12 @@ export function OutreachSettingsForm({
   settings,
   nextRun,
   schedulerActive,
+  interestedLeads = 0,
 }: {
   settings: OutreachSettingsRow | null;
   nextRun: string;
   schedulerActive: boolean;
+  interestedLeads?: number;
 }) {
   const [state, formAction, pending] = useActionState(saveOutreachSettingsAction, initial);
   const enabled = settings?.automation_enabled ?? false;
@@ -25,6 +28,14 @@ export function OutreachSettingsForm({
   const submitted = Number(summary.submitted || 0);
   const failed = Number(summary.failed || 0);
   const skipped = Number(summary.skipped || 0);
+  const replies = Number(summary.replies || 0);
+  const consultations = Number(summary.consultations || 0);
+  const conversions = Number(summary.conversions || 0);
+  const [target, setTarget] = useState(clampDailyTarget(settings?.weekday_target));
+  const monthly = monthlyOutreachVolume(target);
+  useEffect(() => {
+    if (typeof state.weekdayTarget === "number") setTarget(clampDailyTarget(state.weekdayTarget));
+  }, [state.weekdayTarget]);
 
   return (
     <form action={formAction} className="rounded-2xl border border-black/10 bg-paper p-4 shadow-soft sm:p-5">
@@ -41,21 +52,36 @@ export function OutreachSettingsForm({
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <input type="hidden" name="automationEnabled" value="on" />
         <label className="flex min-h-11 items-center gap-3 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm font-semibold">
-          <input type="checkbox" name="automationEnabled" defaultChecked={enabled} />
-          Automation enabled
+          <input type="checkbox" name="pauseAutomation" defaultChecked={!enabled} />
+          Pause automation
         </label>
         <label className="flex min-h-11 items-center gap-3 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm font-semibold">
           <input type="checkbox" name="manualPriority" defaultChecked={manualPriority} />
           Manual prospects go first
         </label>
-        <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
-          <span className="block font-semibold text-ink">Weekday target</span>
-          5 successfully submitted emails, Monday–Friday
-        </p>
+        <label className="block rounded-xl bg-black/[0.03] px-3 py-3 text-sm font-semibold text-ink">
+          Daily email target
+          <select
+            name="weekdayTarget"
+            value={target}
+            onChange={(event) => setTarget(clampDailyTarget(event.target.value))}
+            className="mt-1 min-h-11 w-full rounded-xl border border-black/10 bg-white px-3 text-sm"
+          >
+            {Array.from({ length: 10 }, (_, index) => index + 1).map((value) => (
+              <option key={value} value={value}>
+                {value} per weekday
+              </option>
+            ))}
+          </select>
+          <span className="mt-2 block font-normal text-muted">
+            Current target: {target} successfully submitted emails each weekday. About {monthly} per month. A successful retry counts toward the limit. Saving waits for the weekday schedule.
+          </span>
+        </label>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
           <span className="block font-semibold text-ink">Schedule</span>
-          9:00 AM America/Denver, and only if a later phase starts it
+          Monday–Friday at 9:00 AM America/Denver, and only if a later phase starts it
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
           <span className="block font-semibold text-ink">Retry limit</span>
@@ -70,10 +96,15 @@ export function OutreachSettingsForm({
           {nextRun}
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm sm:col-span-2">
-          <span className="block font-semibold text-ink">Daily results</span>
+          <span className="block font-semibold text-ink">Outreach results</span>
           {settings?.last_run_at
-            ? `${submitted} submitted, ${skipped} skipped, ${failed} failed`
-            : "No completed runs"}
+            ? `${submitted} submitted, ${skipped} skipped, ${failed} failed. Research attempts are not counted.`
+            : "No completed sending runs. Research attempts are not counted."}
+        </p>
+        <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm sm:col-span-2">
+          <span className="block font-semibold text-ink">Replies and outcomes</span>
+          {replies} replies, {interestedLeads} interested leads, {consultations} consultations, {conversions} conversions.
+          Consultations and conversions appear here when a later send records them.
         </p>
         <label className="block text-sm font-semibold text-ink sm:col-span-2">
           Business mailing address

@@ -8,7 +8,9 @@ import { createServiceClient } from "@/lib/supabase/service";
 import {
   statusTimestampColumn,
   suppressesOutreach,
+  WEEKDAY_TARGET,
   suppressionOr,
+  monthlyOutreachVolume,
   validateManualProspect,
   validateOutreachSettings,
   validateResearch,
@@ -30,6 +32,7 @@ export type ProspectActionState = {
   ok?: boolean;
   error?: string;
   message?: string;
+  weekdayTarget?: number;
 };
 
 async function adminWriteClient() {
@@ -405,12 +408,59 @@ export async function updateProspectResearchAction(
   return { ok: true, message: "Research saved." };
 }
 
+function settingsSavedMessage(
+  value: { automation_enabled: boolean; weekday_target: number },
+  targetLocked: boolean
+) {
+  const pause = value.automation_enabled
+    ? "Automation is marked on. The scheduler is still off, so no emails will be sent."
+    : "Automation is paused. No emails will be sent.";
+  if (targetLocked) {
+    return `${pause} The daily target is still locked at 5 until migration 013 is approved. Nothing was sent.`;
+  }
+  return `${pause} Daily target is ${value.weekday_target} submitted emails per weekday, about ${monthlyOutreachVolume(value.weekday_target)} per month. Nothing was sent.`;
+}
+
+async function persistOutreachSettings(
+  client: SupabaseClient,
+  value: { automation_enabled: boolean; weekday_target: number; manual_priority: boolean; mailing_address: string }
+) {
+  const base = {
+    automation_enabled: value.automation_enabled,
+    manual_priority: value.manual_priority,
+    mailing_address: value.mailing_address || null,
+    weekday_target: value.weekday_target,
+  };
+  const { error } = await client.from("outreach_settings").update(base).eq("id", 1);
+  const checkViolation = error?.code === "23514" || /23514|check constraint/i.test(`${error?.code || ""} ${error?.message || ""}`);
+  if (checkViolation) {
+    const { error: retryError } = await client
+      .from("outreach_settings")
+      .update({
+        automation_enabled: value.automation_enabled,
+        manual_priority: value.manual_priority,
+        mailing_address: value.mailing_address || null,
+      })
+      .eq("id", 1);
+    const schema = schemaMessage(retryError);
+    if (retryError && schema) return { error: schema, targetLocked: false };
+    if (retryError) return { error: "Unable to save that change.", targetLocked: false };
+    return { error: null as string | null, targetLocked: true };
+  }
+  const schema = schemaMessage(error);
+  if (error && schema) return { error: schema, targetLocked: false };
+  if (error) return { error: "Unable to save that change.", targetLocked: false };
+  return { error: null as string | null, targetLocked: false };
+}
+
 export async function saveOutreachSettingsAction(
   _prev: ProspectActionState,
   formData: FormData
 ): Promise<ProspectActionState> {
   const parsed = validateOutreachSettings({
     automationEnabled: formData.get("automationEnabled"),
+    pauseAutomation: formData.get("pauseAutomation"),
+    weekdayTarget: formData.get("weekdayTarget"),
     manualPriority: formData.get("manualPriority"),
     mailingAddress: formData.get("mailingAddress"),
   });
@@ -419,41 +469,13 @@ export async function saveOutreachSettingsAction(
   const { error, client } = await adminWriteClient();
   if (error || !client) return { error: error || "Unauthorized." };
 
-  const { data, error: rpcError } = await client.rpc("admin_save_outreach_settings", {
-    p_enabled: parsed.value.automation_enabled,
-    p_manual_priority: parsed.value.manual_priority,
-    p_mailing_address: parsed.value.mailing_address,
-  });
-  if (missingFunction(rpcError)) {
-    const { error: saveError } = await client
-      .from("outreach_settings")
-      .update({
-        automation_enabled: parsed.value.automation_enabled,
-        manual_priority: parsed.value.manual_priority,
-        mailing_address: parsed.value.mailing_address || null,
-      })
-      .eq("id", 1);
-    const saveSchema = schemaMessage(saveError);
-    if (saveError && saveSchema) return { error: saveSchema };
-    if (saveError) return { error: "Unable to save that change." };
-    revalidateProspects();
-    return {
-      ok: true,
-      message: parsed.value.automation_enabled
-        ? "Automation is marked on. The scheduler is still off, so no emails will be sent."
-        : "Automation is paused. No emails will be sent.",
-    };
-  }
-  const schema = schemaMessage(rpcError);
-  if (rpcError && schema) return { error: schema };
-  if (rpcError || !data?.ok) return { error: resultMessage(data?.error || "") };
-
+  const saved = await persistOutreachSettings(client, parsed.value);
+  if (saved.error) return { error: saved.error };
   revalidateProspects();
   return {
     ok: true,
-    message: parsed.value.automation_enabled
-      ? "Automation is marked on. The scheduler is still off, so no emails will be sent."
-      : "Automation is paused. No emails will be sent.",
+    weekdayTarget: saved.targetLocked ? WEEKDAY_TARGET : parsed.value.weekday_target,
+    message: settingsSavedMessage(parsed.value, saved.targetLocked),
   };
 }
 
