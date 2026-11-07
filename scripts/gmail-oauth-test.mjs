@@ -19,7 +19,7 @@ import {
   statesMatch,
   testRecipient,
 } from "../lib/gmail/oauth.mjs";
-import { buildAdminTestMessage, sendAdminTest } from "../lib/gmail/send.mjs";
+import { buildAdminTestMessage, buildSampleOutreachMessage, SAMPLE_SUBJECT, sendAdminTest, sendSampleMessage } from "../lib/gmail/send.mjs";
 
 process.env.GOOGLE_OAUTH_CLIENT_ID = "test-client-id";
 process.env.GOOGLE_OAUTH_CLIENT_SECRET = "test-client-secret";
@@ -111,6 +111,106 @@ await check("a failed Gmail response does not become a prospect send", async () 
   assert.equal(body.includes("prospect@"), false);
 });
 
+await check("a sample uses the outreach letter and is not retried", async () => {
+  const address = "4Ward Web Design\nPO BOX 1161\nCARLSBAD NM 88220";
+  const built = buildSampleOutreachMessage(address);
+  assert.equal(built.ok, true);
+  const text = Buffer.from(built.raw, "base64url").toString("utf8");
+  assert.match(text, /From: 4Ward Web Design <4wardwebdesigns@gmail.com>/);
+  assert.match(text, /^To: 4wardwebdesigns@gmail.com/m);
+  assert.doesNotMatch(text, /^(Bcc|Cc):/m);
+  assert.doesNotMatch(text, /verified-sample@example.com/);
+  const encoded = text.match(/Subject: =\?UTF-8\?B\?([^?]+)\?=/)[1];
+  assert.equal(Buffer.from(encoded, "base64").toString("utf8"), SAMPLE_SUBJECT);
+  assert.match(text, /Adam Windhorst/);
+  assert.match(text, /Mesa Verde Pottery/);
+  assert.match(text, /mesaverdepottery\.example/);
+  assert.match(text, /\(970\) 560-2575/);
+  assert.match(text, /https:\/\/www\.4wardwebdesign.com/);
+  assert.match(text, /4ward-commercial\.mp4/);
+  assert.match(text, /Google Business Profile setup and optimization/);
+  assert.match(text, /Google Search and Maps/);
+  assert.match(text, /free, no-obligation consultation/);
+  assert.match(text, /PO BOX 1161/);
+  assert.match(text, /ask to be removed/);
+  assert.equal(buildSampleOutreachMessage("").ok, false);
+
+  let calls = 0;
+  const accepted = await sendSampleMessage({
+    accessToken: "access",
+    mailingAddress: address,
+    fetchImpl: async () => {
+      calls += 1;
+      return { ok: true, json: async () => ({ id: "18c5sample01" }) };
+    },
+  });
+  assert.equal(calls, 1);
+  assert.equal(accepted.ok, true);
+  assert.equal(accepted.id, "18c5sample01");
+
+  calls = 0;
+  const rejected = await sendSampleMessage({
+    accessToken: "access",
+    mailingAddress: address,
+    fetchImpl: async () => {
+      calls += 1;
+      return { ok: false };
+    },
+  });
+  assert.equal(calls, 1);
+  assert.equal(rejected.ok, false);
+  assert.equal(rejected.uncertain, false);
+
+  calls = 0;
+  const uncertain = await sendSampleMessage({
+    accessToken: "access",
+    mailingAddress: address,
+    fetchImpl: async () => {
+      calls += 1;
+      throw new Error("timeout");
+    },
+  });
+  assert.equal(calls, 1);
+  assert.equal(uncertain.uncertain, true);
+
+  const blocked = await sendSampleMessage({
+    accessToken: "access",
+    mailingAddress: " ",
+    fetchImpl: async () => {
+      throw new Error("should not send");
+    },
+  });
+  assert.equal(blocked.ok, false);
+
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  let overlapCalls = 0;
+  const first = sendSampleMessage({
+    accessToken: "access",
+    mailingAddress: address,
+    fetchImpl: async () => {
+      overlapCalls += 1;
+      await gate;
+      return { ok: true, json: async () => ({ id: "18c5sample02" }) };
+    },
+  });
+  const second = await sendSampleMessage({
+    accessToken: "access",
+    mailingAddress: address,
+    fetchImpl: async () => {
+      overlapCalls += 1;
+      return { ok: true, json: async () => ({ id: "18c5sample03" }) };
+    },
+  });
+  assert.equal(second.ok, false);
+  assert.match(second.error, /already being sent/);
+  release();
+  assert.equal((await first).id, "18c5sample02");
+  assert.equal(overlapCalls, 1);
+});
+
 await check("scheduled outreach and discovery stay off", async () => {
   assert.equal(OUTREACH_SCHEDULER_ACTIVE, false);
   assert.equal(discoveryProvider().available, false);
@@ -123,9 +223,17 @@ await check("scheduled outreach and discovery stay off", async () => {
   const callback = readFileSync(new URL("../app/api/admin/gmail/callback/route.ts", import.meta.url), "utf8");
   const migration = readFileSync(new URL("../supabase/migrations/014_gmail_oauth.sql", import.meta.url), "utf8");
   const prospects = readFileSync(new URL("../app/admin/prospect-actions.ts", import.meta.url), "utf8");
+  const mailbox = readFileSync(new URL("../lib/gmail/mailbox.mjs", import.meta.url), "utf8");
   assert.match(action, /getAdminUser/);
   assert.match(action, /testRecipient\(user\)/);
+  assert.match(action, /sendSampleOutreach\(\)/);
+  assert.match(action, /Inbox delivery was not checked/);
   assert.doesNotMatch(action, /formData|GOOGLE_OAUTH_CLIENT_SECRET|gmail_refresh_token/);
+  assert.match(mailbox, /export async function sendSampleOutreach\(\)/);
+  assert.match(mailbox, /mailing_address/);
+  assert.match(client, /Send Sample Outreach Email/);
+  assert.match(client, /addressSaved/);
+  assert.doesNotMatch(client, /name="(?:to|recipient|email)"/);
   assert.match(start, /getAdminUser/);
   assert.match(callback, /getAdminUser/);
   assert.match(callback, /statesMatch/);

@@ -80,7 +80,7 @@ export default async function ProspectsPage({
     <>
       <PageHeader
         title="Prospective Clients"
-        description="Queue and review businesses for a future weekday outreach batch. Prospect email stays off. A mailbox test goes only to the signed-in administrator."
+        description="Queue and review businesses for a future weekday outreach batch. Prospect email stays off. A sample outreach email goes only to 4wardwebdesigns@gmail.com when an administrator clicks the button."
       />
 
       {schemaMissing ? (
@@ -109,6 +109,7 @@ export default async function ProspectsPage({
           pendingMigration={mailbox.pendingMigration}
           configured={mailbox.configured}
           notice={params.gmail || ""}
+          addressSaved={Boolean(String(dashboard.data.settings?.mailing_address || "").trim())}
         />
       </div>
 
