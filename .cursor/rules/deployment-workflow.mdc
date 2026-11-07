@@ -1,0 +1,21 @@
+---
+description: Test, commit, and deploy routine 4Ward updates without extra approval
+alwaysApply: true
+---
+
+# Deployment workflow
+
+For routine website, dashboard, styling, and performance work:
+
+1. Implement the request.
+2. Run the production build, relevant checks, and `node scripts/payment-resilience-test.mjs`.
+3. Verify mobile layout, security, and the changed behavior.
+4. Keep secrets, `.env` files, and temporary files out of git.
+5. Commit when those checks pass.
+6. Fetch `origin/main`, merge only if it fast-forwards or rebases cleanly, then push `main` so Vercel deploys.
+7. Verify the live site and report the commit, deployment URL, and test results.
+8. Stop after that. Do not start the next numbered phase.
+
+Ask before applying a production database migration, changing Stripe billing, changing authentication or permissions, sending outreach email, changing outreach limits, adding a paid service, or deploying after a failed test or merge conflict.
+
+Keep Supabase on the free plan: one query when a screen opens, no polling, no realtime subscription, and no extra storage. Paginate list screens.
