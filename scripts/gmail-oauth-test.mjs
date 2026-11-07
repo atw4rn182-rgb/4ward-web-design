@@ -19,7 +19,7 @@ import {
   statesMatch,
   testRecipient,
 } from "../lib/gmail/oauth.mjs";
-import { buildAdminTestMessage, buildSampleOutreachMessage, SAMPLE_SUBJECT, sendAdminTest, sendSampleMessage } from "../lib/gmail/send.mjs";
+import { buildAdminTestMessage, buildOutreachMessage, buildSampleOutreachMessage, outreachBlocked, SAMPLE_SUBJECT, sendAdminTest, sendOutreachMessage, sendSampleMessage } from "../lib/gmail/send.mjs";
 
 process.env.GOOGLE_OAUTH_CLIENT_ID = "test-client-id";
 process.env.GOOGLE_OAUTH_CLIENT_SECRET = "test-client-secret";
@@ -214,6 +214,87 @@ await check("a sample uses the outreach letter and is not retried", async () => 
   release();
   assert.equal((await first).id, "18c5sample02");
   assert.equal(overlapCalls, 1);
+});
+
+await check("a connected mailbox sends one checked outreach message and does not retry", async () => {
+  assert.equal(outreachBlocked({ email: "shop@example.com", suppressed: true }), "This recipient is opted out.");
+  assert.equal(outreachBlocked({ email: "shop@example.com", status: "sent" }), "This recipient was already contacted.");
+  assert.equal(outreachBlocked({ email: "shop@example.com", existingCustomer: true }), "This email belongs to an existing customer.");
+  assert.match(outreachBlocked({ email: "shop@example.com", oneTimeExcluded: true }), /one-time test/);
+  assert.equal(outreachBlocked({ email: "shop@example.com", oneTimeExcluded: true, suppressed: true, authorizedOneTime: true }), "This recipient is opted out.");
+  assert.equal(outreachBlocked({ email: "shop@example.com", status: "sent", authorizedOneTime: true, explicitlyAuthorized: true }), "This recipient was already contacted.");
+  assert.match(outreachBlocked({ email: "shop@example.com", outreachEligible: false }), /not eligible for automated outreach/);
+  assert.equal(outreachBlocked({ email: "shop@example.com", outreachEligible: false, oneTimeExcluded: true, authorizedOneTime: true }), "");
+  assert.equal(outreachBlocked({ email: "shop@example.com", outreachEligible: false, explicitlyAuthorized: true }), "");
+  assert.match(outreachBlocked({ email: "shop@example.com", oneTimeExcluded: true, explicitlyAuthorized: true, outreachEligible: false }), /one-time test/);
+  const noted = buildOutreachMessage({
+    mailingAddress: "PO BOX 1161",
+    to: "office@shop.example",
+    businessName: "Shop Example",
+    city: "Artesia",
+    websiteLine: "No business-owned website found.",
+  });
+  assert.match(Buffer.from(noted.raw, "base64url").toString("utf8"), /No business-owned website found/);
+  assert.doesNotMatch(Buffer.from(noted.raw, "base64url").toString("utf8"), /no website/i);
+  const letter = buildOutreachMessage({
+    mailingAddress: "4Ward Web Design\nPO BOX 1161\nCARLSBAD NM 88220",
+    to: "office@shop.example",
+    businessName: "Shop Example",
+    city: "Artesia",
+    industry: "plumbing",
+    websiteHost: "",
+  });
+  assert.equal(letter.ok, true);
+  const decoded = Buffer.from(letter.raw, "base64url").toString("utf8");
+  assert.match(decoded, /To: office@shop\.example/);
+  assert.match(decoded, /PO BOX 1161/);
+  assert.match(decoded, /offer=both#pricing/);
+  assert.doesNotMatch(decoded, /no website/i);
+  let calls = 0;
+  const refused = await sendOutreachMessage({
+    accessToken: "access",
+    mailingAddress: "PO BOX 1161",
+    email: "old@shop.example",
+    suppressed: true,
+    businessName: "Old Shop",
+    city: "Artesia",
+    fetchImpl: async () => {
+      calls += 1;
+      return { ok: true, json: async () => ({ id: "should-not-send" }) };
+    },
+  });
+  assert.equal(refused.ok, false);
+  assert.equal(calls, 0);
+  const accepted = await sendOutreachMessage({
+    accessToken: "access",
+    mailingAddress: "PO BOX 1161",
+    email: "office@shop.example",
+    businessName: "Shop Example",
+    city: "Artesia",
+    fetchImpl: async () => {
+      calls += 1;
+      return { ok: true, json: async () => ({ id: "18c5outreach1" }) };
+    },
+  });
+  assert.equal(accepted.ok, true);
+  assert.equal(accepted.id, "18c5outreach1");
+  assert.equal(accepted.uncertain, false);
+  const uncertain = await sendOutreachMessage({
+    accessToken: "access",
+    mailingAddress: "PO BOX 1161",
+    email: "other@shop.example",
+    businessName: "Other Shop",
+    city: "Carlsbad",
+    fetchImpl: async () => {
+      calls += 1;
+      throw new Error("timeout");
+    },
+  });
+  assert.equal(uncertain.uncertain, true);
+  assert.equal(calls, 2);
+  const configured = outreachMailer({ accessToken: "access", mailingAddress: "PO BOX 1161", fetchImpl: async () => ({ ok: true, json: async () => ({ id: "18c5outreach2" }) }) });
+  assert.equal(configured.configured, true);
+  assert.equal(configured.schedulerActive, false);
 });
 
 await check("scheduled outreach and discovery stay off", async () => {

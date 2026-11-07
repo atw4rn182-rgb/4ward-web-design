@@ -21,6 +21,7 @@ import { ResearchQueueButton } from "@/components/admin/prospects/ResearchAction
 import { ProspectDecision } from "@/components/admin/prospects/ProspectDecision";
 import { listQualification } from "@/lib/prospects/research.mjs";
 import { GmailConnection } from "@/components/admin/prospects/GmailConnection";
+import { AuthorizedLaunch } from "@/components/admin/prospects/AuthorizedLaunch";
 import { gmailConnectionStatus } from "@/lib/gmail/mailbox.mjs";
 
 export const metadata = {
@@ -80,7 +81,7 @@ export default async function ProspectsPage({
     <>
       <PageHeader
         title="Prospective Clients"
-        description="Queue and review businesses for a future weekday outreach batch. Prospect email stays off. A sample outreach email goes only to 4wardwebdesigns@gmail.com when an administrator clicks the button."
+        description="Queue and review businesses for outreach. Weekday batches stay off. An administrator can send the five authorized messages, or a sample that goes only to 4wardwebdesigns@gmail.com."
       />
 
       {schemaMissing ? (
@@ -112,6 +113,8 @@ export default async function ProspectsPage({
           addressSaved={Boolean(String(dashboard.data.settings?.mailing_address || "").trim())}
         />
       </div>
+
+      <AuthorizedLaunch />
 
       <div className="mb-5">
         <OutreachSettingsForm
