@@ -1749,6 +1749,25 @@ a.ba-frame:hover img {
   font-weight: 500;
 }
 
+.plan-with-dashboard {
+  margin: -0.1rem 0 0.5rem;
+  color: var(--ink);
+  font-size: 0.92rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.plan-with-dashboard span {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.plan-with-dashboard small {
+  font-weight: 600;
+  color: var(--muted);
+}
+
 .plan-fee {
   margin: 0;
   color: var(--muted);
