@@ -31,6 +31,17 @@ import {
   validateStatusChange,
 } from "../lib/prospects/model.mjs";
 import { outreachMailer } from "../lib/prospects/mailer.mjs";
+import {
+  buildDraft,
+  discoveryProvider,
+  extractPublicContacts,
+  packResearchRecord,
+  qualifyProspect,
+  readResearchRecord,
+  robotsAllows,
+  selectResearchBatch,
+} from "../lib/prospects/research.mjs";
+import { readOwnWebsite, researchFromRecord } from "../lib/prospects/research-run.mjs";
 
 let passed = 0;
 async function check(name, fn) {
@@ -196,6 +207,99 @@ await check("pages stay within one query and do not poll", () => {
   assert.match(PHASE_RULES.x9, /suppression/i);
 });
 
+await check("manual prospects are researched before discovered ones and duplicates are skipped", () => {
+  const batch = selectResearchBatch([
+    { id: "a", status: "queued", manual_priority: false, business_name: "Auto Shop", city: "Artesia", public_email: "", last_activity_at: "2026-11-01" },
+    { id: "b", status: "queued", manual_priority: true, business_name: "Manual Welding", city: "Carlsbad", public_email: "office@manual.example", last_activity_at: "2026-11-02" },
+    { id: "c", status: "queued", manual_priority: false, business_name: "Manual Welding", city: "Carlsbad", public_email: "", last_activity_at: "2026-11-03" },
+    { id: "d", status: "do_not_contact", manual_priority: true, business_name: "Closed", city: "Loving", public_email: "", last_activity_at: "2026-11-04" },
+  ], 5);
+  assert.equal(batch.chosen[0].id, "b");
+  assert.equal(batch.chosen.some((row) => row.id === "c"), false);
+  assert.equal(batch.skipped.some((row) => row.reason === "duplicate"), true);
+  assert.equal(batch.skipped.some((row) => row.reason === "suppressed"), true);
+});
+
+await check("qualification does not invent a contact or a missing website", () => {
+  const missing = qualifyProspect({ businessName: "Hope Plumbing", city: "Hope", publicEmail: "" });
+  assert.equal(missing.qualification, "no_verified_contact");
+  assert.match(missing.reason, /not guessed/i);
+  const outside = qualifyProspect({ businessName: "Far Shop", city: "Hobbs", publicEmail: "info@farshop.com" });
+  assert.equal(outside.qualification, "not_qualified");
+  const personal = qualifyProspect({ businessName: "Local Clean", city: "Loving", publicEmail: "owner@gmail.com" });
+  assert.equal(personal.qualification, "needs_review");
+  const blocked = qualifyProspect({ businessName: "Blocked", city: "Carlsbad", publicEmail: "info@blocked.com", suppressed: true });
+  assert.equal(blocked.qualification, "suppressed");
+  assert.equal(blocked.outreachEligible, false);
+  const ready = qualifyProspect({ businessName: "Carlsbad Welding", city: "Carlsbad", publicEmail: "info@carlsbadwelding.com", websiteHost: "carlsbadwelding.com" });
+  assert.equal(ready.qualification, "qualified");
+  const draft = buildDraft({ ...ready, businessName: "Carlsbad Welding", city: "Carlsbad", websiteHost: "carlsbadwelding.com", mailingAddress: "" });
+  assert.match(draft.body, /\$99/);
+  assert.match(draft.body, /\$50/);
+  assert.match(draft.body, /\$200/);
+  assert.match(draft.body, /https:\/\/www\.4wardwebdesign\.com/);
+  assert.match(draft.body, /560-2575/);
+  assert.doesNotMatch(draft.body, /outdated|ranking|poor website|no website/i);
+  assert.equal(buildDraft(missing), null);
+});
+
+await check("research reads only permitted public contacts and stays compact", () => {
+  assert.equal(robotsAllows("User-agent: *\nDisallow: /", "/"), false);
+  assert.equal(robotsAllows("User-agent: *\nDisallow: /private", "/"), true);
+  const contacts = extractPublicContacts('<title>Shop</title><a href="mailto:info@shop.test">Email</a><a href="/contact">Contact</a> owner@gmail.com', "https://shop.test/");
+  assert.deepEqual(contacts.emails, ["info@shop.test", "owner@gmail.com"]);
+  assert.equal(contacts.contactUrl, "https://shop.test/contact");
+  const packed = packResearchRecord({
+    qualification: "qualified",
+    reason: "Public email verified.",
+    summary: "Short summary",
+    sources: "https://shop.test/",
+    draftSubject: "Website help for Shop",
+    draftBody: "Hello from Carlsbad.",
+    factualNotes: "Public page title: Shop.",
+    confidence: "medium",
+    email: "info@shop.test",
+  });
+  const read = readResearchRecord({ research_notes: packed.research_notes, website_opportunities: packed.website_opportunities, research_sources: packed.research_sources });
+  assert.equal(read.qualification, "qualified");
+  assert.equal(read.draftSubject, "Website help for Shop");
+  assert.match(read.draftBody, /Hello from Carlsbad/);
+  assert.equal(packed.outreach_eligible, false);
+  assert.equal(discoveryProvider().available, false);
+  assert.equal(discoveryProvider().tested, false);
+});
+
+await check("a blocked or failed website is marked for review and not emailed", async () => {
+  const blocked = await readOwnWebsite("https://shop.test/", {
+    fetchImpl: async (url) => ({
+      status: String(url).endsWith("/robots.txt") ? 200 : 200,
+      headers: { get: () => "" },
+      text: async () => (String(url).endsWith("/robots.txt") ? "User-agent: *\nDisallow: /" : "<title>Hidden</title>"),
+    }),
+  });
+  assert.equal(blocked.robotsBlocked, true);
+  assert.equal(blocked.emails.length, 0);
+  const result = researchFromRecord({
+    business_name: "Shop",
+    city: "Artesia",
+    public_email: "info@shop.test",
+    website_host: "shop.test",
+    website_url: "https://shop.test/",
+  }, blocked, "");
+  assert.equal(result.qualification, "needs_review");
+  assert.equal(result.draftBody, "");
+  let calls = 0;
+  const failed = await readOwnWebsite("https://shop.test/menu", {
+    timeoutMs: 1000,
+    fetchImpl: async () => {
+      calls += 1;
+      return { status: 500, headers: { get: () => "" }, text: async () => "" };
+    },
+  });
+  assert.equal(failed.ok, false);
+  assert.ok(calls <= 3);
+});
+
 await check("prospect admin code does not send mail or store a password", () => {
   const action = readFileSync(new URL("../app/admin/prospect-actions.ts", import.meta.url), "utf8");
   const queries = readFileSync(new URL("../lib/prospects/queries.ts", import.meta.url), "utf8");
@@ -205,6 +309,9 @@ await check("prospect admin code does not send mail or store a password", () => 
   const shell = readFileSync(new URL("../components/admin/AdminShell.tsx", import.meta.url), "utf8");
   assert.match(action, /getAdminUser/);
   assert.match(action, /admin_add_prospect/);
+  assert.match(action, /researchProspectAction/);
+  assert.match(action, /researchQueueAction/);
+  assert.doesNotMatch(action, /discover\(/);
   assert.doesNotMatch(action, /static-forms|outreachMailer|claim_outreach_run|setInterval|SUPABASE_SERVICE_ROLE_KEY|\bpassword\b|scheduler_live/);
   assert.doesNotMatch(queries, /select\("\*"\)|channel\(|setInterval/);
   assert.match(queries, /prospect_dashboard/);

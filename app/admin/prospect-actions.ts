@@ -14,6 +14,17 @@ import {
   validateResearch,
   validateStatusChange,
 } from "@/lib/prospects/model.mjs";
+import {
+  RESEARCH_BATCH_LIMIT,
+  RESEARCH_DEADLINE_MS,
+  RESEARCH_FAILURE_LIMIT,
+  isQualification,
+  packResearchRecord,
+  qualificationLabel,
+  selectResearchBatch,
+  suppressionMatches,
+} from "@/lib/prospects/research.mjs";
+import { readOwnWebsite, researchFromRecord } from "@/lib/prospects/research-run.mjs";
 
 export type ProspectActionState = {
   ok?: boolean;
@@ -331,6 +342,29 @@ export async function updateProspectResearchAction(
   });
   if (!id) return { error: "Choose a prospect." };
   if (!parsed.ok) return { error: parsed.errors[0] };
+  const qualification = String(formData.get("qualification") || "");
+  const draftBody = String(formData.get("draftBody") || "").trim();
+  if (draftBody.length > 900) return { error: "The draft is too long." };
+  if (qualification && !isQualification(qualification)) return { error: "Choose a valid qualification." };
+  const packed = packResearchRecord({
+    qualification,
+    reason: formData.get("qualificationReason"),
+    summary: parsed.value.researchNotes,
+    sources: parsed.value.researchSources,
+    factualNotes: formData.get("factualNotes") || parsed.value.websiteOpportunities,
+    draftSubject: formData.get("draftSubject"),
+    draftBody,
+    listingNote: parsed.value.gbpObservations,
+    confidence: parsed.value.researchConfidence,
+    email: parsed.value.publicEmail,
+    industry: parsed.value.industry,
+  });
+  parsed.value.researchNotes = packed.research_notes;
+  parsed.value.websiteOpportunities = packed.website_opportunities;
+  parsed.value.gbpObservations = packed.gbp_observations || parsed.value.gbpObservations;
+  if (["suppressed", "not_qualified", "no_verified_contact"].includes(qualification)) {
+    parsed.value.outreachEligible = false;
+  }
   if (parsed.value.businessName.length < 2) return { error: "Enter the business name." };
 
   const researchedAt = parsed.value.researchedAt
@@ -454,5 +488,157 @@ export async function cleanupProspectLogsAction(
   return {
     ok: true,
     message: `Removed ${data.activityDeleted || 0} old log entries. Suppression records were kept.`,
+  };
+}
+
+const RESEARCH_COLUMNS =
+  "id,business_name,city,service_area,industry,website_url,website_host,public_email,status,manual_priority,last_activity_at";
+
+async function saveResearchResult(client: SupabaseClient, prospect: { id: string; status: string }, result: {
+  qualification: string;
+  reason: string;
+  confidence: string;
+  email: string;
+  industry: string;
+  sources: string;
+  factualNotes: string;
+  draftSubject: string;
+  draftBody: string;
+  listingNote: string;
+}) {
+  const packed = packResearchRecord(result);
+  const now = new Date().toISOString();
+  const status = result.qualification === "suppressed" ? "do_not_contact" : prospect.status === "queued" ? "researching" : prospect.status;
+  const patch: Record<string, string | boolean | null> = {
+    research_notes: packed.research_notes || null,
+    research_sources: packed.research_sources || null,
+    website_opportunities: packed.website_opportunities || null,
+    gbp_observations: packed.gbp_observations || null,
+    research_confidence: packed.research_confidence || null,
+    industry: packed.industry || null,
+    outreach_eligible: false,
+    status,
+    researched_at: now,
+    last_activity_at: now,
+  };
+  if (packed.public_email) patch.public_email = packed.public_email;
+  if (status === "do_not_contact") patch.do_not_contact_at = now;
+  const { error } = await client.from("prospects").update(patch).eq("id", prospect.id);
+  if (error) return error;
+  await client.from("prospect_activity").insert({
+    prospect_id: prospect.id,
+    event_type: "research",
+    from_status: prospect.status,
+    to_status: status,
+    note: `Research saved as ${qualificationLabel(result.qualification) || "Needs review"}. No email was sent.`.slice(0, 500),
+  });
+  return null;
+}
+
+async function researchProspectRecord(client: SupabaseClient, prospect: {
+  id: string;
+  business_name: string;
+  city: string | null;
+  service_area: string | null;
+  industry: string | null;
+  website_url: string | null;
+  website_host: string | null;
+  public_email: string | null;
+  status: string;
+}, mailingAddress: string, timeoutMs: number) {
+  const filter = suppressionOr({
+    businessName: prospect.business_name,
+    city: prospect.city || "",
+    email: prospect.public_email || "",
+    websiteHost: prospect.website_host || "",
+  });
+  const { data: blocked } = filter
+    ? await client.from("prospect_suppressions").select("id,business_name,city,email,website_host").or(filter).limit(1)
+    : { data: [] };
+  if (suppressionMatches(prospect, blocked || [])) {
+    const error = await saveResearchResult(client, prospect, {
+      qualification: "suppressed",
+      reason: "This business matches a do-not-contact record and was not queued for outreach.",
+      confidence: "high",
+      email: prospect.public_email || "",
+      industry: prospect.industry || "",
+      sources: "",
+      factualNotes: "",
+      draftSubject: "",
+      draftBody: "",
+      listingNote: "",
+    });
+    return { state: error ? "failed" : "suppressed", error };
+  }
+  const reading = prospect.website_url ? await readOwnWebsite(prospect.website_url, { timeoutMs }) : null;
+  const result = researchFromRecord({ ...prospect, suppressed: false }, reading, mailingAddress);
+  const error = await saveResearchResult(client, prospect, result);
+  if (error) return { state: "failed", error };
+  if (reading && !reading.ok && !reading.robotsBlocked) return { state: "failed", error: null };
+  return { state: "researched", error: null };
+}
+
+export async function researchProspectAction(
+  _prev: ProspectActionState,
+  formData: FormData
+): Promise<ProspectActionState> {
+  const id = String(formData.get("id") || "");
+  if (!id) return { error: "Choose a prospect." };
+  const { error, client } = await adminWriteClient();
+  if (error || !client) return { error: error || "Unauthorized." };
+  const { data: prospect, error: readError } = await client
+    .from("prospects")
+    .select(RESEARCH_COLUMNS)
+    .eq("id", id)
+    .maybeSingle();
+  const readSchema = schemaMessage(readError);
+  if (readError && readSchema) return { error: readSchema };
+  if (readError || !prospect) return { error: "Prospect not found." };
+  const { data: settings } = await client.from("outreach_settings").select("mailing_address").eq("id", 1).maybeSingle();
+  const outcome = await researchProspectRecord(client, prospect, settings?.mailing_address || "", RESEARCH_DEADLINE_MS);
+  if (outcome.state === "failed" && outcome.error) return { error: "Research could not be saved." };
+  revalidateProspects(id);
+  return {
+    ok: true,
+    message:
+      outcome.state === "suppressed"
+        ? "This business is suppressed. Research stopped and no email was sent."
+        : outcome.state === "failed"
+          ? "The website could not be read. The record was marked for review and no email was sent."
+          : "Research saved. The draft, if one was prepared, has not been sent.",
+  };
+}
+
+export async function researchQueueAction(_prev: ProspectActionState): Promise<ProspectActionState> {
+  const { error, client } = await adminWriteClient();
+  if (error || !client) return { error: error || "Unauthorized." };
+  const { data: rows, error: readError } = await client
+    .from("prospects")
+    .select(RESEARCH_COLUMNS)
+    .in("status", ["queued", "researching"])
+    .order("manual_priority", { ascending: false })
+    .order("last_activity_at", { ascending: true })
+    .limit(15);
+  const readSchema = schemaMessage(readError);
+  if (readError && readSchema) return { error: readSchema };
+  if (readError) return { error: "Unable to read the queue." };
+  const batch = selectResearchBatch(rows || [], RESEARCH_BATCH_LIMIT);
+  const { data: settings } = await client.from("outreach_settings").select("mailing_address").eq("id", 1).maybeSingle();
+  const started = Date.now();
+  let researched = 0;
+  let suppressed = 0;
+  let failed = 0;
+  for (const prospect of batch.chosen) {
+    if (Date.now() - started >= RESEARCH_DEADLINE_MS || failed >= RESEARCH_FAILURE_LIMIT) break;
+    const remaining = RESEARCH_DEADLINE_MS - (Date.now() - started);
+    const outcome = await researchProspectRecord(client, prospect, settings?.mailing_address || "", remaining);
+    if (outcome.state === "researched") researched += 1;
+    else if (outcome.state === "suppressed") suppressed += 1;
+    else failed += 1;
+  }
+  revalidateProspects();
+  return {
+    ok: true,
+    message: `Researched ${researched}. Suppressed ${suppressed}. Failed ${failed}. Skipped ${batch.skipped.length} duplicates or closed records. The batch stops at ${RESEARCH_BATCH_LIMIT} businesses and ${RESEARCH_DEADLINE_MS / 1000} seconds. No email was sent.`,
   };
 }

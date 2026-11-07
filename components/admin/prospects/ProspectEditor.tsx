@@ -7,6 +7,7 @@ import {
   type ProspectActionState,
 } from "@/app/admin/prospect-actions";
 import { PROSPECT_STATUSES, STATUS_LABELS } from "@/lib/prospects/model.mjs";
+import { QUALIFICATION_LABELS, readResearchRecord } from "@/lib/prospects/research.mjs";
 import type { ProspectRow } from "@/lib/prospects/queries";
 
 const initial: ProspectActionState = {};
@@ -25,6 +26,7 @@ export function ProspectEditor({
     updateProspectResearchAction,
     initial
   );
+  const research = readResearchRecord(prospect);
 
   return (
     <div className="grid gap-4 lg:grid-cols-2">
@@ -66,7 +68,7 @@ export function ProspectEditor({
       <form action={researchAction} className="rounded-2xl border border-black/10 bg-paper p-4 shadow-soft sm:p-5">
         <h2 className="font-display text-lg font-bold">Research</h2>
         <p className="mt-1 text-sm leading-relaxed text-muted">
-          Leave contact fields blank until a person confirms them. This form does not look up or invent details.
+          Correct any detail before it is trusted. Saving does not send email or guess a missing address.
         </p>
         <input type="hidden" name="id" value={prospect.id} />
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -111,17 +113,38 @@ export function ProspectEditor({
               <option value="high">High</option>
             </select>
           </label>
+          <label className="text-sm font-semibold">
+            Qualification
+            <select name="qualification" defaultValue={research.qualification} className={field}>
+              <option value="">Not set</option>
+              {Object.entries(QUALIFICATION_LABELS).map(([value, label]) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
+            </select>
+          </label>
+          <label className="text-sm font-semibold sm:col-span-2">
+            Qualification reason
+            <textarea name="qualificationReason" rows={2} maxLength={500} defaultValue={research.qualification ? research.summary : ""} className={field} />
+          </label>
           <label className="text-sm font-semibold sm:col-span-2">
             Research summary
-            <textarea name="researchNotes" rows={3} maxLength={1000} defaultValue={prospect.research_notes || ""} className={field} />
+            <textarea name="researchNotes" rows={3} maxLength={1000} defaultValue={research.qualification ? "" : prospect.research_notes || ""} className={field} />
           </label>
           <label className="text-sm font-semibold sm:col-span-2">
             Source URLs
             <textarea name="researchSources" rows={2} maxLength={800} defaultValue={prospect.research_sources || ""} className={field} />
           </label>
           <label className="text-sm font-semibold sm:col-span-2">
-            Website improvement opportunities
-            <textarea name="websiteOpportunities" rows={3} maxLength={1000} defaultValue={prospect.website_opportunities || ""} className={field} />
+            Factual notes
+            <textarea name="factualNotes" rows={3} maxLength={1000} defaultValue={research.factualNotes} className={field} />
+          </label>
+          <label className="text-sm font-semibold sm:col-span-2">
+            Unsent draft subject
+            <input name="draftSubject" maxLength={90} defaultValue={research.draftSubject} className={field} />
+          </label>
+          <label className="text-sm font-semibold sm:col-span-2">
+            Unsent draft
+            <textarea name="draftBody" rows={6} maxLength={900} defaultValue={research.draftBody} className={field} />
           </label>
           <label className="text-sm font-semibold sm:col-span-2">
             Google Business Profile observations

@@ -17,6 +17,7 @@ import {
 } from "@/lib/prospects/model.mjs";
 import { getProspectDashboard } from "@/lib/prospects/queries";
 import { UsagePanel } from "@/components/admin/prospects/UsagePanel";
+import { ResearchQueueButton } from "@/components/admin/prospects/ResearchActions";
 
 export const metadata = {
   title: "Prospective Clients | 4Ward Admin",
@@ -111,6 +112,7 @@ export default async function ProspectsPage({
         lastCleanup={dashboard.data.settings?.last_cleanup_at ? formatDenver(dashboard.data.settings.last_cleanup_at) : "Not run"}
       />
 
+      <ResearchQueueButton />
       <AddBusinessForm />
       <ProspectFilters q={q} status={status} />
 

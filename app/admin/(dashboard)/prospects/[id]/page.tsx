@@ -3,6 +3,8 @@ import { notFound } from "next/navigation";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { ProspectEditor } from "@/components/admin/prospects/ProspectEditor";
+import { ResearchPreview } from "@/components/admin/prospects/ResearchPreview";
+import { ResearchProspectButton } from "@/components/admin/prospects/ResearchActions";
 import { formatWhen } from "@/lib/format";
 import { STATUS_LABELS } from "@/lib/prospects/model.mjs";
 import { getProspectDetail } from "@/lib/prospects/queries";
@@ -58,6 +60,8 @@ export default async function ProspectDetailPage({
         title={prospect.business_name}
         description={`${STATUS_LABELS[prospect.status as keyof typeof STATUS_LABELS] || prospect.status}. Unsubscribe token is stored for a later compliance page. No email is sent from here.`}
       />
+      <ResearchProspectButton prospectId={prospect.id} />
+      <ResearchPreview prospect={prospect} />
       <ProspectEditor prospect={prospect} researchedOn={researchedOn(prospect.researched_at)} />
 
       <section className="mt-5 rounded-2xl border border-black/10 bg-paper p-4 shadow-soft sm:p-5">
