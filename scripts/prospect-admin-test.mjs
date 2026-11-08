@@ -51,7 +51,7 @@ import { readOwnWebsite, researchFromRecord } from "../lib/prospects/research-ru
 import { isClosedProspect, selectWeekdayRecipients } from "../lib/prospects/weekday.mjs";
 import { outreachHistory } from "../lib/prospects/history.mjs";
 import { deliveryShortfall, discoveryNeed, findingFromReading, outreachRank, readinessBlock, selectPendingForReview, upcomingRecipients, verificationBlock } from "../lib/prospects/discovery.mjs";
-import { classifyCandidate, discoverCandidates } from "../lib/prospects/lookup.mjs";
+import { classifyCandidate, discoverCandidates, isDirectoryHost } from "../lib/prospects/lookup.mjs";
 import { IMPORT_ROW_LIMIT, classifyImport, parseProspectList, splitImportText } from "../lib/prospects/import.mjs";
 import { assignQueueTimes, compareAndSetRun, estimatedSendDates, needsMoreVerified, slotsAfterAttempt } from "../lib/prospects/queue.mjs";
 import { contactHistoryRecord, emailIdentity, findRecipientMatch, recordsFromExisting } from "../lib/prospects/identity.mjs";
@@ -283,6 +283,12 @@ await check("email history reads the saved acceptance and does not send", async 
   const directory = classifyCandidate({ name: "Listed Shop", city: "Lovington", businessStatus: "OPERATIONAL", websiteUrl: "https://www.yellowpages.com/listed", mapsUrl: "https://maps.google.com/c", pageChecked: true, pageEmails: ["office@listed.example"] });
   assert.equal(directory.action, "ready");
   assert.equal(directory.email, "office@listed.example");
+  assert.equal(directory.websiteHost, "");
+  assert.equal(isDirectoryHost("fedlinks.com"), true);
+  assert.equal(isDirectoryHost("ai.fmcsa.dot.gov"), true);
+  assert.equal(isDirectoryHost("mcnabbservicesinc.com"), false);
+  const profile = classifyCandidate({ name: "Bullfrog Logistics", city: "Carlsbad", businessStatus: "OPERATIONAL", websiteUrl: "https://fedlinks.com/profile/bullfrog", pageChecked: true, pageEmails: ["luis@bullfrogtrucking.com"] });
+  assert.equal(profile.websiteHost, "");
   const unread = findingFromReading({ city: "Carlsbad", public_email: "office@shop.example" }, { ok: false, error: "The public website could not be read. Review it manually." });
   assert.equal(unread.ready, false);
   assert.match(unread.reason, /could not be read/i);
