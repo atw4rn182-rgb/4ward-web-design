@@ -297,6 +297,18 @@ await check("email history reads the saved acceptance and does not send", async 
     { ok: true, emails: ["info@manwelding.com"], text: "Man Welding Services, Lovington. Not a new claim.", host: "manwelding.com", ownSite: true, sourceUrl: "https://www.manwelding.com/" }
   );
   assert.equal(confirmed.ready, true);
+  const unreadPlace = findingFromReading(
+    { city: "Lovington", public_email: "info@manwelding.com", business_name: "Man Welding Services" },
+    { ok: true, emails: ["info@manwelding.com"], text: "Call the shop today.", host: "manwelding.com", ownSite: true }
+  );
+  assert.equal(unreadPlace.ready, false);
+  assert.match(unreadPlace.reason, /did not confirm a southeastern New Mexico location/);
+  const conflict = findingFromReading(
+    { city: "Lovington", public_email: "info@manwelding.com", business_name: "Man Welding Services" },
+    { ok: true, emails: ["info@manwelding.com"], text: "Our yard is in Hobbs.", host: "manwelding.com", ownSite: true }
+  );
+  assert.equal(conflict.ready, false);
+  assert.match(conflict.reason, /location conflicts/);
   assert.equal(confirmed.websiteHost, "manwelding.com");
   assert.doesNotMatch(confirmed.reason, /newly established/i);
   assert.equal(newlyEstablishedEvidence("New Welding Services"), "");
@@ -481,7 +493,20 @@ await check("a blocked or failed website is marked for review and not emailed", 
     },
   });
   assert.equal(failed.ok, false);
+  assert.match(failed.error, /not marked Ready/);
   assert.ok(calls <= 3);
+  const redirected = await readOwnWebsite("http://shop.test/", {
+    timeoutMs: 2000,
+    fetchImpl: async (url) => {
+      const address = String(url);
+      if (address.endsWith("/robots.txt")) return { status: 404, headers: { get: () => "" }, text: async () => "" };
+      if (address === "http://shop.test/") return { status: 301, headers: { get: () => "https://www.shop.test/home" }, text: async () => "" };
+      return { status: 200, headers: { get: () => "" }, text: async () => "<title>Shop</title> info@shop.test Lovington" };
+    },
+  });
+  assert.equal(redirected.ok, true);
+  assert.deepEqual(redirected.emails, ["info@shop.test"]);
+  assert.equal(redirected.host, "shop.test");
 });
 
 await check("pasted prospects are parsed, deduped, and kept pending", () => {
