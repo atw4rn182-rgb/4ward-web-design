@@ -341,6 +341,14 @@ await check("email history reads the saved acceptance and does not send", async 
     { id: "newer", status: "ready", outreach_eligible: true, public_email: "new@shop.example", business_name: "New Welding", city: "Hobbs", website_host: "", queued_at: "2026-11-03T00:00:00.000Z", research_notes: "Not listed as closed on the pages that were read. Published email new@shop.example was on a page that was read. Checked public pages did not show a business-owned website. Newly established: Opened in 2025." },
   ], { limit: 3 });
   assert.deepEqual(priority.chosen.map((row) => row.id), ["newer", "plain", "site"]);
+  const queuedMarker = selectWeekdayRecipients([
+    { id: "q", status: "ready", outreach_eligible: true, public_email: "desk@shop.example", business_name: "Desk Shop", city: "Hobbs", research_notes: "Not listed as closed on the pages that were read. Published email desk@shop.example was on a page that was read." },
+  ], {
+    limit: 1,
+    suppressedEmails: [],
+    records: [{ source: "suppression", id: "q", email: "desk@shop.example", reason: "queued", status: "suppressed", name: "Desk Shop", city: "Hobbs" }],
+  });
+  assert.deepEqual(queuedMarker.chosen.map((row) => row.id), ["q"]);
   assert.equal(outreachRank({ business_name: "New Welding", research_notes: "" }), 4);
   let lookupCalls = 0;
   const inactive = await discoverCandidates({ apiKey: "", fetchImpl: () => { lookupCalls += 1; } });
