@@ -286,7 +286,13 @@ await check("email history reads the saved acceptance and does not send", async 
   assert.equal(directory.websiteHost, "");
   assert.equal(isDirectoryHost("fedlinks.com"), true);
   assert.equal(isDirectoryHost("ai.fmcsa.dot.gov"), true);
+  assert.equal(isDirectoryHost("seasonaljobs.dol.gov"), true);
+  assert.equal(isDirectoryHost("allbiz.com"), true);
+  assert.equal(isDirectoryHost("ocdimage.emnrd.nm.gov"), true);
+  assert.equal(isDirectoryHost("roswell-nm.gov"), true);
+  assert.equal(isDirectoryHost("app.fleetgen.ai"), true);
   assert.equal(isDirectoryHost("mcnabbservicesinc.com"), false);
+  assert.equal(isDirectoryHost("crocketttrucking.com"), false);
   const profile = classifyCandidate({ name: "Bullfrog Logistics", city: "Carlsbad", businessStatus: "OPERATIONAL", websiteUrl: "https://fedlinks.com/profile/bullfrog", pageChecked: true, pageEmails: ["luis@bullfrogtrucking.com"] });
   assert.equal(profile.websiteHost, "");
   const unread = findingFromReading({ city: "Carlsbad", public_email: "office@shop.example" }, { ok: false, error: "The public website could not be read. Review it manually." });
