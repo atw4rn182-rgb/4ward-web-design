@@ -50,6 +50,7 @@ import { readOwnWebsite, researchFromRecord } from "../lib/prospects/research-ru
 import { isClosedProspect, selectWeekdayRecipients } from "../lib/prospects/weekday.mjs";
 import { outreachHistory } from "../lib/prospects/history.mjs";
 import { deliveryShortfall, discoveryNeed, readinessBlock, selectPendingForReview, upcomingRecipients, verificationBlock } from "../lib/prospects/discovery.mjs";
+import { classifyCandidate, discoverCandidates } from "../lib/prospects/lookup.mjs";
 import { nextResearchRun } from "../lib/prospects/model.mjs";
 
 let passed = 0;
@@ -212,7 +213,7 @@ await check("weekday selection keeps safeguards and skips closed or personal mai
   assert.ok(picked.skipped.some((row) => row.reason === "existing-customer"));
 });
 
-await check("email history reads the saved acceptance and does not send", () => {
+await check("email history reads the saved acceptance and does not send", async () => {
   const entries = outreachHistory(
     [
       { id: "a", event_type: "gmail_accepted", created_at: "2026-11-07T23:00:00Z", note: "Gmail accepted the message. Message ID: 1a1b891b08ed5999. Inbox delivery was not checked." },
@@ -257,6 +258,23 @@ await check("email history reads the saved acceptance and does not send", () => 
   assert.equal(upcomingRecipients([fresh], new Date("2026-11-08T16:00:00Z")).length, 1);
   assert.equal(deliveryShortfall(0, 0), 5);
   assert.equal(deliveryShortfall(2, 1), 2);
+  const closed = classifyCandidate({ name: "Closed Shop", city: "Carlsbad", businessStatus: "CLOSED_PERMANENTLY", mapsUrl: "https://maps.google.com/a", pageChecked: true, pageEmails: ["office@closed.example"] });
+  assert.equal(closed.action, "exclude");
+  const missingSite = classifyCandidate({ name: "Open Shop", city: "Hobbs", businessStatus: "OPERATIONAL", mapsUrl: "https://maps.google.com/b", websiteUrl: "", pageChecked: false, pageEmails: [] });
+  assert.equal(missingSite.action, "pending");
+  assert.match(missingSite.reason, /not proof/i);
+  const owned = classifyCandidate({ name: "Site Shop", city: "Artesia", businessStatus: "OPERATIONAL", websiteUrl: "https://siteshop.example", pageChecked: true, pageEmails: ["office@siteshop.example"] });
+  assert.equal(owned.action, "pending");
+  assert.match(owned.reason, /business-owned website/i);
+  const directory = classifyCandidate({ name: "Listed Shop", city: "Lovington", businessStatus: "OPERATIONAL", websiteUrl: "https://www.yellowpages.com/listed", mapsUrl: "https://maps.google.com/c", pageChecked: true, pageEmails: ["office@listed.example"] });
+  assert.equal(directory.action, "ready");
+  assert.equal(directory.email, "office@listed.example");
+  let lookupCalls = 0;
+  const inactive = await discoverCandidates({ apiKey: "", fetchImpl: () => { lookupCalls += 1; } });
+  assert.equal(inactive.active, false);
+  assert.equal(inactive.tested, false);
+  assert.equal(inactive.found.length, 0);
+  assert.equal(lookupCalls, 0);
   const researchAt = nextResearchRun(new Date("2026-11-08T01:43:00Z"));
   assert.equal(researchAt.toISOString(), "2026-11-09T15:00:00.000Z");
 });

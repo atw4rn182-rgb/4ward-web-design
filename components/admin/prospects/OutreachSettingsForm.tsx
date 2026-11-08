@@ -132,7 +132,7 @@ export function OutreachSettingsForm({
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm sm:col-span-2">
           <span className="block font-semibold text-ink">Discovery progress</span>
-          {readyCount} of {READY_GOAL} Ready. Replenishment runs when Ready falls below {READY_FLOOR}. Lookup of new businesses is not active.
+          {readyCount} of {READY_GOAL} Ready. Replenishment runs when Ready falls below {READY_FLOOR}. {summary.discoveryActive === true ? "A discovery run saved verified businesses." : "Lookup of new businesses is not active."}
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
           <span className="block font-semibold text-ink">Last research run</span>
