@@ -278,6 +278,7 @@ await check("email history reads the saved acceptance and does not send", async 
   assert.equal(readinessBlock({ ...fresh, city: "El Paso", public_email: "owner@yahoo.com" }), "");
   assert.equal(inOutreachArea("Odessa"), true);
   assert.equal(inOutreachArea("Lubbock"), true);
+  assert.equal(inOutreachArea("Bosque Farms, NM"), true);
   assert.equal(inOutreachArea("Dallas"), false);
   assert.equal(inOutreachArea("Houston"), false);
   assert.equal(inOutreachArea(""), null);
