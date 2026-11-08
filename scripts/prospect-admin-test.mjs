@@ -41,6 +41,7 @@ import {
   discoveryProvider,
   extractPublicContacts,
   packResearchRecord,
+  newlyEstablishedEvidence,
   qualifyProspect,
   readResearchRecord,
   robotsAllows,
@@ -49,7 +50,7 @@ import {
 import { readOwnWebsite, researchFromRecord } from "../lib/prospects/research-run.mjs";
 import { isClosedProspect, selectWeekdayRecipients } from "../lib/prospects/weekday.mjs";
 import { outreachHistory } from "../lib/prospects/history.mjs";
-import { deliveryShortfall, discoveryNeed, readinessBlock, selectPendingForReview, upcomingRecipients, verificationBlock } from "../lib/prospects/discovery.mjs";
+import { deliveryShortfall, discoveryNeed, findingFromReading, outreachRank, readinessBlock, selectPendingForReview, upcomingRecipients, verificationBlock } from "../lib/prospects/discovery.mjs";
 import { classifyCandidate, discoverCandidates } from "../lib/prospects/lookup.mjs";
 import { IMPORT_ROW_LIMIT, classifyImport, parseProspectList, splitImportText } from "../lib/prospects/import.mjs";
 import { assignQueueTimes, compareAndSetRun, estimatedSendDates, needsMoreVerified, slotsAfterAttempt } from "../lib/prospects/queue.mjs";
@@ -199,7 +200,7 @@ await check("weekday selection keeps safeguards and skips closed or personal mai
   assert.equal(isClosedProspect({ notes: "Listed as closed." }), true);
   assert.equal(isClosedProspect({ notes: "Sunday Closed" }), false);
   const rows = [
-    { id: "1", status: "ready", outreach_eligible: true, public_email: "office@shop.example", business_name: "Shop", city: "Artesia" },
+    { id: "1", status: "ready", outreach_eligible: true, public_email: "office@shop.example", business_name: "Shop", city: "Artesia", research_notes: "Not listed as closed on the pages that were read. Published email office@shop.example was on a page that was read." },
     { id: "2", status: "ready", outreach_eligible: true, public_email: "owner@gmail.com", business_name: "Owner", city: "Artesia" },
     { id: "3", status: "ready", outreach_eligible: true, public_email: "closed@shop.example", notes: "Permanently closed.", business_name: "Closed", city: "Carlsbad" },
     { id: "4", status: "ready", outreach_eligible: true, public_email: "nereecerodriguez956@gmail.com", notes: "One-time test. Exclude from all future outreach.", business_name: "Nereece", city: "Carlsbad" },
@@ -249,20 +250,21 @@ await check("email history reads the saved acceptance and does not send", async 
   assert.equal(oldLetter[0].templateVersion, "outreach-letter-2026-11");
   assert.equal(oldLetter[0].body, historical);
   assert.equal(saved[0].messageId, "abcdef123456");
-  assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", notes: "" }), "website-not-checked");
-  assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", research_notes: "Checked public pages did not show a business-owned website.", notes: "" }), "");
+  assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", notes: "" }), "email");
+  assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", research_notes: "Checked public pages did not show a business-owned website.", notes: "" }), "email");
+  assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "shop.example", research_notes: "Not listed as closed on the pages that were read. Published email office@shop.example was on a page that was read. A business-owned website is recorded at shop.example." }), "");
   assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "nereecerodriguez956@gmail.com", research_sources: "https://example.com/listing", notes: "One-time test." }), "one-time");
   assert.equal(discoveryNeed(0), 50);
   assert.equal(discoveryNeed(19), 31);
   assert.equal(discoveryNeed(20), 0);
   assert.equal(discoveryNeed(50), 0);
   const pending = [
-    { id: "1", status: "queued", business_name: "Shop", city: "Hobbs", public_email: "office@shop.example", research_sources: "https://example.com/a", website_host: "", research_notes: "Checked public pages did not show a business-owned website." },
-    { id: "2", status: "queued", business_name: "Shop", city: "Hobbs", public_email: "office@shop.example", research_sources: "https://example.com/a", website_host: "", research_notes: "Checked public pages did not show a business-owned website." },
+    { id: "1", status: "queued", business_name: "Shop", city: "Hobbs", public_email: "office@shop.example", research_sources: "https://example.com/a", website_host: "", research_notes: "Not listed as closed on the pages that were read. Published email office@shop.example was on a page that was read. Checked public pages did not show a business-owned website." },
+    { id: "2", status: "queued", business_name: "Shop", city: "Hobbs", public_email: "office@shop.example", research_sources: "https://example.com/a", website_host: "", research_notes: "Not listed as closed on the pages that were read. Published email office@shop.example was on a page that was read. Checked public pages did not show a business-owned website." },
   ];
   assert.equal(selectPendingForReview(pending, 5).chosen.length, 1);
   assert.equal(selectPendingForReview(pending, 5).skipped.some((row) => row.reason === "duplicate"), true);
-  const fresh = { status: "ready", outreach_eligible: true, city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", researched_at: "2026-11-01T16:00:00Z", research_notes: "Checked public pages did not show a business-owned website. Published email office@shop.example was already saved." };
+  const fresh = { status: "ready", outreach_eligible: true, city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", researched_at: "2026-11-01T16:00:00Z", research_notes: "Not listed as closed on the pages that were read. Published email office@shop.example was on a page that was read. Checked public pages did not show a business-owned website." };
   assert.equal(readinessBlock(fresh, new Date("2026-11-08T16:00:00Z")), "");
   assert.equal(readinessBlock({ ...fresh, researched_at: "2026-09-01T16:00:00Z" }, new Date("2026-11-08T16:00:00Z")), "stale");
   assert.equal(readinessBlock({ ...fresh, research_notes: "Checked public pages did not show a business-owned website. A different address other@shop.example was published." }, new Date("2026-11-08T16:00:00Z")), "conflicting");
@@ -275,11 +277,31 @@ await check("email history reads the saved acceptance and does not send", async 
   assert.equal(missingSite.action, "pending");
   assert.match(missingSite.reason, /not proof/i);
   const owned = classifyCandidate({ name: "Site Shop", city: "Artesia", businessStatus: "OPERATIONAL", websiteUrl: "https://siteshop.example", pageChecked: true, pageEmails: ["office@siteshop.example"] });
-  assert.equal(owned.action, "pending");
+  assert.equal(owned.action, "ready");
+  assert.equal(owned.eligible, true);
   assert.match(owned.reason, /business-owned website/i);
   const directory = classifyCandidate({ name: "Listed Shop", city: "Lovington", businessStatus: "OPERATIONAL", websiteUrl: "https://www.yellowpages.com/listed", mapsUrl: "https://maps.google.com/c", pageChecked: true, pageEmails: ["office@listed.example"] });
   assert.equal(directory.action, "ready");
   assert.equal(directory.email, "office@listed.example");
+  const unread = findingFromReading({ city: "Carlsbad", public_email: "office@shop.example" }, { ok: false, error: "The public website could not be read. Review it manually." });
+  assert.equal(unread.ready, false);
+  assert.match(unread.reason, /could not be read/i);
+  const confirmed = findingFromReading(
+    { city: "Lovington", public_email: "info@manwelding.com", business_name: "Man Welding Services" },
+    { ok: true, emails: ["info@manwelding.com"], text: "Man Welding Services, Lovington. Not a new claim.", host: "manwelding.com", ownSite: true, sourceUrl: "https://www.manwelding.com/" }
+  );
+  assert.equal(confirmed.ready, true);
+  assert.equal(confirmed.websiteHost, "manwelding.com");
+  assert.doesNotMatch(confirmed.reason, /newly established/i);
+  assert.equal(newlyEstablishedEvidence("New Welding Services"), "");
+  assert.match(newlyEstablishedEvidence("The shop opened in 2025."), /2025/);
+  const priority = selectWeekdayRecipients([
+    { id: "site", status: "ready", outreach_eligible: true, public_email: "site@shop.example", business_name: "Oilfield Pump", city: "Carlsbad", website_host: "pump.example", queued_at: "2026-11-01T00:00:00.000Z", research_notes: "Not listed as closed on the pages that were read. Published email site@shop.example was on a page that was read." },
+    { id: "plain", status: "ready", outreach_eligible: true, public_email: "plain@shop.example", business_name: "Corner Bakery", city: "Carlsbad", website_host: "", queued_at: "2026-11-02T00:00:00.000Z", research_notes: "Not listed as closed on the pages that were read. Published email plain@shop.example was on a page that was read. Checked public pages did not show a business-owned website." },
+    { id: "newer", status: "ready", outreach_eligible: true, public_email: "new@shop.example", business_name: "New Welding", city: "Hobbs", website_host: "", queued_at: "2026-11-03T00:00:00.000Z", research_notes: "Not listed as closed on the pages that were read. Published email new@shop.example was on a page that was read. Checked public pages did not show a business-owned website. Newly established: Opened in 2025." },
+  ], { limit: 3 });
+  assert.deepEqual(priority.chosen.map((row) => row.id), ["newer", "plain", "site"]);
+  assert.equal(outreachRank({ business_name: "New Welding", research_notes: "" }), 4);
   let lookupCalls = 0;
   const inactive = await discoverCandidates({ apiKey: "", fetchImpl: () => { lookupCalls += 1; } });
   assert.equal(inactive.active, false);
@@ -367,7 +389,8 @@ await check("qualification does not invent a contact or a missing website", () =
   assert.equal(ready.qualification, "qualified");
   const draft = buildDraft({ ...ready, businessName: "Carlsbad Welding", city: "Carlsbad", websiteHost: "carlsbadwelding.com", mailingAddress: "" });
   assert.match(draft.body, /Adam Windhorst/);
-  assert.match(draft.body, /businesses across southeastern New Mexico/);
+  assert.match(draft.body, /improve that website/);
+  assert.doesNotMatch(draft.body, /newly established/i);
   assert.match(draft.body, /business in Carlsbad/);
   assert.doesNotMatch(draft.body, /4Ward Web Design in Carlsbad/);
   assert.match(draft.body, /Carlsbad Welding/);
@@ -511,7 +534,7 @@ await check("pasted prospects are parsed, deduped, and kept pending", () => {
     public_email: "office@gmail.com",
     research_sources: "https://example.com/listing",
     website_host: "",
-    research_notes: "Checked public pages did not show a business-owned website. Published as a business contact: office@gmail.com",
+    research_notes: "Not listed as closed on the pages that were read. Checked public pages did not show a business-owned website. Published as a business contact: office@gmail.com",
   });
   assert.equal(published, "");
   const domainOnly = verificationBlock({
@@ -563,7 +586,7 @@ await check("large imports keep queue order and uncertain sends consume the slot
   assert.equal(state.stopped, true);
   const held = selectWeekdayRecipients([
     { id: "held", status: "ready", outreach_eligible: true, public_email: "held@shop.example", notes: "Held for review. Gmail's response was uncertain.", business_name: "Held", city: "Carlsbad" },
-    { id: "next", status: "ready", outreach_eligible: true, public_email: "next@shop.example", business_name: "Next", city: "Carlsbad" },
+    { id: "next", status: "ready", outreach_eligible: true, public_email: "next@shop.example", business_name: "Next", city: "Carlsbad", research_notes: "Not listed as closed on the pages that were read. Published email next@shop.example was on a page that was read." },
   ], { limit: 1, uncertainIds: [], refusedIds: [] });
   assert.deepEqual(held.chosen.map((row) => row.id), ["next"]);
   assert.equal(held.skipped[0].reason, "uncertain");
@@ -621,8 +644,8 @@ await check("large imports keep queue order and uncertain sends consume the slot
   assert.equal(history.email, "a.b+tag@gmail.com");
   assert.match(history.reason, /phone:5755550100/);
   const alternate = selectWeekdayRecipients([
-    { id: "1", status: "ready", outreach_eligible: true, public_email: "one@shop.example", business_name: "Same Shop", city: "Carlsbad", notes: "Phone: 5755550199" },
-    { id: "2", status: "ready", outreach_eligible: true, public_email: "two@shop.example", business_name: "Same Shop", city: "Carlsbad", notes: "Phone: 5755550188" },
+    { id: "1", status: "ready", outreach_eligible: true, public_email: "one@shop.example", business_name: "Same Shop", city: "Carlsbad", notes: "Phone: 5755550199", research_notes: "Not listed as closed on the pages that were read. Published email one@shop.example was on a page that was read." },
+    { id: "2", status: "ready", outreach_eligible: true, public_email: "two@shop.example", business_name: "Same Shop", city: "Carlsbad", notes: "Phone: 5755550188", research_notes: "Not listed as closed on the pages that were read. Published email two@shop.example was on a page that was read." },
   ], { limit: 5, uncertainIds: [], refusedIds: [], records: [] });
   assert.deepEqual(alternate.chosen.map((row) => row.id), ["1"]);
   assert.equal(alternate.skipped[0].reason, "duplicate");

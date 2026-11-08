@@ -61,7 +61,7 @@ export function OutreachSettingsForm({
           <h2 className="font-display text-lg font-bold text-ink">Automation</h2>
           <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">
             {schedulerActive
-              ? "Weekday outreach sends up to five Ready prospects in queue order at 9:00 AM America/Denver. A new import waits behind prospects already queued. Closed businesses, opt-outs, and uncertain sends stay out. Pause stops the next run."
+              ? "Qualified prospects become Ready after their saved public page confirms the checks. No separate approval is required. Weekday outreach sends up to five at 9:00 AM America/Denver. Businesses with no website come first, oilfield services come first inside each group, and queue order is kept inside that group. A recorded website does not block a send. Closed businesses, opt-outs, and uncertain sends stay out."
               : "These settings are saved for a later phase. The scheduler is off, so changing them does not research businesses or send email."}
           </p>
         </div>
