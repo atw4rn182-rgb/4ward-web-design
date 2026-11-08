@@ -31,8 +31,9 @@ import {
 } from "@/lib/prospects/research.mjs";
 import { readOwnWebsite, researchFromRecord } from "@/lib/prospects/research-run.mjs";
 import { classifyImport, importNotes, parseProspectList } from "@/lib/prospects/import.mjs";
-import { duplicateDecision, findRecipientMatch, rememberContact } from "@/lib/prospects/identity.mjs";
+import { duplicateDecision, emailIdentity, findRecipientMatch, rememberContact } from "@/lib/prospects/identity.mjs";
 import { assignQueueTimes, QUEUE_PAUSE_NOTE } from "@/lib/prospects/queue.mjs";
+import { DUPLICATE_DISMISSED_NOTE, DUPLICATE_REVIEW_NOTE, RESEND_ONCE_NOTE, claimResend, duplicateReviewNotes, groupDuplicateReviews, resendSafeguard } from "@/lib/prospects/duplicates.mjs";
 
 export type ImportPreviewRow = {
   line: number;
@@ -46,6 +47,10 @@ export type ImportPreviewRow = {
   result: "import" | "skip" | "review";
   message: string;
   matchId?: string;
+  hold?: boolean;
+  matchKind?: string;
+  matchName?: string;
+  previousSendAt?: string;
 };
 
 export type ProspectActionState = {
@@ -844,49 +849,87 @@ export async function importProspectListAction(_prev: ProspectActionState, formD
   const suppliedBatch = String(formData.get("batchId") || "").trim();
   const batchId = /^[0-9a-f-]{36}$/i.test(suppliedBatch) ? suppliedBatch : crypto.randomUUID();
   const importedOn = new Date().toISOString();
-  const accepted = checked.review.rows.filter((row) => row.result === "import");
+  const accepted = checked.review.rows.filter((row) => row.result === "import" || row.hold);
   const { data: latest } = await client.from("prospects").select("queued_at").order("queued_at", { ascending: false }).limit(1);
   const times = assignQueueTimes(latest?.[0]?.queued_at || new Date().toISOString(), accepted.length);
   let imported = 0;
   let readyCount = 0;
+  let reviewCount = 0;
   for (let index = 0; index < accepted.length; index += 1) {
     const row = accepted[index];
+    const held = row.hold === true;
     const gaps = qualificationGapMessages({ businessName: row.name, publicEmail: row.email, city: row.city });
-    const ready = gaps.length === 0;
-    const { data: created, error: insertError } = await client.from("prospects").insert({
+    const ready = !held && gaps.length === 0;
+    const emailOnRecord = held && row.matchKind === "email" ? null : row.email || null;
+    const notes = held
+      ? `${DUPLICATE_REVIEW_NOTE} ${importNotes({ phone: row.phone, notes: row.notes, batchId, importedOn, emailOriginal: row.emailOriginal })}`.slice(0, 1000)
+      : importNotes({ phone: row.phone, notes: row.notes, batchId, importedOn, emailOriginal: row.emailOriginal });
+    const researchNotes = held
+      ? duplicateReviewNotes({
+        kind: row.matchKind || "name",
+        reason: row.message,
+        matchId: row.matchId || "",
+        matchName: row.matchName || "",
+        previousSendAt: row.previousSendAt || "",
+        sendResult: row.previousSendAt ? "Accepted by Gmail" : "Not sent",
+      })
+      : ready ? IMPORTED_CONTACT_NOTE : gaps.join(" ");
+    let inserted = await client.from("prospects").insert({
       business_name: row.name,
       city: row.city || null,
-      public_email: row.email,
+      public_email: emailOnRecord,
+      secondary_email: held && !emailOnRecord ? row.email || null : null,
       research_sources: row.source || null,
-      research_notes: ready ? IMPORTED_CONTACT_NOTE : gaps.join(" "),
-      status: ready ? "ready" : "queued",
+      research_notes: researchNotes,
+      status: held ? "researching" : ready ? "ready" : "queued",
       source: "manual",
       manual_priority: true,
       outreach_eligible: ready,
       ready_at: ready ? times[index] : null,
       queued_at: times[index],
       created_at: times[index],
-      notes: importNotes({ phone: row.phone, notes: row.notes, batchId, importedOn, emailOriginal: row.emailOriginal }),
+      notes,
     }).select("id").maybeSingle();
-    if (insertError || !created?.id) continue;
+    if (inserted.error && emailOnRecord) {
+      inserted = await client.from("prospects").insert({
+        business_name: row.name,
+        city: row.city || null,
+        public_email: null,
+        secondary_email: row.email || null,
+        research_sources: row.source || null,
+        research_notes: researchNotes,
+        status: "researching",
+        source: "manual",
+        manual_priority: true,
+        outreach_eligible: false,
+        queued_at: times[index],
+        created_at: times[index],
+        notes,
+      }).select("id").maybeSingle();
+    }
+    const created = inserted.data;
+    if (inserted.error || !created?.id) continue;
     await rememberContact(client, { ...row, id: created.id, email: row.email, name: row.name }, "queued");
     await client.from("prospect_activity").insert({
       prospect_id: created.id,
-      event_type: ready ? "research" : "queued",
-      to_status: ready ? "ready" : "queued",
-      note: ready
-        ? `Pasted import ${batchId}. Ready from the saved company name, email, and location. The email was not independently verified. No email was sent.`
-        : `Pasted import ${batchId}. ${gaps.join(" ")} No email was sent.`.slice(0, 500),
+      event_type: held ? "duplicate_review" : ready ? "research" : "queued",
+      to_status: held ? "researching" : ready ? "ready" : "queued",
+      note: (held
+        ? `Pasted import ${batchId}. Saved for duplicate review. No email was sent.`
+        : ready
+          ? `Pasted import ${batchId}. Ready from the saved company name, email, and location. The email was not independently verified. No email was sent.`
+          : `Pasted import ${batchId}. ${gaps.join(" ")} No email was sent.`).slice(0, 500),
     });
     imported += 1;
     if (ready) readyCount += 1;
+    if (held) reviewCount += 1;
   }
   revalidateProspects();
-  const skipped = checked.review.counts.skip + (checked.review.counts.import - imported);
+  const skipped = checked.review.counts.skip + Math.max(0, accepted.length - imported);
   return {
     ok: true,
-    message: `Imported ${imported}. ${readyCount} became Ready. ${imported - readyCount} stay Pending. Skipped ${skipped}. ${checked.review.counts.review} need review. Batch ${batchId}. No email was sent.`,
-    summary: { imported, skipped, review: checked.review.counts.review, ready: readyCount, batchId },
+    message: `Imported ${imported}. ${readyCount} became Ready. ${reviewCount} were saved for duplicate review and will not send automatically. Skipped ${skipped}. Batch ${batchId}. No email was sent.`,
+    summary: { imported, skipped, review: reviewCount, ready: readyCount, batchId },
     preview: previewRows(checked.review.rows),
   };
 }
@@ -943,4 +986,123 @@ export async function removeProspectAction(_prev: ProspectActionState, formData:
   if (deleteError) return { error: "The prospect could not be removed." };
   revalidateProspects();
   return { ok: true, message: "Removed from the queue. No email was sent." };
+}
+
+const REVIEW_SELECT = "id,business_name,city,public_email,secondary_email,status,sent_at,notes,outreach_eligible,queued_at,created_at,research_notes";
+
+async function reviewContext(client: SupabaseClient, id: string) {
+  const { data: rows, error } = await client.from("prospects").select(REVIEW_SELECT).limit(2000);
+  if (error) return { error: "The duplicate list could not be loaded. Nothing was changed.", review: null, current: null, original: null };
+  const reviews = groupDuplicateReviews(rows || []);
+  const review = reviews.find((item) => item.id === id) || null;
+  const current = (rows || []).find((row) => row.id === id) || null;
+  const original = review ? (rows || []).find((row) => row.id === review.matchId) || null : null;
+  return { error: "", review, current, original };
+}
+
+export async function dismissDuplicateAction(_prev: ProspectActionState, formData: FormData): Promise<ProspectActionState> {
+  const { error, client } = await adminWriteClient();
+  if (error || !client) return { error: error || "Unauthorized." };
+  if (String(formData.get("confirmDismiss") || "") !== "on") {
+    return { error: "Confirm that the original should be kept. Nothing was changed." };
+  }
+  const id = String(formData.get("id") || "");
+  const context = await reviewContext(client, id);
+  if (context.error || !context.current || !context.review) return { error: context.error || "This record is not an open duplicate. Nothing was changed." };
+  if (context.current.sent_at) return { error: "The original send record was not changed." };
+  const notes = `${DUPLICATE_DISMISSED_NOTE} ${String(context.current.notes || "").replace(DUPLICATE_REVIEW_NOTE, "")}`.trim().slice(0, 1000);
+  const { data: updated, error: updateError } = await client.from("prospects").update({
+    status: "researching",
+    outreach_eligible: false,
+    notes,
+    last_activity_at: new Date().toISOString(),
+  }).eq("id", id).in("status", ["queued", "researching", "ready"]).is("sent_at", null).select("id");
+  if (updateError || !updated?.length) return { error: "The duplicate could not be dismissed. Nothing was sent." };
+  await client.from("prospect_activity").insert({
+    prospect_id: id,
+    event_type: "duplicate_dismissed",
+    from_status: context.current.status,
+    to_status: "researching",
+    note: `Kept ${context.review.matchName}. Dismissed this duplicate. No email was sent.`.slice(0, 500),
+  });
+  revalidateProspects();
+  return { ok: true, message: `Kept ${context.review.matchName} and dismissed this duplicate. No email was sent.` };
+}
+
+export async function deleteDuplicateAction(_prev: ProspectActionState, formData: FormData): Promise<ProspectActionState> {
+  const { error, client } = await adminWriteClient();
+  if (error || !client) return { error: error || "Unauthorized." };
+  if (String(formData.get("confirmDelete") || "") !== "on") {
+    return { error: "Confirm deletion of the duplicate only. Nothing was deleted." };
+  }
+  const id = String(formData.get("id") || "");
+  const context = await reviewContext(client, id);
+  if (context.error || !context.current || !context.review) return { error: context.error || "This record is not an open duplicate. Nothing was deleted." };
+  if (context.current.sent_at || context.review.matchId === id) return { error: "The original record was not deleted." };
+  const { count, error: activityError } = await client.from("prospect_activity").select("id", { count: "exact", head: true }).eq("prospect_id", id).in("event_type", ["gmail_accepted", "gmail_sending", "gmail_uncertain", "email_snapshot"]);
+  if (activityError) return { error: "Send history could not be checked. Nothing was deleted." };
+  if (count) return { error: "This record has send history and was not deleted." };
+  const { error: deleteError } = await client.from("prospects").delete().eq("id", id).in("status", ["queued", "researching", "ready"]).is("sent_at", null);
+  if (deleteError) return { error: "The duplicate could not be deleted. The original was not changed." };
+  revalidateProspects();
+  return { ok: true, message: "Deleted the duplicate entry. The original, its email history, and suppression records were kept. No email was sent." };
+}
+
+export async function authorizeResendAction(_prev: ProspectActionState, formData: FormData): Promise<ProspectActionState> {
+  const { error, client } = await adminWriteClient();
+  if (error || !client) return { error: error || "Unauthorized." };
+  if (String(formData.get("confirmResend") || "") !== "on") {
+    return { error: "Confirm the recipient and previous send date. Nothing was authorized." };
+  }
+  const id = String(formData.get("id") || "");
+  const context = await reviewContext(client, id);
+  const original = context.original;
+  if (context.error || !context.current || !context.review || !original) {
+    return { error: context.error || "This record is not an open duplicate. Nothing was authorized." };
+  }
+  const claim = claimResend(context.current);
+  if (!claim.ok) return { error: claim.error };
+  const email = emailIdentity(context.review.email).normalized;
+  const confirmedEmail = emailIdentity(String(formData.get("recipient") || "")).normalized;
+  const confirmedSend = String(formData.get("previousSendAt") || "");
+  if (!email || confirmedEmail !== email || confirmedSend !== String(context.review.previousSendAt || "")) {
+    return { error: "The recipient and previous send date did not match. Nothing was authorized." };
+  }
+  const [{ data: customers }, { data: suppressions }, activity] = await Promise.all([
+    client.from("customers").select("id").ilike("email", email).limit(1),
+    client.from("prospect_suppressions").select("reason").ilike("email", email).limit(5),
+    client.from("prospect_activity").select("prospect_id,event_type").in("prospect_id", [id, original.id]).in("event_type", ["gmail_uncertain", "gmail_accepted", "resend_authorized"]).limit(20),
+  ]);
+  const events = (activity.data || []) as { prospect_id: string; event_type: string }[];
+  const suppressed = (suppressions || []).some((row) => !/^(queued|contacted)\b/i.test(String(row.reason || "")));
+  const safeguard = resendSafeguard({
+    duplicate: context.current,
+    original,
+    customer: Boolean(customers?.length),
+    suppressed,
+    duplicateEvents: events.filter((item) => item.prospect_id === id),
+    originalEvents: events.filter((item) => item.prospect_id === original.id),
+  });
+  if (safeguard) return { error: `${safeguard} Nothing was authorized.` };
+  if ((events || []).some((item) => item.prospect_id === id && item.event_type === "resend_authorized")) {
+    return { error: "One resend is already authorized. No second resend was created." };
+  }
+  const notes = `${RESEND_ONCE_NOTE} Recipient: ${email}. Previous send: ${context.review.previousSendAt}.`.slice(0, 1000);
+  const { data: updated, error: updateError } = await client.from("prospects").update({
+    status: "ready",
+    outreach_eligible: true,
+    notes,
+    ready_at: new Date().toISOString(),
+    last_activity_at: new Date().toISOString(),
+  }).eq("id", id).eq("status", context.current.status).eq("outreach_eligible", false).is("sent_at", null).select("id");
+  if (updateError || !updated?.length) return { error: "One resend is already authorized. No second resend was created." };
+  await client.from("prospect_activity").insert({
+    prospect_id: id,
+    event_type: "resend_authorized",
+    from_status: context.current.status,
+    to_status: "ready",
+    note: `One resend authorized to ${email}. Previous send: ${context.review.previousSendAt}. It enters the weekday queue. No email was sent now.`.slice(0, 500),
+  });
+  revalidateProspects();
+  return { ok: true, message: `One resend to ${email} is in the weekday queue. Previous send: ${context.review.previousSendAt}. No email was sent now.` };
 }

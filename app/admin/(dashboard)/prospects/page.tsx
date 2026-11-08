@@ -18,7 +18,8 @@ import {
   STATUS_LABELS,
   sumRecentWrites,
 } from "@/lib/prospects/model.mjs";
-import { getProspectDashboard, getReadyQueue } from "@/lib/prospects/queries";
+import { getDuplicateReview, getProspectDashboard, getReadyQueue } from "@/lib/prospects/queries";
+import { DuplicateReview } from "@/components/admin/prospects/DuplicateReview";
 import { UsagePanel } from "@/components/admin/prospects/UsagePanel";
 import { ResearchQueueButton } from "@/components/admin/prospects/ResearchActions";
 import { ProspectDecision } from "@/components/admin/prospects/ProspectDecision";
@@ -91,10 +92,11 @@ export default async function ProspectsPage({
   const q = sanitizeSearch(params.q || "");
   const status = params.status || "all";
   const window = listWindow(params.page);
-  const [dashboard, mailbox, readyQueue] = await Promise.all([
+  const [dashboard, mailbox, readyQueue, duplicateReview] = await Promise.all([
     getProspectDashboard({ q, status, offset: window.offset }),
     gmailConnectionStatus(),
     getReadyQueue(),
+    getDuplicateReview(),
   ]);
   const schemaMissing = dashboard.missing;
   const counts = dashboard.data.counts;
@@ -148,6 +150,7 @@ export default async function ProspectsPage({
         <StatCard label="Interested prospects" value={String(counts.interested)} hint="Positive replies" href={`${pageHref(q, "interested", 1)}#prospect-list`} current={status === "interested"} />
         <StatCard label="Not interested / opted out" value={String(counts.optedOut)} hint="Kept on the suppression list" href={`${pageHref(q, "opted_out", 1)}#prospect-list`} current={status === "opted_out"} />
         <StatCard label="Failed or bounced" value={String(counts.failed)} hint="Needs review before any retry" href={`${pageHref(q, "needs_review", 1)}#prospect-list`} current={status === "needs_review"} />
+        <StatCard label="Duplicates / Resend review" value={String(duplicateReview.items.length)} hint="Held out of automatic sending" href="#duplicate-review" current={false} />
       </div>
 
       <div className="mb-5">
@@ -190,6 +193,12 @@ export default async function ProspectsPage({
       <ResearchQueueButton awaiting={counts.awaitingResearch} unavailable={schemaMissing} />
       <AddBusinessForm unavailable={schemaMissing} />
       <PasteProspectList unavailable={schemaMissing} />
+      <DuplicateReview
+        items={duplicateReview.items.map((item) => ({
+          ...item,
+          previousSendLabel: item.previousSendAt ? formatDenver(item.previousSendAt) : "Not sent",
+        }))}
+      />
       <div id="prospect-list">
         <ProspectFilters q={q} status={status} />
       </div>

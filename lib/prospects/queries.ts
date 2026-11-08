@@ -1,6 +1,7 @@
 import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { groupDuplicateReviews, sendResultText } from "@/lib/prospects/duplicates.mjs";
 import {
   ACTIVITY_LIMIT,
   ACTIVITY_SELECT,
@@ -183,6 +184,52 @@ function applyProspectStatus(query: any, status: string) {
 }
 
 const READY_QUEUE_SELECT = "id,business_name,city,service_area,public_email,website_host,status,outreach_eligible,notes,research_notes,research_sources,gbp_observations,researched_at,manual_priority,created_at,queued_at,last_activity_at";
+
+const DUPLICATE_SELECT = "id,business_name,city,public_email,secondary_email,status,sent_at,notes,queued_at,created_at,research_notes";
+
+export type DuplicateReviewItem = {
+  id: string;
+  businessName: string;
+  email: string;
+  city: string;
+  kind: string;
+  reason: string;
+  matchId: string;
+  matchName: string;
+  previousSendAt: string;
+  sendResult: string;
+};
+
+export const getDuplicateReview = cache(async function getDuplicateReview() {
+  const supabase = await adminDb();
+  const { data, error } = await supabase.from("prospects").select(DUPLICATE_SELECT).limit(2000);
+  if (error) return { items: [] as DuplicateReviewItem[], error: "The duplicate review could not be loaded. Nothing was sent." };
+  const reviews = groupDuplicateReviews(data || []);
+  const ids = [...new Set(reviews.map((item) => item.matchId).filter(Boolean))];
+  let events: { prospect_id: string; event_type: string }[] = [];
+  if (ids.length) {
+    const activity = await supabase
+      .from("prospect_activity")
+      .select("prospect_id,event_type")
+      .in("prospect_id", ids)
+      .in("event_type", ["gmail_accepted", "gmail_uncertain", "gmail_refused"])
+      .limit(500);
+    events = activity.data || [];
+  }
+  const items = reviews.map((item) => ({
+    id: item.id,
+    businessName: item.businessName,
+    email: item.email,
+    city: item.city,
+    kind: item.kind,
+    reason: item.reason,
+    matchId: item.matchId,
+    matchName: item.matchName,
+    previousSendAt: item.previousSendAt || "",
+    sendResult: item.previousSendAt ? sendResultText(events.filter((event) => event.prospect_id === item.matchId)) : "Not sent",
+  }));
+  return { items, error: "" };
+});
 
 export const getReadyQueue = cache(async function getReadyQueue() {
   const supabase = await adminDb();

@@ -57,6 +57,7 @@ import { deliveryShortfall, discoveryNeed, findingFromReading, outreachRank, rea
 import { classifyCandidate, discoverCandidates, isDirectoryHost } from "../lib/prospects/lookup.mjs";
 import { IMPORT_ROW_LIMIT, classifyImport, parseProspectList, splitImportText } from "../lib/prospects/import.mjs";
 import { assignQueueTimes, compareAndSetRun, estimatedSendDates, needsMoreVerified, slotsAfterAttempt } from "../lib/prospects/queue.mjs";
+import { claimResend, groupDuplicateReviews, resendCanPass, resendSafeguard } from "../lib/prospects/duplicates.mjs";
 import { contactHistoryRecord, emailIdentity, findRecipientMatch, recordsFromExisting } from "../lib/prospects/identity.mjs";
 import { nextResearchRun } from "../lib/prospects/model.mjs";
 
@@ -588,17 +589,21 @@ await check("pasted prospects are parsed, deduped, and kept pending", () => {
   const listed = review.rows.find((row) => row.email === "owner@gmail.com");
   assert.equal(listed.result, "import");
   assert.equal(listed.source, "https://example.com/listed");
-  assert.equal(byName("Pump Shop").result, "skip");
+  assert.equal(byName("Pump Shop").result, "review");
+  assert.equal(byName("Pump Shop").hold, true);
   assert.match(byName("Pump Shop").message, /already contacted/i);
   const repeated = review.rows.filter((row) => row.name === "Bob's Auto Body");
-  assert.equal(repeated[1].result, "skip");
+  assert.equal(repeated[1].result, "review");
+  assert.equal(repeated[1].hold, true);
   assert.match(repeated[1].message, /different email/i);
   const again = classifyImport(parseProspectList("Bob's Auto Body | office@shop.example").rows, {
     prospects: [{ name: "Bob's Auto Body", email: "office@shop.example", status: "queued", sentAt: "" }],
     customers: [],
     suppressions: [],
   });
-  assert.equal(again.rows[0].result, "skip");
+  assert.equal(again.rows[0].result, "review");
+  assert.equal(again.rows[0].hold, true);
+  assert.equal(again.rows[0].matchKind, "email");
   assert.match(again.rows[0].message, /not overwritten/i);
   const suppressed = classifyImport(parseProspectList("Quiet Shop | stop@shop.example").rows, {
     prospects: [],
@@ -648,7 +653,9 @@ await check("large imports keep queue order and uncertain sends consume the slot
   assert.equal(csv.rows[0].notes, "Owner answered");
   const reviewed = classifyImport(csv.rows, { prospects: [], customers: [], suppressions: [] });
   assert.equal(reviewed.rows[0].result, "import");
-  assert.equal(reviewed.rows[1].result, "skip");
+  assert.equal(reviewed.rows[1].result, "review");
+  assert.equal(reviewed.rows[1].hold, true);
+  assert.equal(reviewed.rows[1].matchKind, "name");
   assert.match(reviewed.rows[1].message, /different email/i);
   const again = classifyImport(parseProspectList("North Shop | desk@north.example | Hobbs").rows, {
     prospects: [{ name: "North Shop", city: "Hobbs", email: "desk@north.example", status: "queued", sentAt: "" }],
@@ -705,7 +712,9 @@ await check("large imports keep queue order and uncertain sends consume the slot
     customers: [],
     suppressions: [],
   });
-  assert.equal(samePhone.rows[0].result, "skip");
+  assert.equal(samePhone.rows[0].result, "review");
+  assert.equal(samePhone.rows[0].hold, true);
+  assert.equal(samePhone.rows[0].matchKind, "phone");
   assert.match(samePhone.rows[0].message, /phone number/i);
   assert.match(samePhone.rows[0].message, /\/admin\/prospects\/p1/);
   const otherTown = classifyImport(parseProspectList("North Shop | second@north.example | Artesia").rows, {
@@ -736,6 +745,50 @@ await check("large imports keep queue order and uncertain sends consume the slot
   ], { limit: 5, uncertainIds: [], refusedIds: [], records: [] });
   assert.deepEqual(alternate.chosen.map((row) => row.id), ["1"]);
   assert.equal(alternate.skipped[0].reason, "duplicate");
+});
+
+await check("duplicate review is grouped and a resend stays one weekday message", () => {
+  const rows = [
+    { id: "original", business_name: "North Shop", city: "Hobbs", public_email: "desk@north.example", status: "sent", sent_at: "2026-11-08T16:00:00.000Z", queued_at: "2026-11-01T00:00:00.000Z", notes: "" },
+    { id: "same-email", business_name: "North Shop Desk", city: "Carlsbad", public_email: "Desk@North.example", status: "ready", queued_at: "2026-11-02T00:00:00.000Z", notes: "" },
+    { id: "similar", business_name: "North Shop LLC", city: "Artesia", public_email: "other@north.example", status: "ready", queued_at: "2026-11-03T00:00:00.000Z", notes: "" },
+    { id: "plain", business_name: "Plain Shop", city: "Roswell", public_email: "plain@shop.example", status: "ready", queued_at: "2026-11-04T00:00:00.000Z", notes: "" },
+  ];
+  const reviews = groupDuplicateReviews(rows);
+  assert.equal(reviews.find((item) => item.id === "same-email")?.kind, "email");
+  assert.equal(reviews.find((item) => item.id === "same-email")?.matchId, "original");
+  assert.equal(reviews.find((item) => item.id === "similar")?.kind, "name");
+  assert.equal(reviews.some((item) => item.id === "plain" || item.id === "original"), false);
+  const held = selectWeekdayRecipients([
+    { id: "same-email", status: "ready", outreach_eligible: true, business_name: "North Shop Desk", city: "Carlsbad", public_email: "desk@north.example", notes: "Duplicate review. Held out of automatic sending." },
+    { id: "plain", status: "ready", outreach_eligible: true, business_name: "Plain Shop", city: "Roswell", public_email: "plain@shop.example", notes: "" },
+  ], { limit: 5 });
+  assert.deepEqual(held.chosen.map((row) => row.id), ["plain"]);
+  assert.equal(held.skipped[0].reason, "duplicate-review");
+  const blocked = resendSafeguard({
+    duplicate: { public_email: "desk@north.example", notes: "" },
+    original: { sent_at: "2026-11-08T16:00:00.000Z", status: "sent" },
+    customer: true,
+  });
+  assert.match(blocked, /existing customer/i);
+  const uncertain = resendSafeguard({
+    duplicate: { public_email: "desk@north.example", notes: "" },
+    original: { sent_at: "2026-11-08T16:00:00.000Z", status: "sent" },
+    originalEvents: [{ event_type: "gmail_uncertain" }],
+  });
+  assert.match(uncertain, /uncertain/i);
+  const once = claimResend({ id: "same-email", status: "researching", notes: "Duplicate review. Held out of automatic sending." });
+  assert.equal(once.ok, true);
+  const second = claimResend({ id: "same-email", status: "ready", notes: "Resend authorized once. Recipient: desk@north.example." });
+  assert.equal(second.ok, false);
+  assert.equal(second.already, true);
+  const pass = resendCanPass(
+    { notes: "Resend authorized once. Recipient: desk@north.example." },
+    { record: { source: "prospect", reason: "" } }
+  );
+  assert.equal(pass, true);
+  assert.equal(resendCanPass({ notes: "Resend authorized once." }, { record: { source: "customer" } }), false);
+  assert.equal(resendCanPass({ notes: "Resend authorized once." }, { record: { source: "suppression", reason: "removed" } }), false);
 });
 
 await check("prospect admin code does not send mail or store a password", () => {
