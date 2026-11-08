@@ -1,30 +1,25 @@
 import { NextResponse } from "next/server";
-import { runWeekdayOutreach } from "@/lib/gmail/weekday.mjs";
+import { outreachRequestAllowed, runWeekdayOutreach } from "@/lib/gmail/weekday.mjs";
 
 export const maxDuration = 60;
 
-export async function GET(request) {
+async function denied(request) {
+  if (await outreachRequestAllowed(request.headers.get("authorization") || "")) return null;
   const secret = String(process.env.CRON_SECRET || "").trim();
-  if (!secret) {
-    return NextResponse.json({ ok: false, error: "CRON_SECRET is not configured. No message was sent." }, { status: 503 });
-  }
-  const header = request.headers.get("authorization") || "";
-  if (header !== `Bearer ${secret}`) {
-    return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
-  }
+  if (!secret) return NextResponse.json({ ok: false, error: "CRON_SECRET is not configured. No message was sent." }, { status: 503 });
+  return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+}
+
+export async function GET(request) {
+  const refusal = await denied(request);
+  if (refusal) return refusal;
   const result = await runWeekdayOutreach();
   return NextResponse.json(result, { status: result.ok ? 200 : 500 });
 }
 
 export async function POST(request) {
-  const secret = String(process.env.CRON_SECRET || "").trim();
-  if (!secret) {
-    return NextResponse.json({ ok: false, error: "CRON_SECRET is not configured. No message was sent." }, { status: 503 });
-  }
-  const header = request.headers.get("authorization") || "";
-  if (header !== `Bearer ${secret}`) {
-    return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
-  }
+  const refusal = await denied(request);
+  if (refusal) return refusal;
   let deliverToday = false;
   try {
     const body = await request.json();
