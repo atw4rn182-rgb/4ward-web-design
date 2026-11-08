@@ -10,6 +10,10 @@ type HistoryEntry = {
   note: string;
   subject: string;
   body: string;
+  html: string;
+  recipient: string;
+  templateVersion: string;
+  origin: string;
 };
 
 export function EmailHistory({
@@ -51,11 +55,17 @@ export function EmailHistory({
               {entry.note ? <p className="mt-2 text-sm leading-relaxed text-ink">{entry.note}</p> : null}
               {entry.body ? (
                 <div className="mt-3 rounded-xl bg-black/[0.03] p-3">
-                  <p className="text-xs font-bold uppercase tracking-wide text-muted">Letter prepared from this record</p>
+                  <p className="text-xs font-bold uppercase tracking-wide text-muted">
+                    {entry.origin === "snapshot" ? "Original snapshot saved before sending" : "Reconstructed letter"}
+                  </p>
+                  {entry.recipient ? <p className="mt-2 text-sm">To: {entry.recipient}</p> : null}
                   <p className="mt-2 text-sm font-semibold">{entry.subject}</p>
+                  {entry.templateVersion ? <p className="mt-1 text-xs text-muted">Template {entry.templateVersion}</p> : null}
                   <pre className="mt-2 whitespace-pre-wrap break-words font-sans text-sm leading-relaxed">{entry.body}</pre>
                   <p className="mt-2 text-xs leading-relaxed text-muted">
-                    Inbox delivery was not checked. This is the letter generated from the saved business details, not a copy retrieved from Gmail.
+                    {entry.origin === "snapshot"
+                      ? "This subject, recipient, plain text, and HTML were saved before Gmail was contacted. Inbox delivery was not checked."
+                      : "Reconstructed from the saved business record. This is not the original sent message. Inbox delivery was not checked."}
                   </p>
                 </div>
               ) : null}

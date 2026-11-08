@@ -49,6 +49,7 @@ import {
 import { readOwnWebsite, researchFromRecord } from "../lib/prospects/research-run.mjs";
 import { isClosedProspect, selectWeekdayRecipients } from "../lib/prospects/weekday.mjs";
 import { outreachHistory } from "../lib/prospects/history.mjs";
+import { deliveryShortfall, discoveryNeed, selectPendingForReview, verificationBlock } from "../lib/prospects/discovery.mjs";
 
 let passed = 0;
 async function check(name, fn) {
@@ -223,9 +224,25 @@ await check("email history reads the saved acceptance and does not send", () => 
   assert.equal(entries[0].status, "Accepted by Gmail");
   assert.equal(entries[0].messageId, "1a1b891b08ed5999");
   assert.equal(entries[0].at, "2026-11-07T23:00:00Z");
+  assert.equal(entries[0].origin, "reconstructed");
   assert.match(entries[0].body, /No business-owned website found/);
   assert.match(entries[0].body, /Adam Windhorst/);
   assert.doesNotMatch(entries[0].body, /no website/i);
+  const saved = outreachHistory([
+    { id: "11111111-1111-4111-8111-111111111111", event_type: "email_snapshot", created_at: "2026-11-07T22:59:00Z", note: JSON.stringify({ templateVersion: "outreach-letter-2026-11", recipient: "office@shop.example", subject: "Saved subject", text: "Saved plain text", html: "<p>Saved</p>" }) },
+    { id: "acc-1", event_type: "gmail_accepted", created_at: "2026-11-07T23:00:00Z", note: "Gmail accepted the message. Message ID: abcdef123456. Snapshot: 11111111-1111-4111-8111-111111111111. Inbox delivery was not checked." },
+  ], { business_name: "Shop", city: "Hobbs", public_email: "office@shop.example" }, "");
+  assert.equal(saved[0].origin, "snapshot");
+  assert.equal(saved[0].subject, "Saved subject");
+  assert.equal(saved[0].body, "Saved plain text");
+  assert.equal(saved[0].messageId, "abcdef123456");
+  assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", notes: "" }), "");
+  assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "nereecerodriguez956@gmail.com", research_sources: "https://example.com/listing", notes: "One-time test." }), "one-time");
+  assert.equal(discoveryNeed(5), 0);
+  assert.equal(discoveryNeed(2), 3);
+  assert.equal(selectPendingForReview([{ id: "1", status: "queued", city: "Hobbs", public_email: "office@shop.example", research_sources: "https://example.com/a", website_host: "" }], 1).chosen.length, 1);
+  assert.equal(deliveryShortfall(0, 0), 5);
+  assert.equal(deliveryShortfall(2, 1), 2);
 });
 
 await check("mailer has no provider and refuses to send", async () => {
@@ -292,7 +309,9 @@ await check("qualification does not invent a contact or a missing website", () =
   const missing = qualifyProspect({ businessName: "Hope Plumbing", city: "Hope", publicEmail: "" });
   assert.equal(missing.qualification, "no_verified_contact");
   assert.match(missing.reason, /not guessed/i);
-  const outside = qualifyProspect({ businessName: "Far Shop", city: "Hobbs", publicEmail: "info@farshop.com" });
+  const outside = qualifyProspect({ businessName: "Far Shop", city: "Albuquerque", publicEmail: "info@farshop.com" });
+  const hobbs = qualifyProspect({ businessName: "Lea Shop", city: "Hobbs", publicEmail: "info@leashop.com", websiteHost: "" });
+  assert.equal(hobbs.qualification, "qualified");
   assert.equal(outside.qualification, "not_qualified");
   const personal = qualifyProspect({ businessName: "Local Clean", city: "Loving", publicEmail: "owner@gmail.com" });
   assert.equal(personal.qualification, "needs_review");

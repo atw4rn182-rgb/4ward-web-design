@@ -130,6 +130,7 @@ export default async function ProspectsPage({
           nextRun={nextRun}
           schedulerActive={OUTREACH_SCHEDULER_ACTIVE}
           interestedLeads={counts.interested}
+          readyCount={counts.ready}
         />
       </div>
 

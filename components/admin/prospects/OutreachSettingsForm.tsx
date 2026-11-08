@@ -5,6 +5,7 @@ import {
   saveOutreachSettingsAction,
   type ProspectActionState,
 } from "@/app/admin/prospect-actions";
+import { LOOKUP_BLOCKER } from "@/lib/prospects/discovery.mjs";
 import { clampDailyTarget, externalOutreachAllowed, monthlyOutreachVolume } from "@/lib/prospects/model.mjs";
 import { BUSINESS_POSTAL_ADDRESS } from "@/lib/prospects/research.mjs";
 import type { OutreachSettingsRow } from "@/lib/prospects/queries";
@@ -16,11 +17,13 @@ export function OutreachSettingsForm({
   nextRun,
   schedulerActive,
   interestedLeads = 0,
+  readyCount = 0,
 }: {
   settings: OutreachSettingsRow | null;
   nextRun: string;
   schedulerActive: boolean;
   interestedLeads?: number;
+  readyCount?: number;
 }) {
   const [state, formAction, pending] = useActionState(saveOutreachSettingsAction, initial);
   const enabled = settings?.automation_enabled ?? false;
@@ -32,6 +35,10 @@ export function OutreachSettingsForm({
   const replies = Number(summary.replies || 0);
   const consultations = Number(summary.consultations || 0);
   const conversions = Number(summary.conversions || 0);
+  const shortfall = Number(summary.shortfall || 0);
+  const discoveryPromoted = Number(summary.discoveryPromoted || 0);
+  const discoveryReviewed = Number(summary.discoveryReviewed || 0);
+  const blocker = String(summary.discoveryBlocker || LOOKUP_BLOCKER);
   const [target, setTarget] = useState(clampDailyTarget(settings?.weekday_target));
   const monthly = monthlyOutreachVolume(target);
   useEffect(() => {
@@ -98,14 +105,26 @@ export function OutreachSettingsForm({
           {settings?.last_run_at ? new Date(settings.last_run_at).toLocaleString("en-US", { timeZone: "America/Denver" }) : "No runs yet"}
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
-          <span className="block font-semibold text-ink">Next scheduled run</span>
+          <span className="block font-semibold text-ink">Ready queue</span>
+          {readyCount} verified {readyCount === 1 ? "business" : "businesses"}
+        </p>
+        <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
+          <span className="block font-semibold text-ink">Next discovery</span>
+          {nextRun}. Discovery runs first and does not send email.
+        </p>
+        <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
+          <span className="block font-semibold text-ink">Next delivery</span>
           {nextRun}
+        </p>
+        <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm sm:col-span-2">
+          <span className="block font-semibold text-ink">Blocker</span>
+          {blocker}
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm sm:col-span-2">
           <span className="block font-semibold text-ink">Outreach results</span>
           {settings?.last_run_at
-            ? `${submitted} submitted, ${skipped} skipped, ${failed} failed. Research attempts are not counted.`
-            : "No completed sending runs. Research attempts are not counted."}
+            ? `${submitted} submitted, shortfall ${shortfall}, ${skipped} skipped, ${failed} failed. Discovery reviewed ${discoveryReviewed} and marked ${discoveryPromoted} Ready for a later delivery. Research does not send email.`
+            : "No delivery has run yet. A shortfall is shown after the first weekday job."}
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm sm:col-span-2">
           <span className="block font-semibold text-ink">Replies and outcomes</span>
