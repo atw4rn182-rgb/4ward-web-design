@@ -43,6 +43,8 @@ import {
   packResearchRecord,
   newlyEstablishedEvidence,
   inNewMexico,
+  inOutreachArea,
+  qualificationGapMessages,
   qualifyProspect,
   readResearchRecord,
   robotsAllows,
@@ -197,7 +199,7 @@ await check("next run is the next weekday at 9:00 AM Denver", () => {
   assert.equal(denverDayRange(new Date("2026-11-09T16:00:00Z")).key, "2026-11-09");
 });
 
-await check("weekday selection keeps safeguards and skips closed or personal mail", () => {
+await check("weekday selection keeps safeguards and accepts an imported Gmail address", () => {
   assert.equal(isClosedProspect({ notes: "Listed as closed." }), true);
   assert.equal(isClosedProspect({ notes: "Sunday Closed" }), false);
   const rows = [
@@ -210,9 +212,9 @@ await check("weekday selection keeps safeguards and skips closed or personal mai
     { id: "7", status: "ready", outreach_eligible: true, public_email: "refused@shop.example", business_name: "Refused", city: "Artesia" },
   ];
   const picked = selectWeekdayRecipients(rows, { limit: 5, customerEmails: ["buyer@shop.example"], uncertainIds: [], refusedIds: ["7"] });
-  assert.deepEqual(picked.chosen.map((row) => row.id), ["1"]);
+  assert.deepEqual(picked.chosen.map((row) => row.id), ["1", "2"]);
   assert.ok(picked.skipped.some((row) => row.reason === "refused"));
-  assert.ok(picked.skipped.some((row) => row.reason === "personal-email"));
+  assert.equal(picked.skipped.some((row) => row.reason === "personal-email"), false);
   assert.ok(picked.skipped.some((row) => row.reason === "closed"));
   assert.ok(picked.skipped.some((row) => row.reason === "one-time"));
   assert.ok(picked.skipped.some((row) => row.reason === "existing-customer"));
@@ -251,9 +253,10 @@ await check("email history reads the saved acceptance and does not send", async 
   assert.equal(oldLetter[0].templateVersion, "outreach-letter-2026-11");
   assert.equal(oldLetter[0].body, historical);
   assert.equal(saved[0].messageId, "abcdef123456");
-  assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", notes: "" }), "email");
-  assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", research_notes: "Checked public pages did not show a business-owned website.", notes: "" }), "email");
-  assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "shop.example", research_notes: "Not listed as closed on the pages that were read. Published email office@shop.example was on a page that was read. A business-owned website is recorded at shop.example." }), "");
+  assert.equal(verificationBlock({ status: "queued", business_name: "Shop", city: "Lovington", public_email: "office@shop.example", notes: "" }), "");
+  assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "office@shop.example", notes: "" }), "name-missing");
+  assert.equal(verificationBlock({ status: "queued", business_name: "Shop", public_email: "office@shop.example", notes: "" }), "location-missing");
+  assert.equal(verificationBlock({ status: "queued", business_name: "Shop", city: "Dallas", public_email: "office@shop.example", website_host: "shop.example", notes: "" }), "outside-area");
   assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "nereecerodriguez956@gmail.com", research_sources: "https://example.com/listing", notes: "One-time test." }), "one-time");
   assert.equal(discoveryNeed(0), 50);
   assert.equal(discoveryNeed(19), 31);
@@ -265,10 +268,17 @@ await check("email history reads the saved acceptance and does not send", async 
   ];
   assert.equal(selectPendingForReview(pending, 5).chosen.length, 1);
   assert.equal(selectPendingForReview(pending, 5).skipped.some((row) => row.reason === "duplicate"), true);
-  const fresh = { status: "ready", outreach_eligible: true, city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", researched_at: "2026-11-01T16:00:00Z", research_notes: "Not listed as closed on the pages that were read. Published email office@shop.example was on a page that was read. Checked public pages did not show a business-owned website." };
+  const fresh = { status: "ready", outreach_eligible: true, business_name: "Shop", city: "Lovington", public_email: "office@shop.example", research_sources: "", website_host: "shop.example", researched_at: "2026-11-01T16:00:00Z", research_notes: "" };
   assert.equal(readinessBlock(fresh, new Date("2026-11-08T16:00:00Z")), "");
-  assert.equal(readinessBlock({ ...fresh, researched_at: "2026-09-01T16:00:00Z" }, new Date("2026-11-08T16:00:00Z")), "stale");
-  assert.equal(readinessBlock({ ...fresh, research_notes: "Checked public pages did not show a business-owned website. A different address other@shop.example was published." }, new Date("2026-11-08T16:00:00Z")), "conflicting");
+  assert.equal(readinessBlock({ ...fresh, researched_at: "2026-09-01T16:00:00Z" }, new Date("2026-11-08T16:00:00Z")), "");
+  assert.equal(readinessBlock({ ...fresh, research_notes: "A different address other@shop.example was saved." }, new Date("2026-11-08T16:00:00Z")), "");
+  assert.equal(readinessBlock({ ...fresh, city: "El Paso", public_email: "owner@yahoo.com" }), "");
+  assert.equal(inOutreachArea("Odessa"), true);
+  assert.equal(inOutreachArea("Lubbock"), true);
+  assert.equal(inOutreachArea("Dallas"), false);
+  assert.equal(inOutreachArea("Houston"), false);
+  assert.equal(inOutreachArea(""), null);
+  assert.equal(qualificationGapMessages({ businessName: "", publicEmail: "", city: "" }).join(" "), "A company name is missing. An email address is missing. A location is missing.");
   assert.equal(upcomingRecipients([fresh], new Date("2026-11-08T16:00:00Z")).length, 1);
   assert.equal(deliveryShortfall(0, 0), 5);
   assert.equal(deliveryShortfall(2, 1), 2);
@@ -298,9 +308,10 @@ await check("email history reads the saved acceptance and does not send", async 
   assert.equal(isDirectoryHost("crocketttrucking.com"), false);
   const profile = classifyCandidate({ name: "Bullfrog Logistics", city: "Carlsbad", businessStatus: "OPERATIONAL", websiteUrl: "https://fedlinks.com/profile/bullfrog", pageChecked: true, pageEmails: ["luis@bullfrogtrucking.com"] });
   assert.equal(profile.websiteHost, "");
-  const unread = findingFromReading({ city: "Carlsbad", public_email: "office@shop.example" }, { ok: false, error: "The public website could not be read. Review it manually." });
-  assert.equal(unread.ready, false);
-  assert.match(unread.reason, /could not be read/i);
+  const unread = findingFromReading({ business_name: "Shop", city: "Carlsbad", public_email: "owner@gmail.com" }, { ok: false, error: "The public website could not be read. Review it manually." });
+  assert.equal(unread.ready, true);
+  assert.match(unread.reason, /not independently verified/i);
+  assert.doesNotMatch(unread.reason, /could not be read/i);
   const confirmed = findingFromReading(
     { city: "Lovington", public_email: "info@manwelding.com", business_name: "Man Welding Services" },
     { ok: true, emails: ["info@manwelding.com"], text: "Man Welding Services, Lovington. Not a new claim.", host: "manwelding.com", ownSite: true, sourceUrl: "https://www.manwelding.com/" }
@@ -310,8 +321,8 @@ await check("email history reads the saved acceptance and does not send", async 
     { city: "Lovington", public_email: "info@manwelding.com", business_name: "Man Welding Services" },
     { ok: true, emails: ["info@manwelding.com"], text: "Call the shop today.", host: "manwelding.com", ownSite: true }
   );
-  assert.equal(unreadPlace.ready, false);
-  assert.match(unreadPlace.reason, /did not confirm a New Mexico location/);
+  assert.equal(unreadPlace.ready, true);
+  assert.match(unreadPlace.reason, /was on a page that was read/i);
   assert.equal(inNewMexico("Roswell"), true);
   assert.equal(inNewMexico("Alamogordo"), true);
   assert.equal(inNewMexico("Las Cruces"), true);
@@ -325,14 +336,15 @@ await check("email history reads the saved acceptance and does not send", async 
     { city: "Roswell", public_email: "office@shop.example", business_name: "Roswell Shop" },
     { ok: true, emails: ["office@shop.example"], text: "Roswell Shop in Roswell.", host: "shop.example", ownSite: true }
   );
-  assert.equal(roswellUnstated.ready, false);
+  assert.equal(roswellUnstated.ready, true);
+  assert.match(roswellUnstated.reason, /was on a page that was read/i);
   assert.equal(qualifyProspect({ businessName: "Roswell Shop", city: "Roswell", publicEmail: "office@shop.example" }).qualification, "qualified");
   const conflict = findingFromReading(
     { city: "Lovington", public_email: "info@manwelding.com", business_name: "Man Welding Services" },
     { ok: true, emails: ["info@manwelding.com"], text: "Our yard is in Hobbs.", host: "manwelding.com", ownSite: true }
   );
-  assert.equal(conflict.ready, false);
-  assert.match(conflict.reason, /location conflicts/);
+  assert.equal(conflict.ready, true);
+  assert.doesNotMatch(conflict.reason, /location conflicts/);
   assert.equal(confirmed.websiteHost, "manwelding.com");
   assert.doesNotMatch(confirmed.reason, /newly established/i);
   assert.equal(newlyEstablishedEvidence("New Welding Services"), "");
@@ -425,15 +437,18 @@ await check("manual prospects are researched before discovered ones and duplicat
 await check("qualification does not invent a contact or a missing website", () => {
   const missing = qualifyProspect({ businessName: "Hope Plumbing", city: "Hope", publicEmail: "" });
   assert.equal(missing.qualification, "no_verified_contact");
-  assert.match(missing.reason, /not guessed/i);
+  assert.match(missing.reason, /An email address is missing/);
   const outside = qualifyProspect({ businessName: "Far Shop", city: "Dallas", publicEmail: "info@farshop.com" });
   const albuquerque = qualifyProspect({ businessName: "Duke City Shop", city: "Albuquerque", publicEmail: "info@dukecity.example" });
   const hobbs = qualifyProspect({ businessName: "Lea Shop", city: "Hobbs", publicEmail: "info@leashop.com", websiteHost: "" });
   assert.equal(hobbs.qualification, "qualified");
   assert.equal(albuquerque.qualification, "qualified");
   assert.equal(outside.qualification, "not_qualified");
+  assert.match(outside.reason, /outside New Mexico and West Texas/);
   const personal = qualifyProspect({ businessName: "Local Clean", city: "Loving", publicEmail: "owner@gmail.com" });
-  assert.equal(personal.qualification, "needs_review");
+  assert.equal(personal.qualification, "qualified");
+  assert.match(personal.reason, /not independently verified/i);
+  assert.doesNotMatch(personal.reason, /was verified/i);
   const blocked = qualifyProspect({ businessName: "Blocked", city: "Carlsbad", publicEmail: "info@blocked.com", suppressed: true });
   assert.equal(blocked.qualification, "suppressed");
   assert.equal(blocked.outreachEligible, false);
@@ -516,8 +531,9 @@ await check("a blocked or failed website is marked for review and not emailed", 
     website_host: "shop.test",
     website_url: "https://shop.test/",
   }, blocked, "");
-  assert.equal(result.qualification, "needs_review");
-  assert.equal(result.draftBody, "");
+  assert.equal(result.qualification, "qualified");
+  assert.match(result.reason, /not independently verified/i);
+  assert.match(result.draftBody, /Adam Windhorst/);
   let calls = 0;
   const failed = await readOwnWebsite("https://shop.test/menu", {
     timeoutMs: 1000,
@@ -595,6 +611,7 @@ await check("pasted prospects are parsed, deduped, and kept pending", () => {
   assert.equal(splitImportText(batch.rows.map((row) => `${row.name} | ${row.email}`).join("\n")).chunks.length, 2);
   const published = verificationBlock({
     status: "queued",
+    business_name: "Listed Shop",
     city: "Carlsbad",
     public_email: "office@gmail.com",
     research_sources: "https://example.com/listing",
@@ -604,13 +621,14 @@ await check("pasted prospects are parsed, deduped, and kept pending", () => {
   assert.equal(published, "");
   const domainOnly = verificationBlock({
     status: "queued",
+    business_name: "Listed Shop",
     city: "Carlsbad",
     public_email: "office@gmail.com",
-    research_sources: "https://example.com/listing",
-    website_host: "",
-    research_notes: "Checked public pages did not show a business-owned website.",
+    research_sources: "",
+    website_host: "shop.example",
+    research_notes: "",
   });
-  assert.equal(domainOnly, "email");
+  assert.equal(domainOnly, "");
 });
 
 await check("large imports keep queue order and uncertain sends consume the slot", () => {

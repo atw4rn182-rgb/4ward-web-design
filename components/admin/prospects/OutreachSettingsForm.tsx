@@ -61,7 +61,7 @@ export function OutreachSettingsForm({
           <h2 className="font-display text-lg font-bold text-ink">Automation</h2>
           <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">
             {schedulerActive
-              ? "Qualified New Mexico prospects, including Roswell, become Ready after their saved public page confirms the checks. No separate approval is required. Weekday outreach sends up to five at 9:00 AM America/Denver, including a prospect verified earlier that morning. Research runs at 8:00 AM and does not send. Businesses with no website come first, oilfield services come first inside each group, and queue order is kept inside that group. A recorded website does not block a send. Closed businesses, opt-outs, and uncertain sends stay out."
+              ? "A saved prospect with a company name, a valid email, and a location in New Mexico or West Texas becomes Ready without a separate approval. An imported email, including Gmail or Yahoo, can be sent and is not labeled verified. Weekday outreach sends up to five at 9:00 AM America/Denver, including manual sends. Research at 8:00 AM does not send. A missed day is not caught up. Closed businesses, duplicates, previous recipients, customers, opt-outs, and uncertain sends stay out."
               : "These settings are saved for a later phase. The scheduler is off, so changing them does not research businesses or send email."}
           </p>
         </div>
@@ -128,15 +128,15 @@ export function OutreachSettingsForm({
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm sm:col-span-2">
           <span className="block font-semibold text-ink">Next five scheduled recipients</span>
           {needsMoreVerified(readyCount)
-            ? `The queue needs more verified prospects before a full weekday send. ${readyCount} Ready, ${pendingCount} still Pending research. The next run sends only Ready businesses that pass the recheck, and it does not send a whole imported batch.`
+            ? `The queue has fewer than five Ready prospects. ${readyCount} Ready, ${pendingCount} still Pending. The next run sends only Ready businesses that pass the recheck, and it does not send a whole imported batch.`
             : null}
           {upcoming.length
             ? upcoming.map((row) => `${row.queuePosition ? `#${row.queuePosition} ` : ""}${row.business_name}${row.city ? `, ${row.city}` : ""}${row.sendAt ? ` — ${new Date(row.sendAt).toLocaleString("en-US", { timeZone: "America/Denver", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}` : ""}`).join("; ")
-            : "No verified Ready business is waiting in send order. The send rechecks the full queue and will send fewer than five when the verified list is short."}
+            : "No Ready business is waiting in send order. The send rechecks the full queue and will send fewer than five when the Ready list is short."}
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm sm:col-span-2">
           <span className="block font-semibold text-ink">Discovery progress</span>
-          {readyCount} of {READY_GOAL} Ready. Replenishment runs when Ready falls below {READY_FLOOR}. {summary.discoveryActive === true ? "A discovery run saved verified businesses." : "Lookup of new businesses is not active."}
+          {readyCount} of {READY_GOAL} Ready. Replenishment runs when Ready falls below {READY_FLOOR}. {summary.discoveryActive === true ? "A discovery run saved businesses." : "Lookup of new businesses is not active."}
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
           <span className="block font-semibold text-ink">Last research run</span>

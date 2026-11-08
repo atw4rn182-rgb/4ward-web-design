@@ -25,7 +25,7 @@ import { ProspectDecision } from "@/components/admin/prospects/ProspectDecision"
 import { annotateReadyQueue, upcomingRecipients, verificationBlock } from "@/lib/prospects/discovery.mjs";
 import { skipExplanation } from "@/lib/prospects/queue.mjs";
 import { QueueControls } from "@/components/admin/prospects/QueueControls";
-import { listQualification } from "@/lib/prospects/research.mjs";
+import { listQualification, qualificationGapMessages } from "@/lib/prospects/research.mjs";
 import { GmailConnection } from "@/components/admin/prospects/GmailConnection";
 import { AuthorizedLaunch } from "@/components/admin/prospects/AuthorizedLaunch";
 import { gmailConnectionStatus } from "@/lib/gmail/mailbox.mjs";
@@ -62,8 +62,13 @@ function queueLine(row: { id: string; status: string; notes?: string | null; res
   }
   if (annotation?.skipReason) return skipExplanation(annotation.skipReason);
   if (row.status === "queued" || row.status === "researching") {
+    const note = String(row.research_notes || "").trim();
+    if (note) return note;
     const reason = verificationBlock(row);
-    return reason ? `Pending research. ${skipExplanation(reason)}` : "Pending research. The saved facts still need a research check before this business can be Ready.";
+    if (reason === "name-missing" || reason === "email-missing" || reason === "location-missing" || reason === "invalid-email" || reason === "outside-area") {
+      return qualificationGapMessages(row).join(" ");
+    }
+    return reason ? skipExplanation(reason) : "The company name, email, and location are saved. The email was not independently verified.";
   }
   return "";
 }

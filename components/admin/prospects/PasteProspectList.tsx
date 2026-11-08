@@ -102,6 +102,7 @@ export function PasteProspectList({ unavailable = false }: { unavailable?: boole
       return;
     }
     let imported = 0;
+    let ready = 0;
     let skipped = local.counts.skip;
     let review = local.counts.review;
     let batchId = "";
@@ -118,12 +119,13 @@ export function PasteProspectList({ unavailable = false }: { unavailable?: boole
         return;
       }
       imported += result.summary?.imported || 0;
+      ready += result.summary?.ready || 0;
       skipped += result.summary?.skipped || 0;
       review += result.summary?.review || 0;
       batchId = result.summary?.batchId || batchId;
     }
     setBusy("");
-    setSummary(`Imported ${imported} as Pending research. Skipped ${skipped}. Review ${review}. Batch ${batchId}. No email was sent.`);
+    setSummary(`Imported ${imported}. ${ready} became Ready. ${Math.max(0, imported - ready)} stay Pending. Skipped ${skipped}. Review ${review}. Batch ${batchId}. No email was sent.`);
     setConfirmed(false);
   }
 
@@ -134,7 +136,7 @@ export function PasteProspectList({ unavailable = false }: { unavailable?: boole
     <div className="mb-5 rounded-2xl border border-black/10 bg-paper p-4 shadow-soft sm:p-5">
       <h2 className="text-lg font-semibold text-ink">Paste prospect list</h2>
       <p className="mt-1 text-sm leading-relaxed text-muted">
-        One business per line: Business Name | email@example.com. A table or CSV can also include city, phone, source URL, and notes. Importing saves Pending research and does not send email.
+        One business per line: Business Name | email@example.com. A table or CSV can also include city, phone, source URL, and notes. A company name, valid email, and New Mexico or West Texas location become Ready. Importing does not send email.
       </p>
       <label className="mt-4 block text-sm font-semibold text-ink" htmlFor="prospect-paste">
         Businesses
@@ -217,7 +219,7 @@ export function PasteProspectList({ unavailable = false }: { unavailable?: boole
           onChange={(event) => setConfirmed(event.target.checked)}
           disabled={!checked || counts.import < 1 || unavailable || Boolean(busy)}
         />
-        Import the accepted rows as Pending research. This does not send an email.
+        Import the accepted rows. Qualifying rows become Ready. This does not send an email.
       </label>
       <button
         type="button"

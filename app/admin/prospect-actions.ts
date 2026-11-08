@@ -22,7 +22,9 @@ import {
   RESEARCH_DEADLINE_MS,
   RESEARCH_FAILURE_LIMIT,
   isQualification,
+  IMPORTED_CONTACT_NOTE,
   packResearchRecord,
+  qualificationGapMessages,
   qualificationLabel,
   selectResearchBatch,
   suppressionMatches,
@@ -52,7 +54,7 @@ export type ProspectActionState = {
   message?: string;
   weekdayTarget?: number;
   preview?: ImportPreviewRow[];
-  summary?: { imported: number; skipped: number; review: number; batchId: string };
+  summary?: { imported: number; skipped: number; review: number; ready: number; batchId: string };
   counts?: { import: number; skip: number; review: number };
 };
 
@@ -144,6 +146,8 @@ async function addProspectInTables(
     }
   }
 
+  const gaps = qualificationGapMessages({ businessName: value.businessName, publicEmail: value.email, city: value.city });
+  const ready = gaps.length === 0;
   const { data: created, error: insertError } = await client
     .from("prospects")
     .insert({
@@ -153,10 +157,12 @@ async function addProspectInTables(
       website_host: value.websiteHost || null,
       public_email: value.email || null,
       notes: value.notes || null,
-      status: "queued",
+      research_notes: ready ? IMPORTED_CONTACT_NOTE : gaps.join(" "),
+      status: ready ? "ready" : "queued",
       source: "manual",
       manual_priority: true,
-      outreach_eligible: false,
+      outreach_eligible: ready,
+      ready_at: ready ? new Date().toISOString() : null,
     })
     .select("id")
     .single();
@@ -167,12 +173,14 @@ async function addProspectInTables(
   await rememberContact(client, { ...value, id: created.id, email: value.email, name: value.businessName, business_name: value.businessName }, "queued");
   await client.from("prospect_activity").insert({
     prospect_id: created.id,
-    event_type: "queued",
-    to_status: "queued",
-    note: "Added manually. Priority is set for the next scheduled batch. No email was sent.",
+    event_type: ready ? "research" : "queued",
+    to_status: ready ? "ready" : "queued",
+    note: ready
+      ? "Added as Ready from the saved company name, email, and location. The email was not independently verified. No email was sent."
+      : `Added as Pending. ${gaps.join(" ")} No email was sent.`.slice(0, 500),
   });
   revalidateProspects(created.id);
-  return { ok: true, message: "Business added to the queue. No email was sent." };
+  return { ok: true, message: ready ? "Business saved as Ready. The email was not independently verified. No email was sent." : `Business saved as Pending. ${gaps.join(" ")} No email was sent.` };
 }
 
 async function updateStatusInTables(
@@ -591,7 +599,8 @@ async function saveResearchResult(client: SupabaseClient, prospect: { id: string
 }) {
   const packed = packResearchRecord(result);
   const now = new Date().toISOString();
-  const status = result.qualification === "suppressed" ? "do_not_contact" : prospect.status === "queued" ? "researching" : prospect.status;
+  const qualified = result.qualification === "qualified" && prospect.status !== "sent";
+  const status = result.qualification === "suppressed" ? "do_not_contact" : qualified ? "ready" : prospect.status === "sent" ? "sent" : "queued";
   const patch: Record<string, string | boolean | null> = {
     research_notes: packed.research_notes || null,
     research_sources: packed.research_sources || null,
@@ -599,11 +608,12 @@ async function saveResearchResult(client: SupabaseClient, prospect: { id: string
     gbp_observations: packed.gbp_observations || null,
     research_confidence: packed.research_confidence || null,
     industry: packed.industry || null,
-    outreach_eligible: false,
+    outreach_eligible: qualified,
     status,
     researched_at: now,
     last_activity_at: now,
   };
+  if (qualified) patch.ready_at = now;
   if (packed.public_email) patch.public_email = packed.public_email;
   if (status === "do_not_contact") patch.do_not_contact_at = now;
   const { error } = await client.from("prospects").update(patch).eq("id", prospect.id);
@@ -613,7 +623,9 @@ async function saveResearchResult(client: SupabaseClient, prospect: { id: string
     event_type: "research",
     from_status: prospect.status,
     to_status: status,
-    note: `Research saved as ${qualificationLabel(result.qualification) || "Needs review"}. No email was sent.`.slice(0, 500),
+    note: (qualified
+      ? "Marked Ready from the saved company name, email, and location. The email was not independently verified. No email was sent."
+      : `Saved as pending. ${result.reason} No email was sent.`).slice(0, 500),
   });
   return null;
 }
@@ -636,9 +648,10 @@ async function researchProspectRecord(client: SupabaseClient, prospect: {
     websiteHost: prospect.website_host || "",
   });
   const { data: blocked } = filter
-    ? await client.from("prospect_suppressions").select("id,business_name,city,email,website_host").or(filter).limit(1)
+    ? await client.from("prospect_suppressions").select("id,business_name,city,email,website_host,reason").or(filter).limit(1)
     : { data: [] };
-  if (suppressionMatches(prospect, blocked || [])) {
+  const optedOut = (blocked || []).filter((row) => !/^queued\b/i.test(String(row.reason || "")));
+  if (suppressionMatches(prospect, optedOut)) {
     const error = await saveResearchResult(client, prospect, {
       qualification: "suppressed",
       reason: "This business matches a do-not-contact record and was not queued for outreach.",
@@ -657,6 +670,7 @@ async function researchProspectRecord(client: SupabaseClient, prospect: {
   const result = researchFromRecord({ ...prospect, suppressed: false }, reading, mailingAddress);
   const error = await saveResearchResult(client, prospect, result);
   if (error) return { state: "failed", error };
+  if (result.qualification === "qualified") return { state: "researched", error: null };
   if (reading && !reading.ok && !reading.robotsBlocked) return { state: "failed", error: null };
   return { state: "researched", error: null };
 }
@@ -834,17 +848,22 @@ export async function importProspectListAction(_prev: ProspectActionState, formD
   const { data: latest } = await client.from("prospects").select("queued_at").order("queued_at", { ascending: false }).limit(1);
   const times = assignQueueTimes(latest?.[0]?.queued_at || new Date().toISOString(), accepted.length);
   let imported = 0;
+  let readyCount = 0;
   for (let index = 0; index < accepted.length; index += 1) {
     const row = accepted[index];
+    const gaps = qualificationGapMessages({ businessName: row.name, publicEmail: row.email, city: row.city });
+    const ready = gaps.length === 0;
     const { data: created, error: insertError } = await client.from("prospects").insert({
       business_name: row.name,
       city: row.city || null,
       public_email: row.email,
       research_sources: row.source || null,
-      status: "queued",
+      research_notes: ready ? IMPORTED_CONTACT_NOTE : gaps.join(" "),
+      status: ready ? "ready" : "queued",
       source: "manual",
       manual_priority: true,
-      outreach_eligible: false,
+      outreach_eligible: ready,
+      ready_at: ready ? times[index] : null,
       queued_at: times[index],
       created_at: times[index],
       notes: importNotes({ phone: row.phone, notes: row.notes, batchId, importedOn, emailOriginal: row.emailOriginal }),
@@ -853,18 +872,21 @@ export async function importProspectListAction(_prev: ProspectActionState, formD
     await rememberContact(client, { ...row, id: created.id, email: row.email, name: row.name }, "queued");
     await client.from("prospect_activity").insert({
       prospect_id: created.id,
-      event_type: "queued",
-      to_status: "queued",
-      note: `Pasted import ${batchId}. Pending research. No email was sent.`.slice(0, 500),
+      event_type: ready ? "research" : "queued",
+      to_status: ready ? "ready" : "queued",
+      note: ready
+        ? `Pasted import ${batchId}. Ready from the saved company name, email, and location. The email was not independently verified. No email was sent.`
+        : `Pasted import ${batchId}. ${gaps.join(" ")} No email was sent.`.slice(0, 500),
     });
     imported += 1;
+    if (ready) readyCount += 1;
   }
   revalidateProspects();
   const skipped = checked.review.counts.skip + (checked.review.counts.import - imported);
   return {
     ok: true,
-    message: `Imported ${imported} as Pending research. Skipped ${skipped}. ${checked.review.counts.review} need review. Batch ${batchId}. No email was sent.`,
-    summary: { imported, skipped, review: checked.review.counts.review, batchId },
+    message: `Imported ${imported}. ${readyCount} became Ready. ${imported - readyCount} stay Pending. Skipped ${skipped}. ${checked.review.counts.review} need review. Batch ${batchId}. No email was sent.`,
+    summary: { imported, skipped, review: checked.review.counts.review, ready: readyCount, batchId },
     preview: previewRows(checked.review.rows),
   };
 }
