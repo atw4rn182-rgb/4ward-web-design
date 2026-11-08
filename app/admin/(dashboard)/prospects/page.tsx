@@ -93,14 +93,21 @@ export default async function ProspectsPage({
         </div>
       ) : null}
 
+      {dashboard.error ? (
+        <div className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-800" role="alert">
+          <p className="font-semibold">The prospect list could not be loaded</p>
+          <p className="mt-1 leading-relaxed">{dashboard.error}</p>
+        </div>
+      ) : null}
+
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Total prospects" value={String(counts.total)} hint="Every business in the queue" />
-        <StatCard label="Awaiting research" value={String(counts.awaitingResearch)} hint="Queued or researching" />
-        <StatCard label="Ready to contact" value={String(counts.ready)} hint="Reviewed and eligible" />
-        <StatCard label="Emails sent" value={String(counts.emailsSent)} hint="Submitted in a future phase" />
-        <StatCard label="Interested prospects" value={String(counts.interested)} hint="Positive replies" />
-        <StatCard label="Not interested / opted out" value={String(counts.optedOut)} hint="Kept on the suppression list" />
-        <StatCard label="Failed or bounced" value={String(counts.failed)} hint="Needs review before any retry" />
+        <StatCard label="Total prospects" value={String(counts.total)} hint="Every business in the queue" href={`${pageHref(q, "all", 1)}#prospect-list`} current={status === "all" && !q} />
+        <StatCard label="Awaiting research" value={String(counts.awaitingResearch)} hint="Queued or researching" href={`${pageHref(q, "awaiting", 1)}#prospect-list`} current={status === "awaiting"} />
+        <StatCard label="Ready to contact" value={String(counts.ready)} hint="Reviewed and eligible" href={`${pageHref(q, "ready", 1)}#prospect-list`} current={status === "ready"} />
+        <StatCard label="Emails sent" value={String(counts.emailsSent)} hint="Accepted by Gmail or marked sent" href={`${pageHref(q, "contacted", 1)}#prospect-list`} current={status === "contacted"} />
+        <StatCard label="Interested prospects" value={String(counts.interested)} hint="Positive replies" href={`${pageHref(q, "interested", 1)}#prospect-list`} current={status === "interested"} />
+        <StatCard label="Not interested / opted out" value={String(counts.optedOut)} hint="Kept on the suppression list" href={`${pageHref(q, "opted_out", 1)}#prospect-list`} current={status === "opted_out"} />
+        <StatCard label="Failed or bounced" value={String(counts.failed)} hint="Needs review before any retry" href={`${pageHref(q, "needs_review", 1)}#prospect-list`} current={status === "needs_review"} />
       </div>
 
       <div className="mb-5">
@@ -133,19 +140,26 @@ export default async function ProspectsPage({
         usage={dashboard.data.usage}
         lastRun={dashboard.data.settings?.last_run_at ? formatDenver(dashboard.data.settings.last_run_at) : "No runs yet"}
         lastCleanup={dashboard.data.settings?.last_cleanup_at ? formatDenver(dashboard.data.settings.last_cleanup_at) : "Not run"}
+        unavailable={schemaMissing}
       />
 
-      <ResearchQueueButton />
-      <AddBusinessForm />
-      <ProspectFilters q={q} status={status} />
+      <ResearchQueueButton awaiting={counts.awaitingResearch} unavailable={schemaMissing} />
+      <AddBusinessForm unavailable={schemaMissing} />
+      <div id="prospect-list">
+        <ProspectFilters q={q} status={status} />
+      </div>
 
       {visible.length === 0 ? (
         <EmptyState
-          title={q || status !== "all" ? "No matching prospects" : "No prospects yet"}
+          title={dashboard.error ? "Prospects are unavailable" : q || status !== "all" ? "No matching prospects" : "No prospects yet"}
           detail={
-            schemaMissing
+            dashboard.error
+              ? "Refresh this page after the connection recovers. Nothing was sent."
+              : schemaMissing
               ? "The list will appear after the migration is approved and applied."
-              : "Add a business to give it priority in the next scheduled batch."
+              : status !== "all"
+                ? "No saved business matches this status. Choose another card or clear the filter."
+                : "Add a business to give it priority in the next scheduled batch."
           }
         />
       ) : (
@@ -155,14 +169,16 @@ export default async function ProspectsPage({
               <li key={row.id} className="rounded-2xl border border-black/10 bg-paper p-4 shadow-soft">
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <Link href={`/admin/prospects/${row.id}`} className="font-semibold text-ink">
+                    <Link href={`/admin/prospects/${row.id}`} className="inline-flex min-h-11 items-center font-semibold text-ink">
                       {row.business_name}
                     </Link>
                     <p className="mt-1 text-sm text-muted">{row.city || row.service_area || "Location not recorded"}</p>
                   </div>
-                  <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
-                    {statusLabel(row.status)}
-                  </span>
+                  <Link href={`${pageHref("", row.status, 1)}#prospect-list`} className="inline-flex min-h-11 items-center">
+                    <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
+                      {statusLabel(row.status)}
+                    </span>
+                  </Link>
                 </div>
                 <dl className="mt-3 space-y-1 text-sm">
                   <div className="flex justify-between gap-3">
@@ -186,6 +202,9 @@ export default async function ProspectsPage({
                 ) : null}
                 {row.notes ? <p className="mt-2 line-clamp-2 text-sm text-muted">{row.notes}</p> : null}
                 <ProspectDecision id={row.id} />
+                <Link href={`/admin/prospects/${row.id}`} className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-brand-deep">
+                  View details
+                </Link>
               </li>
             ))}
           </ul>
@@ -211,6 +230,9 @@ export default async function ProspectsPage({
                         <Link href={`/admin/prospects/${row.id}`} className="font-semibold text-ink">
                           {row.business_name}
                         </Link>
+                        <Link href={`/admin/prospects/${row.id}`} className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-brand-deep">
+                          View details
+                        </Link>
                         {row.manual_priority ? (
                           <p className="mt-1 text-xs font-semibold text-brand-deep">Priority</p>
                         ) : null}
@@ -223,9 +245,11 @@ export default async function ProspectsPage({
                       <td className="px-4 py-3">{row.public_email || "Not recorded"}</td>
                       <td className="px-4 py-3">{row.website_host || "—"}</td>
                       <td className="px-4 py-3">
-                        <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
-                          {statusLabel(row.status)}
-                        </span>
+                        <Link href={`${pageHref("", row.status, 1)}#prospect-list`} className="inline-flex min-h-11 items-center">
+                          <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
+                            {statusLabel(row.status)}
+                          </span>
+                        </Link>
                       </td>
                       <td className="px-4 py-3">{formatWhen(row.last_activity_at)}</td>
                       <td className="max-w-xs px-4 py-3 text-muted">{row.notes || "—"}</td>
@@ -258,7 +282,11 @@ export default async function ProspectsPage({
             >
               Previous
             </Link>
-          ) : null}
+          ) : (
+            <span aria-disabled="true" className="inline-flex min-h-11 items-center rounded-full border border-black/10 bg-white px-4 font-semibold text-muted" title="Already on the first page">
+              Previous
+            </span>
+          )}
           {currentPage < pageCount ? (
             <Link
               href={pageHref(q, status, currentPage + 1)}
@@ -266,7 +294,11 @@ export default async function ProspectsPage({
             >
               Next
             </Link>
-          ) : null}
+          ) : (
+            <span aria-disabled="true" className="inline-flex min-h-11 items-center rounded-full border border-black/10 bg-white px-4 font-semibold text-muted" title="Already on the last page">
+              Next
+            </span>
+          )}
         </div>
       </div>
     </>

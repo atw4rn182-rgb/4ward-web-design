@@ -20,6 +20,10 @@ export function ProspectFilters({ q, status }: { q: string; status: string }) {
           className="min-h-11 w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm"
         >
           <option value="all">All statuses</option>
+          <option value="awaiting">Awaiting research</option>
+          <option value="contacted">Emails sent</option>
+          <option value="opted_out">Not interested or opted out</option>
+          <option value="needs_review">Failed or bounced</option>
           {PROSPECT_STATUSES.map((value) => (
             <option key={value} value={value}>
               {STATUS_LABELS[value as keyof typeof STATUS_LABELS]}

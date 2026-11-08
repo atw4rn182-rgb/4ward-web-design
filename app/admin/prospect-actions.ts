@@ -465,6 +465,9 @@ export async function saveOutreachSettingsAction(
     mailingAddress: formData.get("mailingAddress"),
   });
   if (!parsed.ok || !parsed.value) return { error: parsed.error };
+  if (parsed.value.automation_enabled && formData.get("confirmOutreach") !== "on") {
+    return { error: "Confirm weekday sending before saving with automation on. Nothing was changed." };
+  }
 
   const { error, client } = await adminWriteClient();
   if (error || !client) return { error: error || "Unauthorized." };
@@ -480,8 +483,12 @@ export async function saveOutreachSettingsAction(
 }
 
 export async function cleanupProspectLogsAction(
-  _prev: ProspectActionState
+  _prev: ProspectActionState,
+  formData?: FormData
 ): Promise<ProspectActionState> {
+  if (!formData || formData.get("confirmCleanup") !== "on") {
+    return { error: "Confirm cleanup before old logs are removed. Nothing was deleted." };
+  }
   const { error, client } = await adminWriteClient();
   if (error || !client) return { error: error || "Unauthorized." };
 

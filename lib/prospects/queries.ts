@@ -12,6 +12,7 @@ import {
   QUERY_BUDGET_PER_VIEW,
   SETTINGS_SELECT,
   countProspects,
+  isGroupedProspectStatus,
   searchOr,
   settingsFromRow,
 } from "@/lib/prospects/model.mjs";
@@ -142,7 +143,7 @@ async function dashboardFromTables(input: { q: string; status: string; offset: n
     .order("manual_priority", { ascending: false })
     .order("last_activity_at", { ascending: false })
     .range(from, to);
-  if (input.status && input.status !== "all") listQuery = listQuery.eq("status", input.status);
+  listQuery = applyProspectStatus(listQuery, input.status);
   const filter = searchOr(input.q);
   if (filter) listQuery = listQuery.or(filter);
 
@@ -164,15 +165,28 @@ async function dashboardFromTables(input: { q: string; status: string; offset: n
       requests: FALLBACK_REQUESTS,
     },
     missing: missingTable(tableError),
+    error: tableError && !missingTable(tableError) ? "The prospect list could not be loaded. Nothing was sent." : "",
     requests: FALLBACK_REQUESTS,
   };
+}
+
+function applyProspectStatus(query: any, status: string) {
+  if (!status || status === "all") return query;
+  if (status === "awaiting") return query.in("status", ["queued", "researching"]);
+  if (status === "opted_out") return query.in("status", ["not_interested", "do_not_contact"]);
+  if (status === "needs_review") return query.in("status", ["failed", "bounced"]);
+  if (status === "contacted") {
+    return query.not("status", "in", "(bounced,failed)").or("sent_at.not.is.null,status.eq.sent,status.eq.interested");
+  }
+  return query.eq("status", status);
 }
 
 export const getProspectDashboard = cache(async function getProspectDashboard(input: {
   q: string;
   status: string;
   offset: number;
-}): Promise<{ data: ProspectDashboard; missing: boolean; requests: number }> {
+}): Promise<{ data: ProspectDashboard; missing: boolean; error: string; requests: number }> {
+  if (isGroupedProspectStatus(input.status)) return dashboardFromTables(input);
   const supabase = await adminDb();
   const { data, error } = await supabase.rpc("prospect_dashboard", {
     p_q: input.q,
@@ -196,6 +210,7 @@ export const getProspectDashboard = cache(async function getProspectDashboard(in
       requests: QUERY_BUDGET_PER_VIEW,
     },
     missing: false,
+    error: "",
     requests: QUERY_BUDGET_PER_VIEW,
   };
 });
@@ -216,6 +231,7 @@ async function detailFromTables(id: string) {
     prospect: (prospectResult.data as ProspectRow | null) || null,
     activity: (activityResult.data || []) as ProspectActivityRow[],
     missing: missingTable(tableError),
+    error: tableError && !missingTable(tableError) ? "This prospect could not be loaded. Nothing was sent." : "",
     requests: 2,
   };
 }
@@ -223,20 +239,18 @@ async function detailFromTables(id: string) {
 export const getProspectDetail = cache(async function getProspectDetail(id: string) {
   const supabase = await adminDb();
   const { data, error } = await supabase.rpc("prospect_detail", { p_id: id });
-  if (missingFunction(error)) return detailFromTables(id);
-  if (error) {
-    return {
-      prospect: null as ProspectRow | null,
-      activity: [] as ProspectActivityRow[],
-      missing: missingTable(error),
-      requests: QUERY_BUDGET_PER_VIEW,
-    };
+  if (error || !data?.prospect) {
+    if (missingTable(error)) {
+      return { prospect: null as ProspectRow | null, activity: [] as ProspectActivityRow[], missing: true, error: "", requests: QUERY_BUDGET_PER_VIEW };
+    }
+    return detailFromTables(id);
   }
   const payload = (data || {}) as { prospect?: ProspectRow | null; activity?: ProspectActivityRow[] };
   return {
     prospect: payload.prospect || null,
     activity: payload.activity || [],
     missing: false,
+    error: "",
     requests: QUERY_BUDGET_PER_VIEW,
   };
 });

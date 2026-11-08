@@ -1,13 +1,17 @@
+import Link from "next/link";
+
 type StatCardProps = {
   label: string;
   value: string;
   hint: string;
   trend?: string;
+  href?: string;
+  current?: boolean;
 };
 
-export function StatCard({ label, value, hint, trend }: StatCardProps) {
-  return (
-    <article className="rounded-2xl border border-black/10 bg-paper p-4 shadow-soft sm:p-5">
+export function StatCard({ label, value, hint, trend, href, current }: StatCardProps) {
+  const body = (
+    <>
       <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-semibold text-muted">{label}</p>
         {trend ? (
@@ -20,6 +24,20 @@ export function StatCard({ label, value, hint, trend }: StatCardProps) {
         {value}
       </p>
       <p className="mt-2 text-sm leading-relaxed text-muted">{hint}</p>
-    </article>
+    </>
+  );
+  if (!href) {
+    return <article className="rounded-2xl border border-black/10 bg-paper p-4 shadow-soft sm:p-5">{body}</article>;
+  }
+  return (
+    <Link
+      href={href}
+      aria-current={current ? "page" : undefined}
+      className={`block min-h-11 rounded-2xl border bg-paper p-4 shadow-soft sm:p-5 ${
+        current ? "border-brand-deep" : "border-black/10 hover:border-brand-blue/40"
+      }`}
+    >
+      {body}
+    </Link>
   );
 }

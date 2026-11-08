@@ -7,7 +7,7 @@ const initial: ProspectActionState = {};
 const field =
   "min-h-11 w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm";
 
-export function AddBusinessForm() {
+export function AddBusinessForm({ unavailable = false }: { unavailable?: boolean }) {
   const [open, setOpen] = useState(false);
   const [state, formAction, pending] = useActionState(addProspectAction, initial);
 
@@ -16,11 +16,13 @@ export function AddBusinessForm() {
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="inline-flex min-h-11 items-center rounded-full bg-brand-blue px-4 py-2 text-sm font-semibold text-white"
+        disabled={unavailable}
+        className="inline-flex min-h-11 items-center rounded-full bg-brand-blue px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
         aria-expanded={open}
       >
         Add Business
       </button>
+      {unavailable ? <p className="mt-2 text-sm text-muted">Prospect tables are not available, so a business cannot be added.</p> : null}
       {open ? (
         <form action={formAction} className="mt-4 rounded-2xl border border-black/10 bg-paper p-4 shadow-soft sm:p-5">
           <p className="text-sm leading-relaxed text-muted">

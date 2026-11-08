@@ -12,6 +12,15 @@ body {
   @apply bg-sand text-ink antialiased font-sans;
 }
 
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #1e40af;
+  outline-offset: 2px;
+}
+
 @layer utilities {
   .admin-touch-target {
     @apply min-h-11;

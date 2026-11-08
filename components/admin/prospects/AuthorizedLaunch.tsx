@@ -30,7 +30,7 @@ export function AuthorizedLaunch() {
     <section className="mb-5 rounded-2xl border border-black/10 bg-paper p-4 shadow-soft sm:p-5">
       <h2 className="font-display text-lg font-bold text-ink">Authorized launch</h2>
       <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">
-        Sends the five checked messages through the connected mailbox. Opt-outs, existing customers, and duplicates are refused. An uncertain Gmail response is not retried.
+        These five messages were the authorized launch. Checking the box is required before anything is sent. An already accepted recipient is not sent again. Opt-outs, existing customers, and duplicates are refused. An uncertain Gmail response is not retried. Open a business to see its saved letter, time, and Gmail message ID.
       </p>
       <ul className="mt-3 grid gap-1 text-sm text-ink">
         {AUTHORIZED_LAUNCH.map((recipient) => (
@@ -48,7 +48,7 @@ export function AuthorizedLaunch() {
         <button
           type="submit"
           disabled={!confirmed || running}
-          className="rounded-full bg-brand-deep px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          className="inline-flex min-h-11 items-center rounded-full bg-brand-deep px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
         >
           {running ? "Sending…" : "Send authorized messages"}
         </button>

@@ -48,6 +48,7 @@ import {
 } from "../lib/prospects/research.mjs";
 import { readOwnWebsite, researchFromRecord } from "../lib/prospects/research-run.mjs";
 import { isClosedProspect, selectWeekdayRecipients } from "../lib/prospects/weekday.mjs";
+import { outreachHistory } from "../lib/prospects/history.mjs";
 
 let passed = 0;
 async function check(name, fn) {
@@ -127,6 +128,10 @@ await check("dashboard counts and filters follow the status groups", () => {
   assert.equal(filterProspects(rows, { q: "carlsbad", status: "all" }).length, 3);
   assert.equal(filterProspects(rows, { q: "c@test.com", status: "ready" }).length, 1);
   assert.equal(filterProspects(rows, { q: "hours", status: "sent" }).length, 0);
+  assert.equal(filterProspects(rows, { status: "awaiting" }).length, 2);
+  assert.equal(filterProspects(rows, { status: "contacted" }).length, 3);
+  assert.equal(filterProspects(rows, { status: "opted_out" }).length, 2);
+  assert.equal(filterProspects(rows, { status: "needs_review" }).length, 2);
 });
 
 await check("manual prospects sort ahead of the rest", () => {
@@ -203,6 +208,24 @@ await check("weekday selection keeps safeguards and skips closed or personal mai
   assert.ok(picked.skipped.some((row) => row.reason === "closed"));
   assert.ok(picked.skipped.some((row) => row.reason === "one-time"));
   assert.ok(picked.skipped.some((row) => row.reason === "existing-customer"));
+});
+
+await check("email history reads the saved acceptance and does not send", () => {
+  const entries = outreachHistory(
+    [
+      { id: "a", event_type: "gmail_accepted", created_at: "2026-11-07T23:00:00Z", note: "Gmail accepted the message. Message ID: 1a1b891b08ed5999. Inbox delivery was not checked." },
+      { id: "b", event_type: "status", created_at: "2026-11-07T23:01:00Z", note: "queued" },
+    ],
+    { business_name: "Artesia Plumbing Heating & Cooling", city: "Artesia", industry: "plumbing", public_email: "artesiaplumbing@gmail.com", website_host: "", notes: "" },
+    "4Ward Web Design\nPO BOX 1161\nCARLSBAD NM 88220"
+  );
+  assert.equal(entries.length, 1);
+  assert.equal(entries[0].status, "Accepted by Gmail");
+  assert.equal(entries[0].messageId, "1a1b891b08ed5999");
+  assert.equal(entries[0].at, "2026-11-07T23:00:00Z");
+  assert.match(entries[0].body, /No business-owned website found/);
+  assert.match(entries[0].body, /Adam Windhorst/);
+  assert.doesNotMatch(entries[0].body, /no website/i);
 });
 
 await check("mailer has no provider and refuses to send", async () => {

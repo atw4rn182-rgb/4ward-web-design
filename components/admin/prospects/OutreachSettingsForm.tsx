@@ -137,6 +137,10 @@ export function OutreachSettingsForm({
           {state.message}
         </p>
       ) : null}
+      <label className="mt-4 flex min-h-11 items-start gap-2 text-sm text-ink">
+        <input type="checkbox" name="confirmOutreach" className="mt-1" disabled={pending} />
+        <span>Confirm these settings. If pause is unchecked, weekday sending stays on. Saving does not send an email now.</span>
+      </label>
       <button
         type="submit"
         disabled={pending}

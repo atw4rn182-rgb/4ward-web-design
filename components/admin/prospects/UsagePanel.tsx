@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { cleanupProspectLogsAction, type ProspectActionState } from "@/app/admin/prospect-actions";
 import type { UsageDay } from "@/lib/prospects/queries";
 
@@ -13,6 +13,7 @@ export function UsagePanel({
   usage,
   lastRun,
   lastCleanup,
+  unavailable = false,
 }: {
   requests: number;
   totalProspects: number;
@@ -20,8 +21,10 @@ export function UsagePanel({
   usage: UsageDay[];
   lastRun: string;
   lastCleanup: string;
+  unavailable?: boolean;
 }) {
   const [state, formAction, pending] = useActionState(cleanupProspectLogsAction, initial);
+  const [confirmed, setConfirmed] = useState(false);
   const todayKey = new Date().toISOString().slice(0, 10);
   const today = usage.find((row) => String(row.day).slice(0, 10) === todayKey)?.writes || 0;
 
@@ -58,13 +61,18 @@ export function UsagePanel({
         </div>
       </dl>
       <form action={formAction} className="mt-4">
+        <label className="flex min-h-11 items-center gap-2 text-sm text-ink">
+          <input type="checkbox" name="confirmCleanup" checked={confirmed} onChange={(event) => setConfirmed(event.target.checked)} disabled={pending || unavailable} />
+          Remove operational notes older than 180 days
+        </label>
         <button
           type="submit"
-          disabled={pending}
-          className="inline-flex min-h-11 items-center rounded-full border border-black/10 bg-white px-4 text-sm font-semibold disabled:opacity-60"
+          disabled={pending || unavailable || !confirmed}
+          className="mt-3 inline-flex min-h-11 items-center rounded-full border border-black/10 bg-white px-4 text-sm font-semibold disabled:opacity-60"
         >
           {pending ? "Cleaning…" : "Clean up old logs"}
         </button>
+        {unavailable ? <p className="mt-2 text-sm text-muted">Prospect tables are not available, so cleanup cannot run.</p> : null}
         <p className="mt-2 text-sm text-muted">
           Removes operational notes older than 180 days and usage counters older than 90 days. Opt-out records stay.
         </p>

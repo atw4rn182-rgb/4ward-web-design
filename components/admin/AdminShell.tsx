@@ -21,6 +21,7 @@ export const ADMIN_NAV = [
 const PRIMARY_HREFS = new Set([
   "/admin/dashboard",
   "/admin/clients",
+  "/admin/prospects",
   "/admin/quotes",
   "/admin/payments",
 ]);
@@ -175,7 +176,7 @@ export function AdminShell({
         style={{ paddingBottom: "max(0.5rem, env(safe-area-inset-bottom, 0px))" }}
         aria-label="Primary admin shortcuts"
       >
-        <ul className="grid grid-cols-4 gap-1">
+        <ul className="grid grid-cols-5 gap-1">
           {primaryNav.map((item) => {
             const active = isActive(pathname, item.href);
             return (

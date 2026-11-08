@@ -6,9 +6,14 @@ import { discoveryProvider } from "@/lib/prospects/research.mjs";
 
 const initial: ProspectActionState = {};
 
-export function ResearchQueueButton() {
+export function ResearchQueueButton({ awaiting = 0, unavailable = false }: { awaiting?: number; unavailable?: boolean }) {
   const [state, action, pending] = useActionState(researchQueueAction, initial);
   const discovery = discoveryProvider();
+  const reason = unavailable
+    ? "Prospect tables are not available, so research cannot run."
+    : awaiting < 1
+      ? "No businesses are waiting for research."
+      : "";
   return (
     <section className="mb-5 rounded-2xl border border-black/10 bg-paper p-4 shadow-soft sm:p-5">
       <h2 className="font-display text-lg font-bold">Research</h2>
@@ -30,11 +35,12 @@ export function ResearchQueueButton() {
       <form action={action} className="mt-4">
         <button
           type="submit"
-          disabled={pending}
+          disabled={pending || Boolean(reason)}
           className="inline-flex min-h-11 w-full items-center justify-center rounded-full bg-brand-blue px-4 py-2 text-sm font-semibold text-white disabled:opacity-60 sm:w-auto"
         >
           {pending ? "Researching…" : "Research pending queue"}
         </button>
+        {reason ? <p className="mt-2 text-sm text-muted">{reason}</p> : null}
       </form>
       {state.error ? <p className="mt-3 text-sm text-red-800" role="alert">{state.error}</p> : null}
       {state.message ? <p className="mt-3 text-sm text-emerald-900">{state.message}</p> : null}
