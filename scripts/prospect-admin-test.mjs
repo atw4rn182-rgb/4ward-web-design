@@ -49,7 +49,8 @@ import {
 import { readOwnWebsite, researchFromRecord } from "../lib/prospects/research-run.mjs";
 import { isClosedProspect, selectWeekdayRecipients } from "../lib/prospects/weekday.mjs";
 import { outreachHistory } from "../lib/prospects/history.mjs";
-import { deliveryShortfall, discoveryNeed, selectPendingForReview, verificationBlock } from "../lib/prospects/discovery.mjs";
+import { deliveryShortfall, discoveryNeed, readinessBlock, selectPendingForReview, upcomingRecipients, verificationBlock } from "../lib/prospects/discovery.mjs";
+import { nextResearchRun } from "../lib/prospects/model.mjs";
 
 let passed = 0;
 async function check(name, fn) {
@@ -238,11 +239,25 @@ await check("email history reads the saved acceptance and does not send", () => 
   assert.equal(saved[0].messageId, "abcdef123456");
   assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", notes: "" }), "");
   assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "nereecerodriguez956@gmail.com", research_sources: "https://example.com/listing", notes: "One-time test." }), "one-time");
-  assert.equal(discoveryNeed(5), 0);
-  assert.equal(discoveryNeed(2), 3);
-  assert.equal(selectPendingForReview([{ id: "1", status: "queued", city: "Hobbs", public_email: "office@shop.example", research_sources: "https://example.com/a", website_host: "" }], 1).chosen.length, 1);
+  assert.equal(discoveryNeed(0), 50);
+  assert.equal(discoveryNeed(19), 31);
+  assert.equal(discoveryNeed(20), 0);
+  assert.equal(discoveryNeed(50), 0);
+  const pending = [
+    { id: "1", status: "queued", business_name: "Shop", city: "Hobbs", public_email: "office@shop.example", research_sources: "https://example.com/a", website_host: "" },
+    { id: "2", status: "queued", business_name: "Shop", city: "Hobbs", public_email: "office@shop.example", research_sources: "https://example.com/a", website_host: "" },
+  ];
+  assert.equal(selectPendingForReview(pending, 5).chosen.length, 1);
+  assert.equal(selectPendingForReview(pending, 5).skipped.some((row) => row.reason === "duplicate"), true);
+  const fresh = { status: "ready", outreach_eligible: true, city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", researched_at: "2026-11-01T16:00:00Z", research_notes: "Published email office@shop.example was already saved." };
+  assert.equal(readinessBlock(fresh, new Date("2026-11-08T16:00:00Z")), "");
+  assert.equal(readinessBlock({ ...fresh, researched_at: "2026-09-01T16:00:00Z" }, new Date("2026-11-08T16:00:00Z")), "stale");
+  assert.equal(readinessBlock({ ...fresh, research_notes: "A different address other@shop.example was published." }, new Date("2026-11-08T16:00:00Z")), "conflicting");
+  assert.equal(upcomingRecipients([fresh], new Date("2026-11-08T16:00:00Z")).length, 1);
   assert.equal(deliveryShortfall(0, 0), 5);
   assert.equal(deliveryShortfall(2, 1), 2);
+  const researchAt = nextResearchRun(new Date("2026-11-08T01:43:00Z"));
+  assert.equal(researchAt.toISOString(), "2026-11-09T15:00:00.000Z");
 });
 
 await check("mailer has no provider and refuses to send", async () => {

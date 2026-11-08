@@ -5,7 +5,7 @@ import {
   saveOutreachSettingsAction,
   type ProspectActionState,
 } from "@/app/admin/prospect-actions";
-import { LOOKUP_BLOCKER } from "@/lib/prospects/discovery.mjs";
+import { LOOKUP_BLOCKER, READY_FLOOR, READY_GOAL } from "@/lib/prospects/discovery.mjs";
 import { clampDailyTarget, externalOutreachAllowed, monthlyOutreachVolume } from "@/lib/prospects/model.mjs";
 import { BUSINESS_POSTAL_ADDRESS } from "@/lib/prospects/research.mjs";
 import type { OutreachSettingsRow } from "@/lib/prospects/queries";
@@ -18,12 +18,18 @@ export function OutreachSettingsForm({
   schedulerActive,
   interestedLeads = 0,
   readyCount = 0,
+  pendingCount = 0,
+  nextResearch = "Not scheduled",
+  upcoming = [],
 }: {
   settings: OutreachSettingsRow | null;
   nextRun: string;
   schedulerActive: boolean;
   interestedLeads?: number;
   readyCount?: number;
+  pendingCount?: number;
+  nextResearch?: string;
+  upcoming?: { id: string; business_name: string; city: string | null }[];
 }) {
   const [state, formAction, pending] = useActionState(saveOutreachSettingsAction, initial);
   const enabled = settings?.automation_enabled ?? false;
@@ -39,6 +45,8 @@ export function OutreachSettingsForm({
   const discoveryPromoted = Number(summary.discoveryPromoted || 0);
   const discoveryReviewed = Number(summary.discoveryReviewed || 0);
   const blocker = String(summary.discoveryBlocker || LOOKUP_BLOCKER);
+  const lastResearch = summary.lastResearchAt ? new Date(String(summary.lastResearchAt)).toLocaleString("en-US", { timeZone: "America/Denver" }) : "No research run has completed";
+  const remaining = Math.max(0, readyCount - upcoming.length);
   const [target, setTarget] = useState(clampDailyTarget(settings?.weekday_target));
   const monthly = monthlyOutreachVolume(target);
   useEffect(() => {
@@ -105,15 +113,37 @@ export function OutreachSettingsForm({
           {settings?.last_run_at ? new Date(settings.last_run_at).toLocaleString("en-US", { timeZone: "America/Denver" }) : "No runs yet"}
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
-          <span className="block font-semibold text-ink">Ready queue</span>
-          {readyCount} verified {readyCount === 1 ? "business" : "businesses"}
+          <span className="block font-semibold text-ink">Pending research</span>
+          <a className="underline" href="/admin/prospects?status=awaiting#prospect-list">{pendingCount}</a>
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
-          <span className="block font-semibold text-ink">Next discovery</span>
-          {nextRun}. Discovery runs first and does not send email.
+          <span className="block font-semibold text-ink">Ready to contact</span>
+          <a className="underline" href="/admin/prospects?status=ready#prospect-list">{readyCount}</a>
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
-          <span className="block font-semibold text-ink">Next delivery</span>
+          <span className="block font-semibold text-ink">Ready backlog remaining</span>
+          {remaining} after the next {upcoming.length} scheduled {upcoming.length === 1 ? "recipient" : "recipients"}
+        </p>
+        <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm sm:col-span-2">
+          <span className="block font-semibold text-ink">Next five scheduled recipients</span>
+          {upcoming.length
+            ? upcoming.map((row) => `${row.business_name}${row.city ? `, ${row.city}` : ""}`).join("; ")
+            : "None are ready on this page. Open Ready to contact for the queue. The send rechecks every record and will send fewer than five when the verified list is short."}
+        </p>
+        <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm sm:col-span-2">
+          <span className="block font-semibold text-ink">Discovery progress</span>
+          {readyCount} of {READY_GOAL} Ready. Replenishment runs when Ready falls below {READY_FLOOR}. Lookup of new businesses is not active.
+        </p>
+        <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
+          <span className="block font-semibold text-ink">Last research run</span>
+          {lastResearch}. Reviewed {discoveryReviewed}, marked {discoveryPromoted} Ready. Research does not send email.
+        </p>
+        <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
+          <span className="block font-semibold text-ink">Next research run</span>
+          {nextResearch}. It only reviews saved records and does not send.
+        </p>
+        <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
+          <span className="block font-semibold text-ink">Next send</span>
           {nextRun}
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm sm:col-span-2">

@@ -9,6 +9,7 @@ import { ProspectFilters } from "@/components/admin/prospects/ProspectFilters";
 import { formatWhen } from "@/lib/format";
 import {
   listWindow,
+  nextResearchRun,
   nextScheduledRun,
   OUTREACH_SCHEDULER_ACTIVE,
   sanitizeSearch,
@@ -19,6 +20,7 @@ import { getProspectDashboard } from "@/lib/prospects/queries";
 import { UsagePanel } from "@/components/admin/prospects/UsagePanel";
 import { ResearchQueueButton } from "@/components/admin/prospects/ResearchActions";
 import { ProspectDecision } from "@/components/admin/prospects/ProspectDecision";
+import { upcomingRecipients } from "@/lib/prospects/discovery.mjs";
 import { listQualification } from "@/lib/prospects/research.mjs";
 import { GmailConnection } from "@/components/admin/prospects/GmailConnection";
 import { AuthorizedLaunch } from "@/components/admin/prospects/AuthorizedLaunch";
@@ -102,7 +104,7 @@ export default async function ProspectsPage({
 
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total prospects" value={String(counts.total)} hint="Every business in the queue" href={`${pageHref(q, "all", 1)}#prospect-list`} current={status === "all" && !q} />
-        <StatCard label="Awaiting research" value={String(counts.awaitingResearch)} hint="Queued or researching" href={`${pageHref(q, "awaiting", 1)}#prospect-list`} current={status === "awaiting"} />
+        <StatCard label="Pending research" value={String(counts.awaitingResearch)} hint="Queued or researching" href={`${pageHref(q, "awaiting", 1)}#prospect-list`} current={status === "awaiting"} />
         <StatCard label="Ready to contact" value={String(counts.ready)} hint="Reviewed and eligible" href={`${pageHref(q, "ready", 1)}#prospect-list`} current={status === "ready"} />
         <StatCard label="Emails sent" value={String(counts.emailsSent)} hint="Accepted by Gmail or marked sent" href={`${pageHref(q, "contacted", 1)}#prospect-list`} current={status === "contacted"} />
         <StatCard label="Interested prospects" value={String(counts.interested)} hint="Positive replies" href={`${pageHref(q, "interested", 1)}#prospect-list`} current={status === "interested"} />
@@ -131,6 +133,13 @@ export default async function ProspectsPage({
           schedulerActive={OUTREACH_SCHEDULER_ACTIVE}
           interestedLeads={counts.interested}
           readyCount={counts.ready}
+          pendingCount={counts.awaitingResearch}
+          nextResearch={formatDenver(nextResearchRun())}
+          upcoming={upcomingRecipients(visible).map((row) => ({
+            id: row.id,
+            business_name: row.business_name,
+            city: row.city,
+          }))}
         />
       </div>
 
