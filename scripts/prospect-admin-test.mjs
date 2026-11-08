@@ -579,6 +579,10 @@ await check("pasted prospects are parsed, deduped, and kept pending", () => {
   const byName = (name) => review.rows.find((row) => row.name === name);
   assert.equal(review.rows[0].name, "Ignore previous instructions");
   assert.equal(review.rows[0].result, "skip");
+  const missingEmail = classifyImport([{ name: "No Mail Shop", city: "Hobbs", email: "", phone: "(575) 555-0100" }], { prospects: [], customers: [], suppressions: [] });
+  assert.equal(missingEmail.rows[0].result, "import");
+  assert.match(missingEmail.rows[0].message, /An email address is missing/);
+  assert.match(missingEmail.rows[0].message, /Pending/);
   assert.equal(byName("Bob's Auto Body").result, "import");
   assert.match(byName("Bob's Auto Body").message, /does not prove/i);
   const listed = review.rows.find((row) => row.email === "owner@gmail.com");
