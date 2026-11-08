@@ -59,7 +59,7 @@ export function GmailConnection({
         <div>
           <h2 className="font-display text-lg font-bold text-ink">Gmail connection</h2>
           <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">
-            Connect 4wardwebdesigns@gmail.com for a later outreach phase. The permission can send mail and confirm that mailbox. It cannot read the inbox. Automatic sending stays off.
+            Connect 4wardwebdesigns@gmail.com. The permission can send mail and confirm that mailbox. It cannot read the inbox.
           </p>
         </div>
         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${connected ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}>
@@ -126,7 +126,7 @@ export function GmailConnection({
 
       <div className="mt-4 rounded-xl border border-black/10 bg-white px-4 py-3">
         <p className="text-sm leading-relaxed text-muted">
-          Send Sample Outreach Email delivers one copy of the outreach letter to 4wardwebdesigns@gmail.com. The letter uses the fictional business Mesa Verde Pottery. Gmail’s message ID confirms acceptance. Inbox delivery is checked separately. Automatic outreach stays off.
+          Send Sample Outreach Email delivers one copy of the outreach letter to 4wardwebdesigns@gmail.com. The letter uses the fictional business Mesa Verde Pottery. Gmail’s message ID confirms acceptance. Inbox delivery is checked separately.
         </p>
         {connected && addressSaved && !sampleSent ? (
           <form action={sampleAction} onSubmit={submitSample} className="mt-3 flex flex-col gap-3">

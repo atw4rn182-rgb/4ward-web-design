@@ -1,6 +1,10 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
+  "crons": [
+    { "path": "/api/outreach/weekday", "schedule": "0 15 * * 1-5" },
+    { "path": "/api/outreach/weekday", "schedule": "0 16 * * 1-5" }
+  ],
   "headers": [
     {
       "source": "/(.*)",

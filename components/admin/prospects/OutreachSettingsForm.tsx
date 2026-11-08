@@ -44,11 +44,13 @@ export function OutreachSettingsForm({
         <div>
           <h2 className="font-display text-lg font-bold text-ink">Automation</h2>
           <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">
-            These settings are saved for a later phase. The scheduler is {schedulerActive ? "active" : "off"}, so changing them does not research businesses or send email.
+            {schedulerActive
+              ? "Weekday outreach sends up to five new eligible prospects at 9:00 AM America/Denver. Closed businesses, opt-outs, and uncertain sends stay out. Pause stops the next run."
+              : "These settings are saved for a later phase. The scheduler is off, so changing them does not research businesses or send email."}
           </p>
         </div>
-        <span className="rounded-full bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-900">
-          Scheduler off
+        <span className={`rounded-full px-3 py-1 text-xs font-semibold ${schedulerActive ? "bg-emerald-50 text-emerald-900" : "bg-amber-50 text-amber-900"}`}>
+          {schedulerActive ? "Scheduler on" : "Scheduler off"}
         </span>
       </div>
 
@@ -85,7 +87,7 @@ export function OutreachSettingsForm({
         </label>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
           <span className="block font-semibold text-ink">Schedule</span>
-          Monday–Friday at 9:00 AM America/Denver, and only if a later phase starts it
+          Monday–Friday at 9:00 AM America/Denver. A missed day is not caught up.
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
           <span className="block font-semibold text-ink">Retry limit</span>
@@ -121,7 +123,7 @@ export function OutreachSettingsForm({
             className="mt-1 min-h-11 w-full rounded-xl border border-black/10 bg-white px-3 py-2.5 text-sm"
           />
           <span className="mt-1 block font-normal text-muted">
-            USPS PO Box format. The post office street address is not part of this mailing address. Save it before any prospect email. Sending stays off.
+            USPS PO Box format. The post office street address is not part of this mailing address. Save it before any prospect email.
           </span>
         </label>
       </div>

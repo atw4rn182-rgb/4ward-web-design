@@ -294,14 +294,14 @@ await check("a connected mailbox sends one checked outreach message and does not
   assert.equal(calls, 2);
   const configured = outreachMailer({ accessToken: "access", mailingAddress: "PO BOX 1161", fetchImpl: async () => ({ ok: true, json: async () => ({ id: "18c5outreach2" }) }) });
   assert.equal(configured.configured, true);
-  assert.equal(configured.schedulerActive, false);
+  assert.equal(configured.schedulerActive, true);
 });
 
-await check("scheduled outreach and discovery stay off", async () => {
-  assert.equal(OUTREACH_SCHEDULER_ACTIVE, false);
+await check("weekday sending is on and discovery stays off", async () => {
+  assert.equal(OUTREACH_SCHEDULER_ACTIVE, true);
   assert.equal(discoveryProvider().available, false);
   const mailer = outreachMailer();
-  assert.equal(mailer.schedulerActive, false);
+  assert.equal(mailer.schedulerActive, true);
   await assert.rejects(() => mailer.submit(), /disabled/);
   const action = readFileSync(new URL("../app/admin/gmail-actions.ts", import.meta.url), "utf8");
   const client = readFileSync(new URL("../components/admin/prospects/GmailConnection.tsx", import.meta.url), "utf8");
@@ -329,6 +329,12 @@ await check("scheduled outreach and discovery stay off", async () => {
   assert.match(migration, /revoke select on table public\.outreach_settings from anon, authenticated/);
   assert.doesNotMatch(migration, /alter table public\.customers|alter table public\.payments|alter table public\.consultations|auth\.users/i);
   assert.doesNotMatch(migration, /scheduler_live\s*=\s*true|automation_enabled\s*=\s*true/);
+  const cron = readFileSync(new URL("../vercel.json", import.meta.url), "utf8");
+  const weekday = readFileSync(new URL("../app/api/outreach/weekday/route.js", import.meta.url), "utf8");
+  assert.match(cron, /0 15 \* \* 1-5/);
+  assert.match(cron, /0 16 \* \* 1-5/);
+  assert.match(weekday, /CRON_SECRET/);
+  assert.match(weekday, /Unauthorized/);
 });
 
 console.log(`\n${passed} gmail checks passed`);

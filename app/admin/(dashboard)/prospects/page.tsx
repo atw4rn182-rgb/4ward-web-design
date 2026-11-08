@@ -81,7 +81,7 @@ export default async function ProspectsPage({
     <>
       <PageHeader
         title="Prospective Clients"
-        description="Queue and review businesses for outreach. Weekday batches stay off. An administrator can send the five authorized messages, or a sample that goes only to 4wardwebdesigns@gmail.com."
+        description="Queue and review businesses for outreach. Weekday batches send at 9:00 AM America/Denver. An administrator can also send a sample that goes only to 4wardwebdesigns@gmail.com."
       />
 
       {schemaMissing ? (

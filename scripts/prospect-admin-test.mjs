@@ -16,6 +16,8 @@ import {
   findDuplicate,
   findSuppression,
   listWindow,
+  denverDayRange,
+  inWeekdaySendWindow,
   nextScheduledRun,
   parseWebsite,
   retentionPlan,
@@ -45,6 +47,7 @@ import {
   selectResearchBatch,
 } from "../lib/prospects/research.mjs";
 import { readOwnWebsite, researchFromRecord } from "../lib/prospects/research-run.mjs";
+import { isClosedProspect, selectWeekdayRecipients } from "../lib/prospects/weekday.mjs";
 
 let passed = 0;
 async function check(name, fn) {
@@ -149,7 +152,7 @@ await check("ready requires eligibility and settings cannot start the scheduler"
   assert.equal(saved.value.timezone, "America/Denver");
   assert.equal(saved.value.send_hour, 9);
   assert.deepEqual(saved.value.weekdays, [1, 2, 3, 4, 5]);
-  assert.equal(OUTREACH_SCHEDULER_ACTIVE, false);
+  assert.equal(OUTREACH_SCHEDULER_ACTIVE, true);
   const paused = validateOutreachSettings({ automationEnabled: undefined, manualPriority: undefined, mailingAddress: "" });
   assert.equal(paused.value.automation_enabled, false);
   const chosen = validateOutreachSettings({ weekdayTarget: "7", pauseAutomation: "on", automationEnabled: "on", manualPriority: "on" });
@@ -173,12 +176,39 @@ await check("next run is the next weekday at 9:00 AM Denver", () => {
   assert.equal(fridayAfter.toISOString(), "2026-11-09T16:00:00.000Z");
   const saturday = nextScheduledRun(new Date("2026-11-07T18:00:00Z"));
   assert.equal(saturday.toISOString(), "2026-11-09T16:00:00.000Z");
+  assert.equal(inWeekdaySendWindow(new Date("2026-11-09T16:00:00Z")), true);
+  assert.equal(inWeekdaySendWindow(new Date("2026-11-09T15:00:00Z")), false);
+  assert.equal(inWeekdaySendWindow(new Date("2026-07-13T15:00:00Z")), true);
+  assert.equal(inWeekdaySendWindow(new Date("2026-07-13T16:00:00Z")), false);
+  assert.equal(inWeekdaySendWindow(new Date("2026-11-07T16:00:00Z")), false);
+  assert.equal(denverDayRange(new Date("2026-11-09T16:00:00Z")).key, "2026-11-09");
+});
+
+await check("weekday selection keeps safeguards and skips closed or personal mail", () => {
+  assert.equal(isClosedProspect({ notes: "Listed as closed." }), true);
+  assert.equal(isClosedProspect({ notes: "Sunday Closed" }), false);
+  const rows = [
+    { id: "1", status: "ready", outreach_eligible: true, public_email: "office@shop.example", business_name: "Shop", city: "Artesia" },
+    { id: "2", status: "ready", outreach_eligible: true, public_email: "owner@gmail.com", business_name: "Owner", city: "Artesia" },
+    { id: "3", status: "ready", outreach_eligible: true, public_email: "closed@shop.example", notes: "Permanently closed.", business_name: "Closed", city: "Carlsbad" },
+    { id: "4", status: "ready", outreach_eligible: true, public_email: "nereecerodriguez956@gmail.com", notes: "One-time test. Exclude from all future outreach.", business_name: "Nereece", city: "Carlsbad" },
+    { id: "5", status: "sent", outreach_eligible: true, public_email: "old@shop.example", business_name: "Old", city: "Artesia" },
+    { id: "6", status: "ready", outreach_eligible: true, public_email: "buyer@shop.example", business_name: "Buyer", city: "Hobbs" },
+    { id: "7", status: "ready", outreach_eligible: true, public_email: "refused@shop.example", business_name: "Refused", city: "Artesia" },
+  ];
+  const picked = selectWeekdayRecipients(rows, { limit: 5, customerEmails: ["buyer@shop.example"], uncertainIds: [], refusedIds: ["7"] });
+  assert.deepEqual(picked.chosen.map((row) => row.id), ["1"]);
+  assert.ok(picked.skipped.some((row) => row.reason === "refused"));
+  assert.ok(picked.skipped.some((row) => row.reason === "personal-email"));
+  assert.ok(picked.skipped.some((row) => row.reason === "closed"));
+  assert.ok(picked.skipped.some((row) => row.reason === "one-time"));
+  assert.ok(picked.skipped.some((row) => row.reason === "existing-customer"));
 });
 
 await check("mailer has no provider and refuses to send", async () => {
   const mailer = outreachMailer();
   assert.equal(mailer.configured, false);
-  assert.equal(mailer.schedulerActive, false);
+  assert.equal(mailer.schedulerActive, true);
   await assert.rejects(() => mailer.submit(), /disabled/);
 });
 
@@ -274,7 +304,7 @@ await check("qualification does not invent a contact or a missing website", () =
   assert.doesNotMatch(custom.body, /PO BOX 1161/);
   assert.equal(buildDraft(missing), null);
   assert.equal(externalOutreachAllowed({ mailingAddress: "", schedulerActive: true }), false);
-  assert.equal(externalOutreachAllowed({ mailingAddress: "PO BOX 1161", schedulerActive: true }), false);
+  assert.equal(externalOutreachAllowed({ mailingAddress: "PO BOX 1161", schedulerActive: true }), true);
 });
 
 await check("research reads only permitted public contacts and stays compact", () => {

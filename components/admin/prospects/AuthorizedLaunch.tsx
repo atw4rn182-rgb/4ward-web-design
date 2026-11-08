@@ -30,7 +30,7 @@ export function AuthorizedLaunch() {
     <section className="mb-5 rounded-2xl border border-black/10 bg-paper p-4 shadow-soft sm:p-5">
       <h2 className="font-display text-lg font-bold text-ink">Authorized launch</h2>
       <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">
-        Sends the five checked messages through the connected mailbox. Opt-outs, existing customers, and duplicates are refused. An uncertain Gmail response is not retried. Weekday sending stays off.
+        Sends the five checked messages through the connected mailbox. Opt-outs, existing customers, and duplicates are refused. An uncertain Gmail response is not retried.
       </p>
       <ul className="mt-3 grid gap-1 text-sm text-ink">
         {AUTHORIZED_LAUNCH.map((recipient) => (
