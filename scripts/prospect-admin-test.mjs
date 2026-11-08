@@ -51,7 +51,8 @@ import { isClosedProspect, selectWeekdayRecipients } from "../lib/prospects/week
 import { outreachHistory } from "../lib/prospects/history.mjs";
 import { deliveryShortfall, discoveryNeed, readinessBlock, selectPendingForReview, upcomingRecipients, verificationBlock } from "../lib/prospects/discovery.mjs";
 import { classifyCandidate, discoverCandidates } from "../lib/prospects/lookup.mjs";
-import { classifyImport, parseProspectList } from "../lib/prospects/import.mjs";
+import { IMPORT_ROW_LIMIT, classifyImport, parseProspectList, splitImportText } from "../lib/prospects/import.mjs";
+import { assignQueueTimes, compareAndSetRun, estimatedSendDates, needsMoreVerified, slotsAfterAttempt } from "../lib/prospects/queue.mjs";
 import { nextResearchRun } from "../lib/prospects/model.mjs";
 
 let passed = 0;
@@ -484,9 +485,13 @@ await check("pasted prospects are parsed, deduped, and kept pending", () => {
     suppressions: ["stop@shop.example"],
   });
   assert.match(suppressed.rows[0].message, /not reactivated/i);
-  const tooMany = parseProspectList(Array.from({ length: 101 }, (_item, index) => `Shop ${index} | shop${index}@example.com`).join("\n"));
-  assert.match(tooMany.error, /100/);
+  const tooMany = parseProspectList(Array.from({ length: IMPORT_ROW_LIMIT + 1 }, (_item, index) => `Shop ${index} | shop${index}@example.com`).join("\n"));
+  assert.match(tooMany.error, /5000/);
   assert.equal(tooMany.rows.length, 0);
+  const batch = parseProspectList(Array.from({ length: 150 }, (_item, index) => `Shop ${index} | shop${index}@example.com`).join("\n"));
+  assert.equal(batch.error, "");
+  assert.equal(batch.rows.length, 150);
+  assert.equal(splitImportText(batch.rows.map((row) => `${row.name} | ${row.email}`).join("\n")).chunks.length, 2);
   const published = verificationBlock({
     status: "queued",
     city: "Carlsbad",
@@ -507,6 +512,66 @@ await check("pasted prospects are parsed, deduped, and kept pending", () => {
   assert.equal(domainOnly, "email");
 });
 
+await check("large imports keep queue order and uncertain sends consume the slot", () => {
+  const csv = parseProspectList([
+    "Business Name,Email,City,Phone,Source,Notes",
+    "North Shop,desk@north.example,Hobbs,5755550100,https://example.com/north,Owner answered",
+    "North Shop,other@north.example,Hobbs,5755550101,https://example.com/north,Second address",
+  ].join("\n"));
+  assert.equal(csv.error, "");
+  assert.equal(csv.rows[0].city, "Hobbs");
+  assert.equal(csv.rows[0].phone, "5755550100");
+  assert.equal(csv.rows[0].source, "https://example.com/north");
+  assert.equal(csv.rows[0].notes, "Owner answered");
+  const reviewed = classifyImport(csv.rows, { prospects: [], customers: [], suppressions: [] });
+  assert.equal(reviewed.rows[0].result, "import");
+  assert.equal(reviewed.rows[1].result, "review");
+  const again = classifyImport(parseProspectList("North Shop | desk@north.example | Hobbs").rows, {
+    prospects: [{ name: "North Shop", city: "Hobbs", email: "desk@north.example", status: "queued", sentAt: "" }],
+    customers: [],
+    suppressions: [],
+  });
+  assert.match(again.rows[0].message, /not overwritten/i);
+  const first = assignQueueTimes("2026-11-01T00:00:00.000Z", 2);
+  const second = assignQueueTimes(first[1], 1);
+  assert.ok(first[0] > "2026-11-01T00:00:00.000Z");
+  assert.ok(first[1] > first[0]);
+  assert.ok(second[0] > first[1]);
+  const claimed = compareAndSetRun({ last_run_at: null }, null, "2026-11-09T16:00:00.000Z");
+  const overlap = compareAndSetRun(claimed.row, null, "2026-11-09T16:00:01.000Z");
+  assert.equal(claimed.ok, true);
+  assert.equal(overlap.ok, false);
+  let state = slotsAfterAttempt({ sent: 0, failed: 0, uncertain: 0, stopped: false }, { ok: true });
+  state = slotsAfterAttempt(state, { ok: false, uncertain: true });
+  state = slotsAfterAttempt(state, { ok: true });
+  assert.equal(state.sent, 1);
+  assert.equal(state.uncertain, 1);
+  assert.equal(state.stopped, true);
+  const held = selectWeekdayRecipients([
+    { id: "held", status: "ready", outreach_eligible: true, public_email: "held@shop.example", notes: "Held for review. Gmail's response was uncertain.", business_name: "Held", city: "Carlsbad" },
+    { id: "next", status: "ready", outreach_eligible: true, public_email: "next@shop.example", business_name: "Next", city: "Carlsbad" },
+  ], { limit: 1, uncertainIds: [], refusedIds: [] });
+  assert.deepEqual(held.chosen.map((row) => row.id), ["next"]);
+  assert.equal(held.skipped[0].reason, "uncertain");
+  const dates = estimatedSendDates(6, new Date("2026-11-07T18:00:00Z"), 0);
+  assert.equal(dates[0], "2026-11-09T16:00:00.000Z");
+  assert.equal(dates[4], "2026-11-09T16:00:00.000Z");
+  assert.equal(dates[5], "2026-11-10T16:00:00.000Z");
+  assert.equal(needsMoreVerified(4), true);
+  assert.equal(needsMoreVerified(5), false);
+  assert.equal(verificationBlock({
+    status: "queued",
+    notes: "Queue paused by an administrator.",
+    city: "Carlsbad",
+    public_email: "office@shop.example",
+    research_sources: "https://example.com/listing",
+    research_notes: "Checked public pages did not show a business-owned website.",
+  }), "paused");
+  const allowance = canSubmitOutreach({ target: WEEKDAY_TARGET, submittedToday: 5 });
+  assert.equal(allowance.allowed, false);
+  assert.equal(allowance.remaining, 0);
+});
+
 await check("prospect admin code does not send mail or store a password", () => {
   const action = readFileSync(new URL("../app/admin/prospect-actions.ts", import.meta.url), "utf8");
   const queries = readFileSync(new URL("../lib/prospects/queries.ts", import.meta.url), "utf8");
@@ -518,6 +583,10 @@ await check("prospect admin code does not send mail or store a password", () => 
   assert.match(action, /previewProspectImportAction/);
   assert.match(action, /importProspectListAction/);
   assert.match(action, /confirmImport/);
+  assert.match(action, /confirmPause/);
+  assert.match(action, /confirmRemove/);
+  assert.match(action, /queued_at/);
+  assert.doesNotMatch(action, /website_url: row\.source/);
   assert.match(action, /outreach_eligible: false/);
   assert.doesNotMatch(action, /gmail\.googleapis\.com/);
   assert.match(action, /admin_add_prospect/);

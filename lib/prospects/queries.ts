@@ -137,11 +137,12 @@ async function dashboardFromTables(input: { q: string; status: string; offset: n
   const supabase = await adminDb();
   const from = input.offset;
   const to = input.offset + PAGE_SIZE - 1;
+  const queueOrder = input.status === "ready" || input.status === "queued" || input.status === "awaiting";
   let listQuery = supabase
     .from("prospects")
     .select(LIST_SELECT, { count: "exact" })
-    .order("manual_priority", { ascending: false })
-    .order("last_activity_at", { ascending: false })
+    .order(queueOrder ? "queued_at" : "manual_priority", { ascending: queueOrder ? true : false })
+    .order(queueOrder ? "created_at" : "last_activity_at", { ascending: queueOrder ? true : false })
     .range(from, to);
   listQuery = applyProspectStatus(listQuery, input.status);
   const filter = searchOr(input.q);
@@ -181,7 +182,7 @@ function applyProspectStatus(query: any, status: string) {
   return query.eq("status", status);
 }
 
-const READY_QUEUE_SELECT = "id,business_name,city,service_area,public_email,website_host,status,outreach_eligible,notes,research_notes,research_sources,gbp_observations,researched_at,manual_priority,created_at,last_activity_at";
+const READY_QUEUE_SELECT = "id,business_name,city,service_area,public_email,website_host,status,outreach_eligible,notes,research_notes,research_sources,gbp_observations,researched_at,manual_priority,created_at,queued_at,last_activity_at";
 
 export const getReadyQueue = cache(async function getReadyQueue() {
   const supabase = await adminDb();
@@ -190,9 +191,9 @@ export const getReadyQueue = cache(async function getReadyQueue() {
     .select(READY_QUEUE_SELECT)
     .eq("status", "ready")
     .eq("outreach_eligible", true)
-    .order("manual_priority", { ascending: false })
+    .order("queued_at", { ascending: true })
     .order("created_at", { ascending: true })
-    .limit(50);
+    .limit(100);
   return {
     rows: (data || []) as ProspectListRow[],
     error: error ? "The Ready queue could not be loaded. Nothing was sent." : "",
@@ -204,7 +205,7 @@ export const getProspectDashboard = cache(async function getProspectDashboard(in
   status: string;
   offset: number;
 }): Promise<{ data: ProspectDashboard; missing: boolean; error: string; requests: number }> {
-  if (isGroupedProspectStatus(input.status)) return dashboardFromTables(input);
+  if (isGroupedProspectStatus(input.status) || input.status === "ready" || input.status === "queued") return dashboardFromTables(input);
   const supabase = await adminDb();
   const { data, error } = await supabase.rpc("prospect_dashboard", {
     p_q: input.q,

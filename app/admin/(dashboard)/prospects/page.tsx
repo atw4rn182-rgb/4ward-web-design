@@ -13,6 +13,7 @@ import {
   nextResearchRun,
   nextScheduledRun,
   OUTREACH_SCHEDULER_ACTIVE,
+  sameDenverDay,
   sanitizeSearch,
   STATUS_LABELS,
   sumRecentWrites,
@@ -21,11 +22,15 @@ import { getProspectDashboard, getReadyQueue } from "@/lib/prospects/queries";
 import { UsagePanel } from "@/components/admin/prospects/UsagePanel";
 import { ResearchQueueButton } from "@/components/admin/prospects/ResearchActions";
 import { ProspectDecision } from "@/components/admin/prospects/ProspectDecision";
-import { upcomingRecipients } from "@/lib/prospects/discovery.mjs";
+import { annotateReadyQueue, upcomingRecipients, verificationBlock } from "@/lib/prospects/discovery.mjs";
+import { skipExplanation } from "@/lib/prospects/queue.mjs";
+import { QueueControls } from "@/components/admin/prospects/QueueControls";
 import { listQualification } from "@/lib/prospects/research.mjs";
 import { GmailConnection } from "@/components/admin/prospects/GmailConnection";
 import { AuthorizedLaunch } from "@/components/admin/prospects/AuthorizedLaunch";
 import { gmailConnectionStatus } from "@/lib/gmail/mailbox.mjs";
+
+export const maxDuration = 60;
 
 export const metadata = {
   title: "Prospective Clients | 4Ward Admin",
@@ -49,6 +54,18 @@ function formatDenver(value: string | Date | null) {
 
 function statusLabel(status: string) {
   return STATUS_LABELS[status as keyof typeof STATUS_LABELS] || status;
+}
+
+function queueLine(row: { id: string; status: string; notes?: string | null; research_notes?: string | null; research_sources?: string | null; city?: string | null; service_area?: string | null; public_email?: string | null; website_host?: string | null }, annotation?: { queuePosition: number | null; sendAt: string; skipReason: string }) {
+  if (annotation?.queuePosition && annotation.sendAt) {
+    return `Queue position ${annotation.queuePosition}. Estimated send ${formatDenver(annotation.sendAt)}.`;
+  }
+  if (annotation?.skipReason) return skipExplanation(annotation.skipReason);
+  if (row.status === "queued" || row.status === "researching") {
+    const reason = verificationBlock(row);
+    return reason ? `Pending research. ${skipExplanation(reason)}` : "Pending research. The saved facts still need a research check before this business can be Ready.";
+  }
+  return "";
 }
 
 function pageHref(q: string, status: string, page: number) {
@@ -80,6 +97,20 @@ export default async function ProspectsPage({
   const pageCount = Math.max(1, Math.ceil(dashboard.data.total / dashboard.data.limit));
   const currentPage = Math.min(window.page, pageCount);
   const nextRun = formatDenver(nextScheduledRun());
+  const sentToday = dashboard.data.settings?.last_run_at && sameDenverDay(dashboard.data.settings.last_run_at, new Date())
+    ? Number(dashboard.data.settings.last_run_summary?.submitted || 0)
+    : 0;
+  const queueNotes = annotateReadyQueue(readyQueue.rows, new Date(), sentToday);
+  const upcoming = upcomingRecipients(readyQueue.rows).map((row) => {
+    const note = queueNotes.get(row.id);
+    return {
+      id: row.id,
+      business_name: row.business_name,
+      city: row.city,
+      sendAt: note?.sendAt || "",
+      queuePosition: note?.queuePosition || null,
+    };
+  });
 
   return (
     <>
@@ -137,11 +168,7 @@ export default async function ProspectsPage({
           readyCount={counts.ready}
           pendingCount={counts.awaitingResearch}
           nextResearch={formatDenver(nextResearchRun())}
-          upcoming={upcomingRecipients(readyQueue.rows).map((row) => ({
-            id: row.id,
-            business_name: row.business_name,
-            city: row.city,
-          }))}
+          upcoming={upcoming}
         />
       </div>
 
@@ -214,6 +241,8 @@ export default async function ProspectsPage({
                   <p className="mt-2 text-xs font-semibold text-ink">{listQualification(row.research_notes)}</p>
                 ) : null}
                 {row.notes ? <p className="mt-2 line-clamp-2 text-sm text-muted">{row.notes}</p> : null}
+                {queueLine(row, queueNotes.get(row.id)) ? <p className="mt-2 text-sm text-ink">{queueLine(row, queueNotes.get(row.id))}</p> : null}
+                <QueueControls id={row.id} status={row.status} />
                 <ProspectDecision id={row.id} />
                 <Link href={`/admin/prospects/${row.id}`} className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-brand-deep">
                   View details
@@ -252,6 +281,8 @@ export default async function ProspectsPage({
                         {listQualification(row.research_notes) ? (
                           <p className="mt-1 text-xs text-muted">{listQualification(row.research_notes)}</p>
                         ) : null}
+                        {queueLine(row, queueNotes.get(row.id)) ? <p className="mt-1 text-xs text-ink">{queueLine(row, queueNotes.get(row.id))}</p> : null}
+                        <QueueControls id={row.id} status={row.status} />
                         <ProspectDecision id={row.id} />
                       </td>
                       <td className="px-4 py-3">{row.city || row.service_area || "—"}</td>

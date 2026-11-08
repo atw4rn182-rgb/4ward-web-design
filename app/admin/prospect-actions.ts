@@ -27,13 +27,17 @@ import {
   suppressionMatches,
 } from "@/lib/prospects/research.mjs";
 import { readOwnWebsite, researchFromRecord } from "@/lib/prospects/research-run.mjs";
-import { classifyImport, parseProspectList } from "@/lib/prospects/import.mjs";
+import { classifyImport, importNotes, parseProspectList } from "@/lib/prospects/import.mjs";
+import { assignQueueTimes, QUEUE_PAUSE_NOTE } from "@/lib/prospects/queue.mjs";
 
 export type ImportPreviewRow = {
   line: number;
   name: string;
   email: string;
   source: string;
+  city?: string;
+  phone?: string;
+  notes?: string;
   result: "import" | "skip" | "review";
   message: string;
 };
@@ -45,6 +49,7 @@ export type ProspectActionState = {
   weekdayTarget?: number;
   preview?: ImportPreviewRow[];
   summary?: { imported: number; skipped: number; review: number; batchId: string };
+  counts?: { import: number; skip: number; review: number };
 };
 
 async function adminWriteClient() {
@@ -684,25 +689,49 @@ export async function researchQueueAction(_prev: ProspectActionState): Promise<P
   };
 }
 
-async function importContext(client: SupabaseClient) {
-  const [prospects, customers, suppressions] = await Promise.all([
-    client.from("prospects").select("business_name,public_email,status,sent_at").limit(2000),
-    client.from("customers").select("email").limit(2000),
-    client.from("prospect_suppressions").select("email").limit(2000),
+async function lookupChunk(client: SupabaseClient, column: "public_email" | "business_name" | "email", table: "prospects" | "customers" | "prospect_suppressions", values: string[], select: string) {
+  const rows: Record<string, string | null>[] = [];
+  for (let index = 0; index < values.length; index += 100) {
+    const slice = values.slice(index, index + 100);
+    if (!slice.length) continue;
+    const { data, error } = await client.from(table).select(select).in(column, slice);
+    if (error) return { error, rows };
+    rows.push(...((data || []) as unknown as Record<string, string | null>[]));
+  }
+  return { error: null, rows };
+}
+
+async function importContext(client: SupabaseClient, parsedRows: { name?: string; email?: string }[]) {
+  const emails = [...new Set(parsedRows.map((row) => String(row.email || "").toLowerCase()).filter((email) => email.includes("@")))];
+  const names = [...new Set(parsedRows.map((row) => String(row.name || "").trim()).filter(Boolean))];
+  const [prospects, named, customers, suppressions] = await Promise.all([
+    lookupChunk(client, "public_email", "prospects", emails, "business_name,city,public_email,status,sent_at"),
+    lookupChunk(client, "business_name", "prospects", names, "business_name,city,public_email,status,sent_at"),
+    lookupChunk(client, "email", "customers", emails, "email"),
+    lookupChunk(client, "email", "prospect_suppressions", emails, "email"),
   ]);
-  const error = prospects.error || customers.error || suppressions.error;
+  const error = prospects.error || named.error || customers.error || suppressions.error;
   if (error) return { error: "The existing records could not be checked. Nothing was imported.", existing: null };
+  const seen = new Set<string>();
+  const prospectRows = [];
+  for (const row of [...prospects.rows, ...named.rows]) {
+    const key = `${String(row.public_email || "").toLowerCase()}|${String(row.business_name || "").toLowerCase()}|${String(row.city || "").toLowerCase()}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    prospectRows.push({
+      name: row.business_name || "",
+      city: row.city || "",
+      email: String(row.public_email || "").toLowerCase(),
+      status: row.status || "",
+      sentAt: row.sent_at || "",
+    });
+  }
   return {
     error: "",
     existing: {
-      prospects: (prospects.data || []).map((row) => ({
-        name: row.business_name || "",
-        email: String(row.public_email || "").toLowerCase(),
-        status: row.status || "",
-        sentAt: row.sent_at || "",
-      })),
-      customers: (customers.data || []).map((row) => String(row.email || "").toLowerCase()).filter(Boolean),
-      suppressions: (suppressions.data || []).map((row) => String(row.email || "").toLowerCase()).filter(Boolean),
+      prospects: prospectRows,
+      customers: customers.rows.map((row) => String(row.email || "").toLowerCase()).filter(Boolean),
+      suppressions: suppressions.rows.map((row) => String(row.email || "").toLowerCase()).filter(Boolean),
     },
   };
 }
@@ -710,9 +739,9 @@ async function importContext(client: SupabaseClient) {
 async function reviewedPaste(client: SupabaseClient, paste: string) {
   const parsed = parseProspectList(paste);
   if (parsed.error) return { error: parsed.error, review: null };
-  const context = await importContext(client);
+  const context = await importContext(client, parsed.rows);
   if (context.error || !context.existing) return { error: context.error || "The existing records could not be checked. Nothing was imported.", review: null };
-  return { error: "", review: classifyImport(parsed.rows, context.existing) };
+  return { error: "", review: classifyImport(parsed.rows, context.existing) as { rows: ImportPreviewRow[]; counts: { import: number; skip: number; review: number } } };
 }
 
 export async function previewProspectImportAction(_prev: ProspectActionState, formData: FormData): Promise<ProspectActionState> {
@@ -724,8 +753,15 @@ export async function previewProspectImportAction(_prev: ProspectActionState, fo
   return {
     ok: true,
     message: `${counts.import} can be imported, ${counts.skip} will be skipped, and ${counts.review} need review. Nothing has been saved.`,
-    preview: checked.review.rows,
+    counts,
+    preview: previewRows(checked.review.rows as ImportPreviewRow[]),
   };
+}
+
+function previewRows(rows: ImportPreviewRow[]) {
+  const problems = rows.filter((row) => row.result !== "import").slice(0, 40);
+  const sample = rows.filter((row) => row.result === "import").slice(0, 10);
+  return [...problems, ...sample];
 }
 
 export async function importProspectListAction(_prev: ProspectActionState, formData: FormData): Promise<ProspectActionState> {
@@ -736,21 +772,27 @@ export async function importProspectListAction(_prev: ProspectActionState, formD
   }
   const checked = await reviewedPaste(client, String(formData.get("paste") || ""));
   if (checked.error || !checked.review) return { error: checked.error || "The paste could not be checked. Nothing was imported." };
-  const batchId = crypto.randomUUID();
+  const suppliedBatch = String(formData.get("batchId") || "").trim();
+  const batchId = /^[0-9a-f-]{36}$/i.test(suppliedBatch) ? suppliedBatch : crypto.randomUUID();
   const importedOn = new Date().toISOString();
+  const accepted = checked.review.rows.filter((row) => row.result === "import");
+  const { data: latest } = await client.from("prospects").select("queued_at").order("queued_at", { ascending: false }).limit(1);
+  const times = assignQueueTimes(latest?.[0]?.queued_at || new Date().toISOString(), accepted.length);
   let imported = 0;
-  for (const row of checked.review.rows) {
-    if (row.result !== "import") continue;
+  for (let index = 0; index < accepted.length; index += 1) {
+    const row = accepted[index];
     const { data: created, error: insertError } = await client.from("prospects").insert({
       business_name: row.name,
+      city: row.city || null,
       public_email: row.email,
-      website_url: row.source || null,
       research_sources: row.source || null,
       status: "queued",
       source: "manual",
       manual_priority: true,
       outreach_eligible: false,
-      notes: `Imported ${importedOn}. Batch ${batchId}. Pending research. A name and email were pasted and were not verified. No email was sent.`.slice(0, 1000),
+      queued_at: times[index],
+      created_at: times[index],
+      notes: importNotes({ phone: row.phone, notes: row.notes, batchId, importedOn }),
     }).select("id").maybeSingle();
     if (insertError || !created?.id) continue;
     await client.from("prospect_activity").insert({
@@ -767,6 +809,58 @@ export async function importProspectListAction(_prev: ProspectActionState, formD
     ok: true,
     message: `Imported ${imported} as Pending research. Skipped ${skipped}. ${checked.review.counts.review} need review. Batch ${batchId}. No email was sent.`,
     summary: { imported, skipped, review: checked.review.counts.review, batchId },
-    preview: checked.review.rows,
+    preview: previewRows(checked.review.rows),
   };
+}
+
+export async function pauseProspectAction(_prev: ProspectActionState, formData: FormData): Promise<ProspectActionState> {
+  const { error, client } = await adminWriteClient();
+  if (error || !client) return { error: error || "Unauthorized." };
+  if (String(formData.get("confirmPause") || "") !== "on") {
+    return { error: "Confirm the pause. Nothing was changed." };
+  }
+  const id = String(formData.get("id") || "");
+  const { data: current, error: readError } = await client.from("prospects").select("id,status,sent_at,notes").eq("id", id).maybeSingle();
+  if (readError || !current) return { error: "Prospect not found. Nothing was changed." };
+  if (current.sent_at || current.status === "sent" || current.status === "interested") {
+    return { error: "A sent prospect was not paused." };
+  }
+  const notes = `${QUEUE_PAUSE_NOTE} ${current.notes || ""}`.trim().slice(0, 1000);
+  const { error: updateError } = await client.from("prospects").update({
+    status: current.status === "ready" ? "researching" : current.status,
+    outreach_eligible: false,
+    notes,
+    last_activity_at: new Date().toISOString(),
+  }).eq("id", id);
+  if (updateError) return { error: "The pause could not be saved." };
+  await client.from("prospect_activity").insert({
+    prospect_id: id,
+    event_type: "status",
+    from_status: current.status,
+    to_status: current.status === "ready" ? "researching" : current.status,
+    note: "Queue paused by an administrator. No email was sent.",
+  });
+  revalidateProspects();
+  return { ok: true, message: "Paused. This prospect stays out of the send queue. No email was sent." };
+}
+
+export async function removeProspectAction(_prev: ProspectActionState, formData: FormData): Promise<ProspectActionState> {
+  const { error, client } = await adminWriteClient();
+  if (error || !client) return { error: error || "Unauthorized." };
+  if (String(formData.get("confirmRemove") || "") !== "on") {
+    return { error: "Confirm the removal. Nothing was deleted." };
+  }
+  const id = String(formData.get("id") || "");
+  const { data: current, error: readError } = await client.from("prospects").select("id,status,sent_at").eq("id", id).maybeSingle();
+  if (readError || !current) return { error: "Prospect not found. Nothing was deleted." };
+  if (current.sent_at || !["queued", "researching"].includes(current.status)) {
+    return { error: "Only a queued prospect that has not been sent can be removed." };
+  }
+  const { count, error: activityError } = await client.from("prospect_activity").select("id", { count: "exact", head: true }).eq("prospect_id", id).in("event_type", ["gmail_accepted", "gmail_sending", "gmail_uncertain"]);
+  if (activityError) return { error: "Send history could not be checked. Nothing was removed." };
+  if (count) return { error: "This prospect has send history and was not removed." };
+  const { error: deleteError } = await client.from("prospects").delete().eq("id", id).in("status", ["queued", "researching"]).is("sent_at", null);
+  if (deleteError) return { error: "The prospect could not be removed." };
+  revalidateProspects();
+  return { ok: true, message: "Removed from the queue. No email was sent." };
 }

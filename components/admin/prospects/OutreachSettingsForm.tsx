@@ -7,6 +7,7 @@ import {
 } from "@/app/admin/prospect-actions";
 import { LOOKUP_BLOCKER, READY_FLOOR, READY_GOAL } from "@/lib/prospects/discovery.mjs";
 import { clampDailyTarget, externalOutreachAllowed, monthlyOutreachVolume } from "@/lib/prospects/model.mjs";
+import { needsMoreVerified } from "@/lib/prospects/queue.mjs";
 import { BUSINESS_POSTAL_ADDRESS } from "@/lib/prospects/research.mjs";
 import type { OutreachSettingsRow } from "@/lib/prospects/queries";
 
@@ -29,7 +30,7 @@ export function OutreachSettingsForm({
   readyCount?: number;
   pendingCount?: number;
   nextResearch?: string;
-  upcoming?: { id: string; business_name: string; city: string | null }[];
+  upcoming?: { id: string; business_name: string; city: string | null; sendAt?: string; queuePosition?: number | null }[];
 }) {
   const [state, formAction, pending] = useActionState(saveOutreachSettingsAction, initial);
   const enabled = settings?.automation_enabled ?? false;
@@ -60,7 +61,7 @@ export function OutreachSettingsForm({
           <h2 className="font-display text-lg font-bold text-ink">Automation</h2>
           <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted">
             {schedulerActive
-              ? "Weekday outreach sends up to five new eligible prospects at 9:00 AM America/Denver. Closed businesses, opt-outs, and uncertain sends stay out. Pause stops the next run."
+              ? "Weekday outreach sends up to five Ready prospects in queue order at 9:00 AM America/Denver. A new import waits behind prospects already queued. Closed businesses, opt-outs, and uncertain sends stay out. Pause stops the next run."
               : "These settings are saved for a later phase. The scheduler is off, so changing them does not research businesses or send email."}
           </p>
         </div>
@@ -77,7 +78,7 @@ export function OutreachSettingsForm({
         </label>
         <label className="flex min-h-11 items-center gap-3 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm font-semibold">
           <input type="checkbox" name="manualPriority" defaultChecked={manualPriority} />
-          Manual prospects go first
+          Keep manual additions in queue order
         </label>
         <label className="block rounded-xl bg-black/[0.03] px-3 py-3 text-sm font-semibold text-ink">
           Daily email target
@@ -126,8 +127,11 @@ export function OutreachSettingsForm({
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm sm:col-span-2">
           <span className="block font-semibold text-ink">Next five scheduled recipients</span>
+          {needsMoreVerified(readyCount)
+            ? `The queue needs more verified prospects before a full weekday send. ${readyCount} Ready, ${pendingCount} still Pending research. The next run sends only Ready businesses that pass the recheck, and it does not send a whole imported batch.`
+            : null}
           {upcoming.length
-            ? upcoming.map((row) => `${row.business_name}${row.city ? `, ${row.city}` : ""}`).join("; ")
+            ? upcoming.map((row) => `${row.queuePosition ? `#${row.queuePosition} ` : ""}${row.business_name}${row.city ? `, ${row.city}` : ""}${row.sendAt ? ` — ${new Date(row.sendAt).toLocaleString("en-US", { timeZone: "America/Denver", weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}` : ""}`).join("; ")
             : "No verified Ready business is waiting in send order. The send rechecks the full queue and will send fewer than five when the verified list is short."}
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm sm:col-span-2">
@@ -153,8 +157,11 @@ export function OutreachSettingsForm({
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm sm:col-span-2">
           <span className="block font-semibold text-ink">Outreach results</span>
           {settings?.last_run_at
-            ? `${submitted} submitted, shortfall ${shortfall}, ${skipped} skipped, ${failed} failed. Discovery reviewed ${discoveryReviewed} and marked ${discoveryPromoted} Ready for a later delivery. Research does not send email.`
+            ? `${submitted} submitted, shortfall ${shortfall}, ${skipped} skipped, ${failed} failed.${summary.reason === "uncertain-hold" ? " Gmail's response was uncertain, so that recipient is held for review and the remaining slots were not given to anyone else." : ""} Discovery reviewed ${discoveryReviewed} and marked ${discoveryPromoted} Ready for a later delivery. Research does not send email.`
             : "No delivery has run yet. A shortfall is shown after the first weekday job."}
+          {Array.isArray(summary.skippedDetails) && summary.skippedDetails.length
+            ? ` Skipped: ${summary.skippedDetails.slice(0, 8).join(" ")}`
+            : ""}
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm sm:col-span-2">
           <span className="block font-semibold text-ink">Replies and outcomes</span>

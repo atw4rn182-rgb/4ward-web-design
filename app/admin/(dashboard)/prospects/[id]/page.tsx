@@ -6,6 +6,7 @@ import { EmailHistory } from "@/components/admin/prospects/EmailHistory";
 import { ProspectEditor } from "@/components/admin/prospects/ProspectEditor";
 import { ResearchPreview } from "@/components/admin/prospects/ResearchPreview";
 import { ResearchProspectButton } from "@/components/admin/prospects/ResearchActions";
+import { QueueControls } from "@/components/admin/prospects/QueueControls";
 import { formatWhen } from "@/lib/format";
 import { STATUS_LABELS } from "@/lib/prospects/model.mjs";
 import { BUSINESS_POSTAL_ADDRESS } from "@/lib/prospects/research.mjs";
@@ -72,6 +73,7 @@ export default async function ProspectDetailPage({
         description={`${STATUS_LABELS[prospect.status as keyof typeof STATUS_LABELS] || prospect.status}. Unsubscribe token is stored for a later compliance page. No email is sent from here.`}
       />
       <EmailHistory prospect={prospect} activity={detail.activity} mailingAddress={BUSINESS_POSTAL_ADDRESS} />
+      <QueueControls id={prospect.id} status={prospect.status} />
       <ResearchProspectButton prospectId={prospect.id} />
       <ResearchPreview prospect={prospect} />
       <ProspectEditor prospect={prospect} researchedOn={researchedOn(prospect.researched_at)} />
