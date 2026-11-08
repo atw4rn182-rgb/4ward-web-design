@@ -237,22 +237,23 @@ await check("email history reads the saved acceptance and does not send", () => 
   assert.equal(saved[0].subject, "Saved subject");
   assert.equal(saved[0].body, "Saved plain text");
   assert.equal(saved[0].messageId, "abcdef123456");
-  assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", notes: "" }), "");
+  assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", notes: "" }), "website-not-checked");
+  assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", research_notes: "Checked public pages did not show a business-owned website.", notes: "" }), "");
   assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "nereecerodriguez956@gmail.com", research_sources: "https://example.com/listing", notes: "One-time test." }), "one-time");
   assert.equal(discoveryNeed(0), 50);
   assert.equal(discoveryNeed(19), 31);
   assert.equal(discoveryNeed(20), 0);
   assert.equal(discoveryNeed(50), 0);
   const pending = [
-    { id: "1", status: "queued", business_name: "Shop", city: "Hobbs", public_email: "office@shop.example", research_sources: "https://example.com/a", website_host: "" },
-    { id: "2", status: "queued", business_name: "Shop", city: "Hobbs", public_email: "office@shop.example", research_sources: "https://example.com/a", website_host: "" },
+    { id: "1", status: "queued", business_name: "Shop", city: "Hobbs", public_email: "office@shop.example", research_sources: "https://example.com/a", website_host: "", research_notes: "Checked public pages did not show a business-owned website." },
+    { id: "2", status: "queued", business_name: "Shop", city: "Hobbs", public_email: "office@shop.example", research_sources: "https://example.com/a", website_host: "", research_notes: "Checked public pages did not show a business-owned website." },
   ];
   assert.equal(selectPendingForReview(pending, 5).chosen.length, 1);
   assert.equal(selectPendingForReview(pending, 5).skipped.some((row) => row.reason === "duplicate"), true);
-  const fresh = { status: "ready", outreach_eligible: true, city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", researched_at: "2026-11-01T16:00:00Z", research_notes: "Published email office@shop.example was already saved." };
+  const fresh = { status: "ready", outreach_eligible: true, city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", researched_at: "2026-11-01T16:00:00Z", research_notes: "Checked public pages did not show a business-owned website. Published email office@shop.example was already saved." };
   assert.equal(readinessBlock(fresh, new Date("2026-11-08T16:00:00Z")), "");
   assert.equal(readinessBlock({ ...fresh, researched_at: "2026-09-01T16:00:00Z" }, new Date("2026-11-08T16:00:00Z")), "stale");
-  assert.equal(readinessBlock({ ...fresh, research_notes: "A different address other@shop.example was published." }, new Date("2026-11-08T16:00:00Z")), "conflicting");
+  assert.equal(readinessBlock({ ...fresh, research_notes: "Checked public pages did not show a business-owned website. A different address other@shop.example was published." }, new Date("2026-11-08T16:00:00Z")), "conflicting");
   assert.equal(upcomingRecipients([fresh], new Date("2026-11-08T16:00:00Z")).length, 1);
   assert.equal(deliveryShortfall(0, 0), 5);
   assert.equal(deliveryShortfall(2, 1), 2);

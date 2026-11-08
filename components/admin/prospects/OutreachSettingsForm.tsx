@@ -128,7 +128,7 @@ export function OutreachSettingsForm({
           <span className="block font-semibold text-ink">Next five scheduled recipients</span>
           {upcoming.length
             ? upcoming.map((row) => `${row.business_name}${row.city ? `, ${row.city}` : ""}`).join("; ")
-            : "None are ready on this page. Open Ready to contact for the queue. The send rechecks every record and will send fewer than five when the verified list is short."}
+            : "No verified Ready business is waiting in send order. The send rechecks the full queue and will send fewer than five when the verified list is short."}
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm sm:col-span-2">
           <span className="block font-semibold text-ink">Discovery progress</span>

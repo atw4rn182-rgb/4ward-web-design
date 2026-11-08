@@ -181,6 +181,24 @@ function applyProspectStatus(query: any, status: string) {
   return query.eq("status", status);
 }
 
+const READY_QUEUE_SELECT = "id,business_name,city,service_area,public_email,website_host,status,outreach_eligible,notes,research_notes,research_sources,gbp_observations,researched_at,manual_priority,created_at,last_activity_at";
+
+export const getReadyQueue = cache(async function getReadyQueue() {
+  const supabase = await adminDb();
+  const { data, error } = await supabase
+    .from("prospects")
+    .select(READY_QUEUE_SELECT)
+    .eq("status", "ready")
+    .eq("outreach_eligible", true)
+    .order("manual_priority", { ascending: false })
+    .order("created_at", { ascending: true })
+    .limit(50);
+  return {
+    rows: (data || []) as ProspectListRow[],
+    error: error ? "The Ready queue could not be loaded. Nothing was sent." : "",
+  };
+});
+
 export const getProspectDashboard = cache(async function getProspectDashboard(input: {
   q: string;
   status: string;

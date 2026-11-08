@@ -16,7 +16,7 @@ import {
   STATUS_LABELS,
   sumRecentWrites,
 } from "@/lib/prospects/model.mjs";
-import { getProspectDashboard } from "@/lib/prospects/queries";
+import { getProspectDashboard, getReadyQueue } from "@/lib/prospects/queries";
 import { UsagePanel } from "@/components/admin/prospects/UsagePanel";
 import { ResearchQueueButton } from "@/components/admin/prospects/ResearchActions";
 import { ProspectDecision } from "@/components/admin/prospects/ProspectDecision";
@@ -68,9 +68,10 @@ export default async function ProspectsPage({
   const q = sanitizeSearch(params.q || "");
   const status = params.status || "all";
   const window = listWindow(params.page);
-  const [dashboard, mailbox] = await Promise.all([
+  const [dashboard, mailbox, readyQueue] = await Promise.all([
     getProspectDashboard({ q, status, offset: window.offset }),
     gmailConnectionStatus(),
+    getReadyQueue(),
   ]);
   const schemaMissing = dashboard.missing;
   const counts = dashboard.data.counts;
@@ -135,7 +136,7 @@ export default async function ProspectsPage({
           readyCount={counts.ready}
           pendingCount={counts.awaitingResearch}
           nextResearch={formatDenver(nextResearchRun())}
-          upcoming={upcomingRecipients(visible).map((row) => ({
+          upcoming={upcomingRecipients(readyQueue.rows).map((row) => ({
             id: row.id,
             business_name: row.business_name,
             city: row.city,
