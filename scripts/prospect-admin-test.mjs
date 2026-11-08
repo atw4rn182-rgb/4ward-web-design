@@ -42,6 +42,7 @@ import {
   extractPublicContacts,
   packResearchRecord,
   newlyEstablishedEvidence,
+  inNewMexico,
   qualifyProspect,
   readResearchRecord,
   robotsAllows,
@@ -308,7 +309,22 @@ await check("email history reads the saved acceptance and does not send", async 
     { ok: true, emails: ["info@manwelding.com"], text: "Call the shop today.", host: "manwelding.com", ownSite: true }
   );
   assert.equal(unreadPlace.ready, false);
-  assert.match(unreadPlace.reason, /did not confirm a southeastern New Mexico location/);
+  assert.match(unreadPlace.reason, /did not confirm a New Mexico location/);
+  assert.equal(inNewMexico("Roswell"), true);
+  assert.equal(inNewMexico("Alamogordo"), true);
+  assert.equal(inNewMexico("Las Cruces"), true);
+  assert.equal(inNewMexico("Dallas"), false);
+  const roswell = findingFromReading(
+    { city: "Roswell", public_email: "office@shop.example", business_name: "Roswell Shop" },
+    { ok: true, emails: ["office@shop.example"], text: "Roswell Shop, Roswell, New Mexico.", host: "shop.example", ownSite: true }
+  );
+  assert.equal(roswell.ready, true);
+  const roswellUnstated = findingFromReading(
+    { city: "Roswell", public_email: "office@shop.example", business_name: "Roswell Shop" },
+    { ok: true, emails: ["office@shop.example"], text: "Roswell Shop in Roswell.", host: "shop.example", ownSite: true }
+  );
+  assert.equal(roswellUnstated.ready, false);
+  assert.equal(qualifyProspect({ businessName: "Roswell Shop", city: "Roswell", publicEmail: "office@shop.example" }).qualification, "qualified");
   const conflict = findingFromReading(
     { city: "Lovington", public_email: "info@manwelding.com", business_name: "Man Welding Services" },
     { ok: true, emails: ["info@manwelding.com"], text: "Our yard is in Hobbs.", host: "manwelding.com", ownSite: true }
@@ -400,9 +416,11 @@ await check("qualification does not invent a contact or a missing website", () =
   const missing = qualifyProspect({ businessName: "Hope Plumbing", city: "Hope", publicEmail: "" });
   assert.equal(missing.qualification, "no_verified_contact");
   assert.match(missing.reason, /not guessed/i);
-  const outside = qualifyProspect({ businessName: "Far Shop", city: "Albuquerque", publicEmail: "info@farshop.com" });
+  const outside = qualifyProspect({ businessName: "Far Shop", city: "Dallas", publicEmail: "info@farshop.com" });
+  const albuquerque = qualifyProspect({ businessName: "Duke City Shop", city: "Albuquerque", publicEmail: "info@dukecity.example" });
   const hobbs = qualifyProspect({ businessName: "Lea Shop", city: "Hobbs", publicEmail: "info@leashop.com", websiteHost: "" });
   assert.equal(hobbs.qualification, "qualified");
+  assert.equal(albuquerque.qualification, "qualified");
   assert.equal(outside.qualification, "not_qualified");
   const personal = qualifyProspect({ businessName: "Local Clean", city: "Loving", publicEmail: "owner@gmail.com" });
   assert.equal(personal.qualification, "needs_review");

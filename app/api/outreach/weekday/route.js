@@ -15,3 +15,26 @@ export async function GET(request) {
   const result = await runWeekdayOutreach();
   return NextResponse.json(result, { status: result.ok ? 200 : 500 });
 }
+
+export async function POST(request) {
+  const secret = String(process.env.CRON_SECRET || "").trim();
+  if (!secret) {
+    return NextResponse.json({ ok: false, error: "CRON_SECRET is not configured. No message was sent." }, { status: 503 });
+  }
+  const header = request.headers.get("authorization") || "";
+  if (header !== `Bearer ${secret}`) {
+    return NextResponse.json({ ok: false, error: "Unauthorized." }, { status: 401 });
+  }
+  let deliverToday = false;
+  try {
+    const body = await request.json();
+    deliverToday = body?.deliverToday === true;
+  } catch {
+    deliverToday = false;
+  }
+  if (!deliverToday) {
+    return NextResponse.json({ ok: false, error: "No message was sent." }, { status: 400 });
+  }
+  const result = await runWeekdayOutreach(new Date(), { deliverNow: true });
+  return NextResponse.json(result, { status: result.ok ? 200 : 500 });
+}
