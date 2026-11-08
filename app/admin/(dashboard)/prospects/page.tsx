@@ -59,6 +59,15 @@ function statusLabel(status: string) {
   return STATUS_LABELS[status as keyof typeof STATUS_LABELS] || status;
 }
 
+function rowStatusLabel(row: { status: string; notes?: string | null; business_name?: string | null; city?: string | null; service_area?: string | null; public_email?: string | null }) {
+  if (row.status === "queued" || row.status === "researching") {
+    if (isDuplicateHold(row) || isDuplicateDismissed(row)) return "Duplicate review";
+    const gaps = qualificationGapMessages(row);
+    if (gaps.length) return gaps.join(" ");
+  }
+  return statusLabel(row.status);
+}
+
 function queueLine(row: { id: string; status: string; notes?: string | null; research_notes?: string | null; research_sources?: string | null; city?: string | null; service_area?: string | null; public_email?: string | null; website_host?: string | null }, annotation?: { queuePosition: number | null; sendAt: string; skipReason: string }) {
   if (annotation?.queuePosition && annotation.sendAt) {
     return `Queue position ${annotation.queuePosition}. Estimated send ${formatDenver(annotation.sendAt)}.`;
@@ -145,7 +154,7 @@ export default async function ProspectsPage({
 
       <div className="mb-5 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard label="Total prospects" value={String(counts.total)} hint="Every business in the queue" href={`${pageHref(q, "all", 1)}#prospect-list`} current={status === "all" && !q} />
-        <StatCard label="Pending research" value={String(counts.awaitingResearch)} hint="Queued or researching" href={`${pageHref(q, "awaiting", 1)}#prospect-list`} current={status === "awaiting"} />
+        <StatCard label="Pending" value={String(counts.awaitingResearch)} hint="Missing a company name, email, or location" href={`${pageHref(q, "awaiting", 1)}#prospect-list`} current={status === "awaiting"} />
         <StatCard label="Ready to contact" value={String(counts.ready)} hint="Reviewed and eligible" href={`${pageHref(q, "ready", 1)}#prospect-list`} current={status === "ready"} />
         <StatCard label="Emails sent" value={String(counts.emailsSent)} hint="Accepted by Gmail or marked sent" href={`${pageHref(q, "contacted", 1)}#prospect-list`} current={status === "contacted"} />
         <StatCard label="Interested prospects" value={String(counts.interested)} hint="Positive replies" href={`${pageHref(q, "interested", 1)}#prospect-list`} current={status === "interested"} />
@@ -233,7 +242,7 @@ export default async function ProspectsPage({
                   </div>
                   <Link href={`${pageHref("", row.status, 1)}#prospect-list`} className="inline-flex min-h-11 items-center">
                     <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
-                      {statusLabel(row.status)}
+                      {rowStatusLabel(row)}
                     </span>
                   </Link>
                 </div>
@@ -311,7 +320,7 @@ export default async function ProspectsPage({
                       <td className="px-4 py-3">
                         <Link href={`${pageHref("", row.status, 1)}#prospect-list`} className="inline-flex min-h-11 items-center">
                           <span className="rounded-full bg-brand-blue/10 px-2.5 py-1 text-xs font-semibold text-brand-deep">
-                            {statusLabel(row.status)}
+                            {rowStatusLabel(row)}
                           </span>
                         </Link>
                       </td>

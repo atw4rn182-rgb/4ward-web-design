@@ -114,7 +114,7 @@ export function OutreachSettingsForm({
           {settings?.last_run_at ? new Date(settings.last_run_at).toLocaleString("en-US", { timeZone: "America/Denver" }) : "No runs yet"}
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">
-          <span className="block font-semibold text-ink">Pending research</span>
+          <span className="block font-semibold text-ink">Pending</span>
           <a className="underline" href="/admin/prospects?status=awaiting#prospect-list">{pendingCount}</a>
         </p>
         <p className="rounded-xl bg-black/[0.03] px-3 py-3 text-sm">

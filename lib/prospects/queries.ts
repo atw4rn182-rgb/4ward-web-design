@@ -155,11 +155,12 @@ async function dashboardFromTables(input: { q: string; status: string; offset: n
     supabase.from("outreach_settings").select(SETTINGS_SELECT).eq("id", 1).maybeSingle(),
   ]);
   const tableError = listResult.error || countResult.error || settingsResult.error;
+  const counts = { ...emptyCounts, ...countProspects(countResult.data || []) };
   return {
     data: {
       rows: (listResult.data || []) as ProspectListRow[],
       total: listResult.count || 0,
-      counts: { ...emptyCounts, ...countProspects(countResult.data || []) },
+      counts,
       settings: settingsFromRow(settingsResult.data),
       usage: [] as UsageDay[],
       limit: PAGE_SIZE,
@@ -174,7 +175,9 @@ async function dashboardFromTables(input: { q: string; status: string; offset: n
 
 function applyProspectStatus(query: any, status: string) {
   if (!status || status === "all") return query;
-  if (status === "awaiting") return query.in("status", ["queued", "researching"]);
+  if (status === "awaiting") {
+    return query.in("status", ["queued", "researching"]).or("notes.is.null,and(notes.not.ilike.%Duplicate review%,notes.not.ilike.%Duplicate dismissed%)");
+  }
   if (status === "opted_out") return query.in("status", ["not_interested", "do_not_contact"]);
   if (status === "needs_review") return query.in("status", ["failed", "bounced"]);
   if (status === "contacted") {
@@ -264,11 +267,13 @@ export const getProspectDashboard = cache(async function getProspectDashboard(in
   if (error || !data?.settings) return dashboardFromTables(input);
 
   const payload = data as ProspectDashboard;
+  const { data: counted } = await supabase.from("prospects").select(COUNT_SELECT).limit(2000);
+  const counts = counted ? { ...emptyCounts, ...countProspects(counted) } : { ...emptyCounts, ...(payload.counts || {}) };
   return {
     data: {
       rows: payload.rows || [],
       total: Number(payload.total || 0),
-      counts: { ...emptyCounts, ...(payload.counts || {}) },
+      counts,
       settings: payload.settings || null,
       usage: payload.usage || [],
       limit: Number(payload.limit || 25),

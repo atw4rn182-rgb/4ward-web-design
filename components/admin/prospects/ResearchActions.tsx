@@ -12,7 +12,7 @@ export function ResearchQueueButton({ awaiting = 0, unavailable = false }: { awa
   const reason = unavailable
     ? "Prospect tables are not available, so research cannot run."
     : awaiting < 1
-      ? "No businesses are waiting for research."
+      ? "No saved business is missing a company name, email, or location."
       : "";
   return (
     <section className="mb-5 rounded-2xl border border-black/10 bg-paper p-4 shadow-soft sm:p-5">
@@ -30,7 +30,7 @@ export function ResearchQueueButton({ awaiting = 0, unavailable = false }: { awa
         ))}
       </ul>
       <p className="mt-2 text-sm leading-relaxed text-muted">
-        Research pending queue checks up to five queued businesses, manual entries first. It reads a business’s own public website only when that site allows it, then saves a short result and an unsent draft. Rejecting a business does not send email.
+        A company name, valid email, and New Mexico or West Texas location become Ready without a source page. A missing name, email, or location stays Pending with that exact reason. This check does not invent those details and does not send email.
       </p>
       <form action={action} className="mt-4">
         <button

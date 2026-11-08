@@ -128,9 +128,10 @@ await check("dashboard counts and filters follow the status groups", () => {
     { status: "do_not_contact", business_name: "G", city: "Hope", public_email: "", notes: "", sent_at: null },
     { status: "bounced", business_name: "H", city: "Loving", public_email: "", notes: "", sent_at: "2026-11-05T16:00:00Z" },
     { status: "failed", business_name: "I", city: "Carlsbad", public_email: "", notes: "", sent_at: null },
+    { status: "researching", business_name: "J", city: "Hobbs", public_email: "", notes: "Duplicate review. Held out of automatic sending.", sent_at: null },
   ];
   const counts = countProspects(rows);
-  assert.equal(counts.total, 9);
+  assert.equal(counts.total, 10);
   assert.equal(counts.awaitingResearch, 2);
   assert.equal(counts.ready, 1);
   assert.equal(counts.emailsSent, 3);
