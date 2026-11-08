@@ -53,6 +53,7 @@ import { deliveryShortfall, discoveryNeed, readinessBlock, selectPendingForRevie
 import { classifyCandidate, discoverCandidates } from "../lib/prospects/lookup.mjs";
 import { IMPORT_ROW_LIMIT, classifyImport, parseProspectList, splitImportText } from "../lib/prospects/import.mjs";
 import { assignQueueTimes, compareAndSetRun, estimatedSendDates, needsMoreVerified, slotsAfterAttempt } from "../lib/prospects/queue.mjs";
+import { contactHistoryRecord, emailIdentity, findRecipientMatch, recordsFromExisting } from "../lib/prospects/identity.mjs";
 import { nextResearchRun } from "../lib/prospects/model.mjs";
 
 let passed = 0;
@@ -471,7 +472,8 @@ await check("pasted prospects are parsed, deduped, and kept pending", () => {
   assert.equal(byName("Pump Shop").result, "skip");
   assert.match(byName("Pump Shop").message, /already contacted/i);
   const repeated = review.rows.filter((row) => row.name === "Bob's Auto Body");
-  assert.equal(repeated[1].result, "review");
+  assert.equal(repeated[1].result, "skip");
+  assert.match(repeated[1].message, /different email/i);
   const again = classifyImport(parseProspectList("Bob's Auto Body | office@shop.example").rows, {
     prospects: [{ name: "Bob's Auto Body", email: "office@shop.example", status: "queued", sentAt: "" }],
     customers: [],
@@ -525,7 +527,8 @@ await check("large imports keep queue order and uncertain sends consume the slot
   assert.equal(csv.rows[0].notes, "Owner answered");
   const reviewed = classifyImport(csv.rows, { prospects: [], customers: [], suppressions: [] });
   assert.equal(reviewed.rows[0].result, "import");
-  assert.equal(reviewed.rows[1].result, "review");
+  assert.equal(reviewed.rows[1].result, "skip");
+  assert.match(reviewed.rows[1].message, /different email/i);
   const again = classifyImport(parseProspectList("North Shop | desk@north.example | Hobbs").rows, {
     prospects: [{ name: "North Shop", city: "Hobbs", email: "desk@north.example", status: "queued", sentAt: "" }],
     customers: [],
@@ -570,6 +573,48 @@ await check("large imports keep queue order and uncertain sends consume the slot
   const allowance = canSubmitOutreach({ target: WEEKDAY_TARGET, submittedToday: 5 });
   assert.equal(allowance.allowed, false);
   assert.equal(allowance.remaining, 0);
+  const dotted = emailIdentity("A.B+tag@gmail.com");
+  const plain = emailIdentity("ab@gmail.com");
+  assert.equal(dotted.normalized, "a.b+tag@gmail.com");
+  assert.notEqual(dotted.normalized, plain.normalized);
+  assert.equal(emailIdentity(" Office@Shop.Example ").original, "Office@Shop.Example");
+  assert.equal(emailIdentity(" Office@Shop.Example ").normalized, "office@shop.example");
+  const samePhone = classifyImport(parseProspectList("Other Shop | other@shop.example | Carlsbad | 5755550100").rows, {
+    prospects: [{ id: "p1", name: "North Shop", city: "Hobbs", email: "desk@north.example", phone: "Phone: 5755550100", status: "queued" }],
+    customers: [],
+    suppressions: [],
+  });
+  assert.equal(samePhone.rows[0].result, "skip");
+  assert.match(samePhone.rows[0].message, /phone number/i);
+  assert.match(samePhone.rows[0].message, /\/admin\/prospects\/p1/);
+  const otherTown = classifyImport(parseProspectList("North Shop | second@north.example | Artesia").rows, {
+    prospects: [{ id: "p1", name: "North Shop", city: "Hobbs", email: "desk@north.example", status: "queued" }],
+    customers: [],
+    suppressions: [],
+  });
+  assert.equal(otherTown.rows[0].result, "review");
+  const domain = findRecipientMatch(
+    { name: "New Name", email: "new@elsewhere.example", websiteHost: "webshop.example" },
+    recordsFromExisting({ prospects: [{ id: "p2", name: "Web Shop", email: "office@web.example", websiteHost: "webshop.example", status: "sent", sentAt: "2026-11-01" }] })
+  );
+  assert.equal(domain.kind, "block");
+  assert.equal(domain.reason, "domain");
+  const removed = classifyImport(parseProspectList("North Shop | desk@north.example | Hobbs").rows, {
+    prospects: [],
+    customers: [],
+    suppressions: [{ email: "desk@north.example", name: "North Shop", reason: "removed phone:5755550100" }],
+  });
+  assert.equal(removed.rows[0].result, "skip");
+  assert.match(removed.rows[0].message, /not reactivated/i);
+  const history = contactHistoryRecord({ id: "p1", name: "North Shop", email: "A.B+tag@gmail.com", phone: "575-555-0100", city: "Hobbs" }, "contacted");
+  assert.equal(history.email, "a.b+tag@gmail.com");
+  assert.match(history.reason, /phone:5755550100/);
+  const alternate = selectWeekdayRecipients([
+    { id: "1", status: "ready", outreach_eligible: true, public_email: "one@shop.example", business_name: "Same Shop", city: "Carlsbad", notes: "Phone: 5755550199" },
+    { id: "2", status: "ready", outreach_eligible: true, public_email: "two@shop.example", business_name: "Same Shop", city: "Carlsbad", notes: "Phone: 5755550188" },
+  ], { limit: 5, uncertainIds: [], refusedIds: [], records: [] });
+  assert.deepEqual(alternate.chosen.map((row) => row.id), ["1"]);
+  assert.equal(alternate.skipped[0].reason, "duplicate");
 });
 
 await check("prospect admin code does not send mail or store a password", () => {

@@ -199,6 +199,7 @@ export function PasteProspectList({ unavailable = false }: { unavailable?: boole
                 {row.source ? <a className="mt-1 block break-all underline" href={row.source} target="_blank" rel="noreferrer">{row.source}</a> : <p className="mt-1 text-muted">No source link</p>}
                 <p className="mt-2 font-semibold">{row.result === "import" ? "Will import" : row.result === "review" ? "Needs review" : "Will skip"}</p>
                 <p className="mt-1 leading-relaxed text-muted">{row.message}</p>
+                {row.matchId ? <a className="mt-1 inline-flex min-h-11 items-center underline" href={`/admin/prospects/${row.matchId}`}>Existing record</a> : null}
               </li>
             ))}
           </ul>

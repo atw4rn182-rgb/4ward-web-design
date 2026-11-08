@@ -15,6 +15,7 @@ import {
   validateOutreachSettings,
   validateResearch,
   validateStatusChange,
+  normalizeEmail,
 } from "@/lib/prospects/model.mjs";
 import {
   RESEARCH_BATCH_LIMIT,
@@ -28,6 +29,7 @@ import {
 } from "@/lib/prospects/research.mjs";
 import { readOwnWebsite, researchFromRecord } from "@/lib/prospects/research-run.mjs";
 import { classifyImport, importNotes, parseProspectList } from "@/lib/prospects/import.mjs";
+import { duplicateDecision, findRecipientMatch, rememberContact } from "@/lib/prospects/identity.mjs";
 import { assignQueueTimes, QUEUE_PAUSE_NOTE } from "@/lib/prospects/queue.mjs";
 
 export type ImportPreviewRow = {
@@ -38,8 +40,10 @@ export type ImportPreviewRow = {
   city?: string;
   phone?: string;
   notes?: string;
+  emailOriginal?: string;
   result: "import" | "skip" | "review";
   message: string;
+  matchId?: string;
 };
 
 export type ProspectActionState = {
@@ -84,6 +88,34 @@ function resultMessage(code: string) {
   return "Unable to save that change.";
 }
 
+async function identityBlock(client: SupabaseClient, value: { businessName?: string; city?: string; email?: string; websiteHost?: string; notes?: string; phone?: string }) {
+  const email = normalizeEmail(value.email || "");
+  const name = String(value.businessName || "").replace(/["%_,*()]/g, "").slice(0, 80);
+  const filters = [email ? `public_email.ilike.${email}` : "", name ? `business_name.ilike."${name}"` : ""].filter(Boolean);
+  const suppressionFilters = [email ? `email.ilike.${email}` : "", name ? `business_name.ilike."${name}"` : ""].filter(Boolean);
+  const [prospects, suppressions, customers] = await Promise.all([
+    filters.length ? client.from("prospects").select("id,business_name,city,public_email,website_host,status,sent_at,notes").or(filters.join(",")).limit(20) : Promise.resolve({ data: [], error: null }),
+    suppressionFilters.length ? client.from("prospect_suppressions").select("id,prospect_id,business_name,city,email,website_host,reason").or(suppressionFilters.join(",")).limit(20) : Promise.resolve({ data: [], error: null }),
+    email ? client.from("customers").select("id,company_name,email,phone,city,website_url").ilike("email", email).limit(5) : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (prospects.error || suppressions.error || customers.error) return "The existing records could not be checked. Nothing was added.";
+  const records = [
+    ...(prospects.data || []).map((row) => ({ source: "prospect", id: row.id, name: row.business_name, city: row.city, email: row.public_email, phone: row.notes, websiteHost: row.website_host, status: row.status, sentAt: row.sent_at })),
+    ...(suppressions.data || []).map((row) => ({ source: "suppression", id: row.prospect_id || "", name: row.business_name, city: row.city, email: row.email, phone: row.reason, websiteHost: row.website_host, reason: row.reason, status: "suppressed" })),
+    ...(customers.data || []).map((row) => ({ source: "customer", id: row.id, name: row.company_name, email: row.email, phone: row.phone, city: row.city, websiteHost: row.website_url, status: "customer" })),
+  ];
+  const match = findRecipientMatch({
+    name: value.businessName,
+    city: value.city,
+    email,
+    phone: value.phone || value.notes,
+    websiteHost: value.websiteHost,
+    notes: value.notes,
+  }, records);
+  if (match.kind === "new") return "";
+  return duplicateDecision(match).message;
+}
+
 async function addProspectInTables(
   client: SupabaseClient,
   value: {
@@ -95,6 +127,8 @@ async function addProspectInTables(
     notes: string;
   }
 ): Promise<ProspectActionState> {
+  const duplicate = await identityBlock(client, value);
+  if (duplicate) return { error: duplicate };
   const blockedFilter = suppressionOr(value);
   if (blockedFilter) {
     const { data: blocked, error: blockError } = await client
@@ -130,6 +164,7 @@ async function addProspectInTables(
   if (insertError && insertSchema) return { error: insertSchema };
   if (insertError || !created) return { error: "Unable to add the business." };
 
+  await rememberContact(client, { ...value, id: created.id, email: value.email, name: value.businessName, business_name: value.businessName }, "queued");
   await client.from("prospect_activity").insert({
     prospect_id: created.id,
     event_type: "queued",
@@ -291,6 +326,8 @@ export async function addProspectAction(
 
   const { error, client } = await adminWriteClient();
   if (error || !client) return { error: error || "Unauthorized." };
+  const duplicate = await identityBlock(client, parsed.value);
+  if (duplicate) return { error: duplicate };
 
   const { data, error: rpcError } = await client.rpc("admin_add_prospect", {
     p_business_name: parsed.value.businessName,
@@ -705,10 +742,10 @@ async function importContext(client: SupabaseClient, parsedRows: { name?: string
   const emails = [...new Set(parsedRows.map((row) => String(row.email || "").toLowerCase()).filter((email) => email.includes("@")))];
   const names = [...new Set(parsedRows.map((row) => String(row.name || "").trim()).filter(Boolean))];
   const [prospects, named, customers, suppressions] = await Promise.all([
-    lookupChunk(client, "public_email", "prospects", emails, "business_name,city,public_email,status,sent_at"),
-    lookupChunk(client, "business_name", "prospects", names, "business_name,city,public_email,status,sent_at"),
-    lookupChunk(client, "email", "customers", emails, "email"),
-    lookupChunk(client, "email", "prospect_suppressions", emails, "email"),
+    lookupChunk(client, "public_email", "prospects", emails, "id,business_name,city,public_email,website_host,status,sent_at,notes"),
+    lookupChunk(client, "business_name", "prospects", names, "id,business_name,city,public_email,website_host,status,sent_at,notes"),
+    lookupChunk(client, "email", "customers", emails, "id,company_name,email,phone,city,website_url"),
+    lookupChunk(client, "email", "prospect_suppressions", emails, "id,prospect_id,business_name,city,email,website_host,reason"),
   ]);
   const error = prospects.error || named.error || customers.error || suppressions.error;
   if (error) return { error: "The existing records could not be checked. Nothing was imported.", existing: null };
@@ -719,9 +756,12 @@ async function importContext(client: SupabaseClient, parsedRows: { name?: string
     if (seen.has(key)) continue;
     seen.add(key);
     prospectRows.push({
+      id: row.id || "",
       name: row.business_name || "",
       city: row.city || "",
       email: String(row.public_email || "").toLowerCase(),
+      phone: row.notes || "",
+      websiteHost: row.website_host || "",
       status: row.status || "",
       sentAt: row.sent_at || "",
     });
@@ -730,8 +770,23 @@ async function importContext(client: SupabaseClient, parsedRows: { name?: string
     error: "",
     existing: {
       prospects: prospectRows,
-      customers: customers.rows.map((row) => String(row.email || "").toLowerCase()).filter(Boolean),
-      suppressions: suppressions.rows.map((row) => String(row.email || "").toLowerCase()).filter(Boolean),
+      customers: customers.rows.map((row) => ({
+        id: row.id || "",
+        name: row.company_name || "",
+        email: row.email || "",
+        phone: row.phone || "",
+        city: row.city || "",
+        websiteHost: row.website_url || "",
+      })),
+      suppressions: suppressions.rows.map((row) => ({
+        id: row.prospect_id || row.id || "",
+        name: row.business_name || "",
+        city: row.city || "",
+        email: row.email || "",
+        phone: row.reason || "",
+        websiteHost: row.website_host || "",
+        status: "suppressed",
+      })),
     },
   };
 }
@@ -792,9 +847,10 @@ export async function importProspectListAction(_prev: ProspectActionState, formD
       outreach_eligible: false,
       queued_at: times[index],
       created_at: times[index],
-      notes: importNotes({ phone: row.phone, notes: row.notes, batchId, importedOn }),
+      notes: importNotes({ phone: row.phone, notes: row.notes, batchId, importedOn, emailOriginal: row.emailOriginal }),
     }).select("id").maybeSingle();
     if (insertError || !created?.id) continue;
+    await rememberContact(client, { ...row, id: created.id, email: row.email, name: row.name }, "queued");
     await client.from("prospect_activity").insert({
       prospect_id: created.id,
       event_type: "queued",
@@ -851,11 +907,13 @@ export async function removeProspectAction(_prev: ProspectActionState, formData:
     return { error: "Confirm the removal. Nothing was deleted." };
   }
   const id = String(formData.get("id") || "");
-  const { data: current, error: readError } = await client.from("prospects").select("id,status,sent_at").eq("id", id).maybeSingle();
+  const { data: current, error: readError } = await client.from("prospects").select("id,status,sent_at,business_name,city,public_email,website_host,notes").eq("id", id).maybeSingle();
   if (readError || !current) return { error: "Prospect not found. Nothing was deleted." };
   if (current.sent_at || !["queued", "researching"].includes(current.status)) {
     return { error: "Only a queued prospect that has not been sent can be removed." };
   }
+  const history = await rememberContact(client, current, "removed");
+  if (!history.ok) return { error: "Contact history could not be saved. The prospect was not removed." };
   const { count, error: activityError } = await client.from("prospect_activity").select("id", { count: "exact", head: true }).eq("prospect_id", id).in("event_type", ["gmail_accepted", "gmail_sending", "gmail_uncertain"]);
   if (activityError) return { error: "Send history could not be checked. Nothing was removed." };
   if (count) return { error: "This prospect has send history and was not removed." };
