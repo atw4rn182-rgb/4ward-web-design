@@ -129,6 +129,9 @@ await check("a sample uses the outreach letter and is not retried", async () => 
   assert.match(text, /https:\/\/www\.4wardwebdesign.com/);
   assert.match(text, /4ward-commercial\.mp4/);
   assert.match(text, /Google Business Profile setup and optimization/);
+  assert.match(text, /We help businesses across southeastern New Mexico build a professional website and improve their visibility on Google Search and Maps/);
+  assert.match(text, /pottery business in Carlsbad/);
+  assert.doesNotMatch(text, /4Ward Web Design in Carlsbad/);
   assert.match(text, /Google Search and Maps/);
   assert.match(text, /free, no-obligation consultation/);
   assert.match(text, /PO BOX 1161/);
@@ -247,6 +250,9 @@ await check("a connected mailbox sends one checked outreach message and does not
   assert.equal(letter.ok, true);
   const decoded = Buffer.from(letter.raw, "base64url").toString("utf8");
   assert.match(decoded, /To: office@shop\.example/);
+  assert.match(decoded, /plumbing business in Artesia/);
+  assert.match(decoded, /businesses across southeastern New Mexico/);
+  assert.doesNotMatch(decoded, /4Ward Web Design in Carlsbad/);
   assert.match(decoded, /PO BOX 1161/);
   assert.match(decoded, /offer=both#pricing/);
   assert.doesNotMatch(decoded, /no website/i);

@@ -240,6 +240,14 @@ await check("email history reads the saved acceptance and does not send", async 
   assert.equal(saved[0].origin, "snapshot");
   assert.equal(saved[0].subject, "Saved subject");
   assert.equal(saved[0].body, "Saved plain text");
+  const historical = "My name is Adam Windhorst, and I own 4Ward Web Design in Carlsbad, New Mexico.";
+  const oldLetter = outreachHistory([
+    { id: "22222222-2222-4222-8222-222222222222", event_type: "email_snapshot", created_at: "2026-11-07T22:59:00Z", note: JSON.stringify({ templateVersion: "outreach-letter-2026-11", recipient: "office@shop.example", subject: "Old subject", text: historical, html: "<p>Old</p>" }) },
+    { id: "acc-old", event_type: "gmail_accepted", created_at: "2026-11-07T23:00:00Z", note: "Gmail accepted the message. Message ID: abcdef654321. Snapshot: 22222222-2222-4222-8222-222222222222. Inbox delivery was not checked." },
+  ], { business_name: "Shop", city: "Hobbs", public_email: "office@shop.example" }, "");
+  assert.equal(oldLetter[0].origin, "snapshot");
+  assert.equal(oldLetter[0].templateVersion, "outreach-letter-2026-11");
+  assert.equal(oldLetter[0].body, historical);
   assert.equal(saved[0].messageId, "abcdef123456");
   assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", notes: "" }), "website-not-checked");
   assert.equal(verificationBlock({ status: "queued", city: "Lovington", public_email: "office@shop.example", research_sources: "https://example.com/listing", website_host: "", research_notes: "Checked public pages did not show a business-owned website.", notes: "" }), "");
@@ -359,6 +367,9 @@ await check("qualification does not invent a contact or a missing website", () =
   assert.equal(ready.qualification, "qualified");
   const draft = buildDraft({ ...ready, businessName: "Carlsbad Welding", city: "Carlsbad", websiteHost: "carlsbadwelding.com", mailingAddress: "" });
   assert.match(draft.body, /Adam Windhorst/);
+  assert.match(draft.body, /businesses across southeastern New Mexico/);
+  assert.match(draft.body, /business in Carlsbad/);
+  assert.doesNotMatch(draft.body, /4Ward Web Design in Carlsbad/);
   assert.match(draft.body, /Carlsbad Welding/);
   assert.match(draft.body, /carlsbadwelding\.com/);
   assert.match(draft.body, /free, no-obligation consultation/);
