@@ -20,10 +20,12 @@ import {
 } from "@/lib/prospects/model.mjs";
 import { getDuplicateReview, getProspectDashboard, getReadyQueue } from "@/lib/prospects/queries";
 import { DuplicateReview } from "@/components/admin/prospects/DuplicateReview";
+import { ApproveProspectButton, ApproveSelectedBar, PendingApprovalProvider, PendingCheckbox } from "@/components/admin/prospects/PendingApproval";
+import { isDuplicateDismissed, isDuplicateHold } from "@/lib/prospects/duplicates.mjs";
 import { UsagePanel } from "@/components/admin/prospects/UsagePanel";
 import { ResearchQueueButton } from "@/components/admin/prospects/ResearchActions";
 import { ProspectDecision } from "@/components/admin/prospects/ProspectDecision";
-import { annotateReadyQueue, upcomingRecipients, verificationBlock } from "@/lib/prospects/discovery.mjs";
+import { annotateReadyQueue, upcomingRecipients } from "@/lib/prospects/discovery.mjs";
 import { skipExplanation } from "@/lib/prospects/queue.mjs";
 import { QueueControls } from "@/components/admin/prospects/QueueControls";
 import { listQualification, qualificationGapMessages } from "@/lib/prospects/research.mjs";
@@ -63,14 +65,13 @@ function queueLine(row: { id: string; status: string; notes?: string | null; res
   }
   if (annotation?.skipReason) return skipExplanation(annotation.skipReason);
   if (row.status === "queued" || row.status === "researching") {
-    const note = String(row.research_notes || "").trim();
-    if (note) return note;
-    const reason = verificationBlock(row);
-    if (reason === "name-missing" || reason === "email-missing" || reason === "location-missing" || reason === "invalid-email" || reason === "outside-area") {
-      return qualificationGapMessages(row).join(" ");
-    }
-    return reason ? skipExplanation(reason) : "The company name, email, and location are saved. The email was not independently verified.";
+    const parts = [];
+    if (isDuplicateHold(row) || isDuplicateDismissed(row)) parts.push("Duplicate review. Held out of automatic sending.");
+    parts.push(...qualificationGapMessages(row));
+    if (parts.length) return parts.join(" ");
+    return "The company name, email, and location are saved. The email was not independently verified.";
   }
+  if (/Admin approved by /i.test(String(row.research_notes || ""))) return "Admin approved.";
   return "";
 }
 
@@ -217,7 +218,8 @@ export default async function ProspectsPage({
           }
         />
       ) : (
-        <>
+        <PendingApprovalProvider rows={visible}>
+          <ApproveSelectedBar />
           <ul className="grid gap-3 md:hidden">
             {visible.map((row) => (
               <li key={row.id} className="rounded-2xl border border-black/10 bg-paper p-4 shadow-soft">
@@ -226,6 +228,7 @@ export default async function ProspectsPage({
                     <Link href={`/admin/prospects/${row.id}`} className="inline-flex min-h-11 items-center font-semibold text-ink">
                       {row.business_name}
                     </Link>
+                    <PendingCheckbox id={row.id} status={row.status} name={row.business_name} />
                     <p className="mt-1 text-sm text-muted">{row.city || row.service_area || "Location not recorded"}</p>
                   </div>
                   <Link href={`${pageHref("", row.status, 1)}#prospect-list`} className="inline-flex min-h-11 items-center">
@@ -257,6 +260,7 @@ export default async function ProspectsPage({
                 {row.notes ? <p className="mt-2 line-clamp-2 text-sm text-muted">{row.notes}</p> : null}
                 {queueLine(row, queueNotes.get(row.id)) ? <p className="mt-2 text-sm text-ink">{queueLine(row, queueNotes.get(row.id))}</p> : null}
                 <QueueControls id={row.id} status={row.status} />
+                <ApproveProspectButton id={row.id} status={row.status} />
                 <ProspectDecision id={row.id} />
                 <Link href={`/admin/prospects/${row.id}`} className="mt-3 inline-flex min-h-11 items-center text-sm font-semibold text-brand-deep">
                   View details
@@ -286,6 +290,7 @@ export default async function ProspectsPage({
                         <Link href={`/admin/prospects/${row.id}`} className="font-semibold text-ink">
                           {row.business_name}
                         </Link>
+                        <PendingCheckbox id={row.id} status={row.status} name={row.business_name} />
                         <Link href={`/admin/prospects/${row.id}`} className="mt-2 inline-flex min-h-11 items-center text-sm font-semibold text-brand-deep">
                           View details
                         </Link>
@@ -297,6 +302,7 @@ export default async function ProspectsPage({
                         ) : null}
                         {queueLine(row, queueNotes.get(row.id)) ? <p className="mt-1 text-xs text-ink">{queueLine(row, queueNotes.get(row.id))}</p> : null}
                         <QueueControls id={row.id} status={row.status} />
+                        <ApproveProspectButton id={row.id} status={row.status} />
                         <ProspectDecision id={row.id} />
                       </td>
                       <td className="px-4 py-3">{row.city || row.service_area || "—"}</td>
@@ -317,7 +323,7 @@ export default async function ProspectsPage({
               </table>
             </AdminTableScroll>
           </div>
-        </>
+        </PendingApprovalProvider>
       )}
 
       <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">

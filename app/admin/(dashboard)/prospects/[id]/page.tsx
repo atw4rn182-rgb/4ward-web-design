@@ -7,6 +7,7 @@ import { ProspectEditor } from "@/components/admin/prospects/ProspectEditor";
 import { ResearchPreview } from "@/components/admin/prospects/ResearchPreview";
 import { ResearchProspectButton } from "@/components/admin/prospects/ResearchActions";
 import { QueueControls } from "@/components/admin/prospects/QueueControls";
+import { SingleProspectApproval } from "@/components/admin/prospects/PendingApproval";
 import { formatWhen } from "@/lib/format";
 import { STATUS_LABELS } from "@/lib/prospects/model.mjs";
 import { BUSINESS_POSTAL_ADDRESS } from "@/lib/prospects/research.mjs";
@@ -74,6 +75,7 @@ export default async function ProspectDetailPage({
       />
       <EmailHistory prospect={prospect} activity={detail.activity} mailingAddress={BUSINESS_POSTAL_ADDRESS} />
       <QueueControls id={prospect.id} status={prospect.status} />
+      <SingleProspectApproval row={prospect} />
       <ResearchProspectButton prospectId={prospect.id} />
       <ResearchPreview prospect={prospect} />
       <ProspectEditor prospect={prospect} researchedOn={researchedOn(prospect.researched_at)} />

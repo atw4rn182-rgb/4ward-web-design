@@ -57,6 +57,7 @@ import { deliveryShortfall, discoveryNeed, findingFromReading, outreachRank, rea
 import { classifyCandidate, discoverCandidates, isDirectoryHost } from "../lib/prospects/lookup.mjs";
 import { IMPORT_ROW_LIMIT, classifyImport, parseProspectList, splitImportText } from "../lib/prospects/import.mjs";
 import { assignQueueTimes, compareAndSetRun, estimatedSendDates, needsMoreVerified, slotsAfterAttempt } from "../lib/prospects/queue.mjs";
+import { approvalDecision, approvedResearchNote } from "../lib/prospects/approval.mjs";
 import { claimResend, groupDuplicateReviews, resendCanPass, resendSafeguard } from "../lib/prospects/duplicates.mjs";
 import { contactHistoryRecord, emailIdentity, findRecipientMatch, recordsFromExisting } from "../lib/prospects/identity.mjs";
 import { nextResearchRun } from "../lib/prospects/model.mjs";
@@ -789,6 +790,85 @@ await check("duplicate review is grouped and a resend stays one weekday message"
   assert.equal(pass, true);
   assert.equal(resendCanPass({ notes: "Resend authorized once." }, { record: { source: "customer" } }), false);
   assert.equal(resendCanPass({ notes: "Resend authorized once." }, { record: { source: "suppression", reason: "removed" } }), false);
+});
+
+await check("approval requires a complete area record and keeps safeguards", () => {
+  const ready = approvalDecision({
+    id: "shop",
+    business_name: "North Shop",
+    city: "Carlsbad",
+    public_email: "owner@gmail.com",
+    status: "queued",
+    notes: "Imported business contact. The email was not independently verified.",
+  });
+  assert.equal(ready.ok, true);
+  const missing = approvalDecision({ id: "new", business_name: "Odessa Welding Service LLC", public_email: "owner@gmail.com", status: "queued" });
+  assert.equal(missing.ok, false);
+  assert.deepEqual(missing.reasons, ["A location is missing."]);
+  const outside = approvalDecision({ id: "tx", business_name: "Dallas Shop", city: "Dallas", public_email: "owner@gmail.com", status: "queued" });
+  assert.match(outside.reasons.join(" "), /outside New Mexico and West Texas/);
+  const blocked = approvalDecision({
+    id: "held",
+    business_name: "Held Shop",
+    city: "Hobbs",
+    public_email: "held@gmail.com",
+    status: "researching",
+    notes: "Duplicate review. Held out of automatic sending.",
+  }, {
+    customers: [{ email: "buyer@shop.example" }],
+    suppressions: [{ email: "stop@shop.example", reason: "opted out", prospect_id: "other" }],
+  });
+  assert.match(blocked.reasons.join(" "), /Duplicate review/);
+  const customer = approvalDecision({
+    id: "buyer",
+    business_name: "Buyer Shop",
+    city: "Hobbs",
+    public_email: "buyer@shop.example",
+    status: "queued",
+  }, { customers: [{ email: "buyer@shop.example" }] });
+  assert.match(customer.reasons.join(" "), /existing customer/);
+  const opted = approvalDecision({
+    id: "quiet",
+    business_name: "Quiet Shop",
+    city: "Hobbs",
+    public_email: "stop@shop.example",
+    status: "queued",
+  }, { suppressions: [{ email: "stop@shop.example", reason: "opted out", prospect_id: "other" }] });
+  assert.match(opted.reasons.join(" "), /suppressed or opted out/);
+  const queuedMarker = approvalDecision({
+    id: "same",
+    business_name: "Same Shop",
+    city: "Hobbs",
+    public_email: "same@shop.example",
+    status: "queued",
+  }, { suppressions: [{ email: "same@shop.example", reason: "queued", prospect_id: "same" }] });
+  assert.equal(queuedMarker.ok, true);
+  const once = approvalDecision({ id: "test", business_name: "Test", city: "Carlsbad", public_email: "nereecerodriguez956@gmail.com", status: "queued" });
+  assert.match(once.reasons.join(" "), /one-time test address/);
+  const uncertain = approvalDecision({
+    id: "unsure",
+    business_name: "Unsure Shop",
+    city: "Carlsbad",
+    public_email: "unsure@gmail.com",
+    status: "researching",
+    notes: "Held for review. Gmail's response was uncertain.",
+  });
+  assert.match(uncertain.reasons.join(" "), /uncertain/);
+  const closed = approvalDecision({
+    id: "closed",
+    business_name: "Closed Shop",
+    city: "Carlsbad",
+    public_email: "closed@gmail.com",
+    status: "queued",
+    notes: "The business is closed.",
+  });
+  assert.match(closed.reasons.join(" "), /closed/);
+  const invalid = approvalDecision({ id: "bad", business_name: "Bad Shop", city: "Carlsbad", public_email: "not-an-email", status: "queued" });
+  assert.match(invalid.reasons.join(" "), /not valid/);
+  const note = approvedResearchNote("Imported business contact. The email was not independently verified.", "4wardwebdesigns@gmail.com", "2026-11-08T22:00:00.000Z");
+  assert.match(note, /Admin approved by 4wardwebdesigns@gmail.com at 2026-11-08T22:00:00.000Z/);
+  assert.match(note, /not independently verified/);
+  assert.doesNotMatch(note, /(?<!not )independently verified/);
 });
 
 await check("prospect admin code does not send mail or store a password", () => {

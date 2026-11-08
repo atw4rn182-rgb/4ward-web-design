@@ -33,6 +33,7 @@ import { readOwnWebsite, researchFromRecord } from "@/lib/prospects/research-run
 import { classifyImport, importNotes, parseProspectList } from "@/lib/prospects/import.mjs";
 import { duplicateDecision, emailIdentity, findRecipientMatch, rememberContact } from "@/lib/prospects/identity.mjs";
 import { assignQueueTimes, QUEUE_PAUSE_NOTE } from "@/lib/prospects/queue.mjs";
+import { approvalDecision, approvedResearchNote } from "@/lib/prospects/approval.mjs";
 import { DUPLICATE_DISMISSED_NOTE, DUPLICATE_REVIEW_NOTE, RESEND_ONCE_NOTE, claimResend, duplicateReviewNotes, groupDuplicateReviews, resendSafeguard } from "@/lib/prospects/duplicates.mjs";
 
 export type ImportPreviewRow = {
@@ -61,13 +62,17 @@ export type ProspectActionState = {
   preview?: ImportPreviewRow[];
   summary?: { imported: number; skipped: number; review: number; ready: number; batchId: string };
   counts?: { import: number; skip: number; review: number };
+  approval?: {
+    approved: { id: string; name: string; email: string }[];
+    blocked: { id: string; name: string; email: string; reasons: string[] }[];
+  };
 };
 
 async function adminWriteClient() {
   const user = await getAdminUser();
-  if (!user) return { error: "Unauthorized.", client: null };
+  if (!user) return { error: "Unauthorized.", client: null, user: null };
   const client = createServiceClient() || (await createClient());
-  return { error: null as string | null, client };
+  return { error: null as string | null, client, user };
 }
 
 function missingFunction(error: { code?: string; message?: string } | null) {
@@ -1105,4 +1110,72 @@ export async function authorizeResendAction(_prev: ProspectActionState, formData
   });
   revalidateProspects();
   return { ok: true, message: `One resend to ${email} is in the weekday queue. Previous send: ${context.review.previousSendAt}. No email was sent now.` };
+}
+
+export async function approveProspectsAction(_prev: ProspectActionState, formData: FormData): Promise<ProspectActionState> {
+  const { error, client, user } = await adminWriteClient();
+  if (error || !client || !user) return { error: error || "Unauthorized." };
+  if (String(formData.get("confirmApprove") || "") !== "on") {
+    return { error: "Confirm the approval. Nothing was changed." };
+  }
+  const ids = [...new Set(formData.getAll("id").map((value) => String(value || "")))]
+    .filter((id) => /^[0-9a-f-]{36}$/i.test(id))
+    .slice(0, 25);
+  if (!ids.length) return { error: "Select a prospect. Nothing was changed." };
+  const { data: rows, error: readError } = await client
+    .from("prospects")
+    .select("id,business_name,city,service_area,public_email,secondary_email,status,sent_at,notes,research_notes,gbp_observations,outreach_eligible")
+    .in("id", ids);
+  if (readError || !rows) return { error: "The prospects could not be loaded. Nothing was changed." };
+  const emails = [...new Set(rows.flatMap((row) => [row.public_email, row.secondary_email].map((value) => String(value || "").trim().toLowerCase()).filter(Boolean)))];
+  const emailFilter = emails.map((email) => `email.ilike.${email}`).join(",");
+  const [{ data: customers }, { data: suppressions }, { data: uncertain }] = await Promise.all([
+    emailFilter ? client.from("customers").select("email").or(emailFilter).limit(25) : Promise.resolve({ data: [] }),
+    emailFilter ? client.from("prospect_suppressions").select("prospect_id,email,reason").or(emailFilter).limit(50) : Promise.resolve({ data: [] }),
+    client.from("prospect_activity").select("prospect_id").in("prospect_id", ids).eq("event_type", "gmail_uncertain").limit(25),
+  ]);
+  const uncertainIds = new Set((uncertain || []).map((item) => item.prospect_id));
+  const approver = String(user.email || "the signed-in administrator");
+  const approvedAt = new Date().toISOString();
+  const approved: { id: string; name: string; email: string }[] = [];
+  const blocked: { id: string; name: string; email: string; reasons: string[] }[] = [];
+  const found = new Set(rows.map((row) => row.id));
+  for (const id of ids.filter((item) => !found.has(item))) {
+    blocked.push({ id, name: "This business", email: "An email address is missing.", reasons: ["Prospect not found. Nothing was changed."] });
+  }
+  for (const row of rows) {
+    const decision = approvalDecision(row, {
+      customers: customers || [],
+      suppressions: suppressions || [],
+      uncertain: uncertainIds.has(row.id),
+    });
+    if (!decision.ok) {
+      blocked.push({ id: row.id, name: decision.name, email: decision.email, reasons: decision.reasons });
+      continue;
+    }
+    const { data: updated, error: updateError } = await client.from("prospects").update({
+      status: "ready",
+      outreach_eligible: true,
+      ready_at: approvedAt,
+      last_activity_at: approvedAt,
+      research_notes: approvedResearchNote(row.research_notes, approver, approvedAt),
+    }).eq("id", row.id).in("status", ["queued", "researching"]).is("sent_at", null).select("id");
+    if (updateError || !updated?.length) {
+      blocked.push({ id: row.id, name: decision.name, email: decision.email, reasons: ["This prospect is already Ready."] });
+      continue;
+    }
+    await client.from("prospect_activity").insert({
+      prospect_id: row.id,
+      event_type: "admin_approved",
+      from_status: row.status,
+      to_status: "ready",
+      note: `Admin approved by ${approver} at ${approvedAt}. No email was sent.`.slice(0, 500),
+    });
+    approved.push({ id: row.id, name: decision.name, email: decision.email });
+  }
+  revalidateProspects();
+  const message = approved.length
+    ? `Approved ${approved.length}. ${blocked.length} could not be approved. No email was sent.`
+    : "No records were approved. No email was sent.";
+  return { ok: approved.length > 0, message, approval: { approved, blocked } };
 }
