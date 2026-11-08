@@ -413,7 +413,7 @@ function settingsSavedMessage(
   targetLocked: boolean
 ) {
   const pause = value.automation_enabled
-    ? "Automation is marked on. The scheduler is still off, so no emails will be sent."
+    ? "Automation is on. Weekday sending stays at 9:00 AM America/Denver."
     : "Automation is paused. No emails will be sent.";
   if (targetLocked) {
     return `${pause} The daily target is still locked at 5 until migration 013 is approved. Nothing was sent.`;

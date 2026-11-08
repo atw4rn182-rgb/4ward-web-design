@@ -181,24 +181,7 @@ export const getProspectDashboard = cache(async function getProspectDashboard(in
     p_offset: input.offset,
   });
 
-  if (missingFunction(error)) return dashboardFromTables(input);
-
-  if (error || !data) {
-    return {
-      data: {
-        rows: [],
-        total: 0,
-        counts: emptyCounts,
-        settings: null,
-        usage: [],
-        limit: PAGE_SIZE,
-        offset: input.offset,
-        requests: QUERY_BUDGET_PER_VIEW,
-      },
-      missing: missingTable(error),
-      requests: QUERY_BUDGET_PER_VIEW,
-    };
-  }
+  if (error || !data?.settings) return dashboardFromTables(input);
 
   const payload = data as ProspectDashboard;
   return {
