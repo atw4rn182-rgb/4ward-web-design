@@ -27,12 +27,24 @@ import {
   suppressionMatches,
 } from "@/lib/prospects/research.mjs";
 import { readOwnWebsite, researchFromRecord } from "@/lib/prospects/research-run.mjs";
+import { classifyImport, parseProspectList } from "@/lib/prospects/import.mjs";
+
+export type ImportPreviewRow = {
+  line: number;
+  name: string;
+  email: string;
+  source: string;
+  result: "import" | "skip" | "review";
+  message: string;
+};
 
 export type ProspectActionState = {
   ok?: boolean;
   error?: string;
   message?: string;
   weekdayTarget?: number;
+  preview?: ImportPreviewRow[];
+  summary?: { imported: number; skipped: number; review: number; batchId: string };
 };
 
 async function adminWriteClient() {
@@ -669,5 +681,92 @@ export async function researchQueueAction(_prev: ProspectActionState): Promise<P
   return {
     ok: true,
     message: `Researched ${researched}. Suppressed ${suppressed}. Failed ${failed}. Skipped ${batch.skipped.length} duplicates or closed records. The batch stops at ${RESEARCH_BATCH_LIMIT} businesses and ${RESEARCH_DEADLINE_MS / 1000} seconds. No email was sent.`,
+  };
+}
+
+async function importContext(client: SupabaseClient) {
+  const [prospects, customers, suppressions] = await Promise.all([
+    client.from("prospects").select("business_name,public_email,status,sent_at").limit(2000),
+    client.from("customers").select("email").limit(2000),
+    client.from("prospect_suppressions").select("email").limit(2000),
+  ]);
+  const error = prospects.error || customers.error || suppressions.error;
+  if (error) return { error: "The existing records could not be checked. Nothing was imported.", existing: null };
+  return {
+    error: "",
+    existing: {
+      prospects: (prospects.data || []).map((row) => ({
+        name: row.business_name || "",
+        email: String(row.public_email || "").toLowerCase(),
+        status: row.status || "",
+        sentAt: row.sent_at || "",
+      })),
+      customers: (customers.data || []).map((row) => String(row.email || "").toLowerCase()).filter(Boolean),
+      suppressions: (suppressions.data || []).map((row) => String(row.email || "").toLowerCase()).filter(Boolean),
+    },
+  };
+}
+
+async function reviewedPaste(client: SupabaseClient, paste: string) {
+  const parsed = parseProspectList(paste);
+  if (parsed.error) return { error: parsed.error, review: null };
+  const context = await importContext(client);
+  if (context.error || !context.existing) return { error: context.error || "The existing records could not be checked. Nothing was imported.", review: null };
+  return { error: "", review: classifyImport(parsed.rows, context.existing) };
+}
+
+export async function previewProspectImportAction(_prev: ProspectActionState, formData: FormData): Promise<ProspectActionState> {
+  const { error, client } = await adminWriteClient();
+  if (error || !client) return { error: error || "Unauthorized." };
+  const checked = await reviewedPaste(client, String(formData.get("paste") || ""));
+  if (checked.error || !checked.review) return { error: checked.error || "The paste could not be checked. Nothing was imported." };
+  const counts = checked.review.counts;
+  return {
+    ok: true,
+    message: `${counts.import} can be imported, ${counts.skip} will be skipped, and ${counts.review} need review. Nothing has been saved.`,
+    preview: checked.review.rows,
+  };
+}
+
+export async function importProspectListAction(_prev: ProspectActionState, formData: FormData): Promise<ProspectActionState> {
+  const { error, client } = await adminWriteClient();
+  if (error || !client) return { error: error || "Unauthorized." };
+  if (String(formData.get("confirmImport") || "") !== "on") {
+    return { error: "Confirm the import before saving. Nothing was imported." };
+  }
+  const checked = await reviewedPaste(client, String(formData.get("paste") || ""));
+  if (checked.error || !checked.review) return { error: checked.error || "The paste could not be checked. Nothing was imported." };
+  const batchId = crypto.randomUUID();
+  const importedOn = new Date().toISOString();
+  let imported = 0;
+  for (const row of checked.review.rows) {
+    if (row.result !== "import") continue;
+    const { data: created, error: insertError } = await client.from("prospects").insert({
+      business_name: row.name,
+      public_email: row.email,
+      website_url: row.source || null,
+      research_sources: row.source || null,
+      status: "queued",
+      source: "manual",
+      manual_priority: true,
+      outreach_eligible: false,
+      notes: `Imported ${importedOn}. Batch ${batchId}. Pending research. A name and email were pasted and were not verified. No email was sent.`.slice(0, 1000),
+    }).select("id").maybeSingle();
+    if (insertError || !created?.id) continue;
+    await client.from("prospect_activity").insert({
+      prospect_id: created.id,
+      event_type: "queued",
+      to_status: "queued",
+      note: `Pasted import ${batchId}. Pending research. No email was sent.`.slice(0, 500),
+    });
+    imported += 1;
+  }
+  revalidateProspects();
+  const skipped = checked.review.counts.skip + (checked.review.counts.import - imported);
+  return {
+    ok: true,
+    message: `Imported ${imported} as Pending research. Skipped ${skipped}. ${checked.review.counts.review} need review. Batch ${batchId}. No email was sent.`,
+    summary: { imported, skipped, review: checked.review.counts.review, batchId },
+    preview: checked.review.rows,
   };
 }

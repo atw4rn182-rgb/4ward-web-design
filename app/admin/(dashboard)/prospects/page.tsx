@@ -4,6 +4,7 @@ import { StatCard } from "@/components/admin/StatCard";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { AdminTableScroll } from "@/components/admin/AdminTableScroll";
 import { AddBusinessForm } from "@/components/admin/prospects/AddBusinessForm";
+import { PasteProspectList } from "@/components/admin/prospects/PasteProspectList";
 import { OutreachSettingsForm } from "@/components/admin/prospects/OutreachSettingsForm";
 import { ProspectFilters } from "@/components/admin/prospects/ProspectFilters";
 import { formatWhen } from "@/lib/format";
@@ -156,6 +157,7 @@ export default async function ProspectsPage({
 
       <ResearchQueueButton awaiting={counts.awaitingResearch} unavailable={schemaMissing} />
       <AddBusinessForm unavailable={schemaMissing} />
+      <PasteProspectList unavailable={schemaMissing} />
       <div id="prospect-list">
         <ProspectFilters q={q} status={status} />
       </div>

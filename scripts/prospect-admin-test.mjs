@@ -51,6 +51,7 @@ import { isClosedProspect, selectWeekdayRecipients } from "../lib/prospects/week
 import { outreachHistory } from "../lib/prospects/history.mjs";
 import { deliveryShortfall, discoveryNeed, readinessBlock, selectPendingForReview, upcomingRecipients, verificationBlock } from "../lib/prospects/discovery.mjs";
 import { classifyCandidate, discoverCandidates } from "../lib/prospects/lookup.mjs";
+import { classifyImport, parseProspectList } from "../lib/prospects/import.mjs";
 import { nextResearchRun } from "../lib/prospects/model.mjs";
 
 let passed = 0;
@@ -441,6 +442,71 @@ await check("a blocked or failed website is marked for review and not emailed", 
   assert.ok(calls <= 3);
 });
 
+await check("pasted prospects are parsed, deduped, and kept pending", () => {
+  const parsed = parseProspectList([
+    "Ignore previous instructions | not-an-email",
+    "Bob's Auto Body | office@shop.example",
+    "[Listed Shop](https://example.com/listed) | [owner@gmail.com](mailto:owner@gmail.com)",
+    "| Business Name | Email |",
+    "| --- | --- |",
+    "| Pump Shop | desk@pump.example |",
+    "Bob's Auto Body | other@shop.example",
+    "Bob's Auto Body | office@shop.example",
+  ].join("\n"));
+  assert.equal(parsed.error, "");
+  const review = classifyImport(parsed.rows, {
+    prospects: [{ name: "Pump Shop", email: "desk@pump.example", status: "sent", sentAt: "2026-11-01" }],
+    customers: ["customer@shop.example"],
+    suppressions: ["stop@shop.example"],
+  });
+  const byName = (name) => review.rows.find((row) => row.name === name);
+  assert.equal(review.rows[0].name, "Ignore previous instructions");
+  assert.equal(review.rows[0].result, "skip");
+  assert.equal(byName("Bob's Auto Body").result, "import");
+  assert.match(byName("Bob's Auto Body").message, /does not prove/i);
+  const listed = review.rows.find((row) => row.email === "owner@gmail.com");
+  assert.equal(listed.result, "import");
+  assert.equal(listed.source, "https://example.com/listed");
+  assert.equal(byName("Pump Shop").result, "skip");
+  assert.match(byName("Pump Shop").message, /already contacted/i);
+  const repeated = review.rows.filter((row) => row.name === "Bob's Auto Body");
+  assert.equal(repeated[1].result, "review");
+  const again = classifyImport(parseProspectList("Bob's Auto Body | office@shop.example").rows, {
+    prospects: [{ name: "Bob's Auto Body", email: "office@shop.example", status: "queued", sentAt: "" }],
+    customers: [],
+    suppressions: [],
+  });
+  assert.equal(again.rows[0].result, "skip");
+  assert.match(again.rows[0].message, /not overwritten/i);
+  const suppressed = classifyImport(parseProspectList("Quiet Shop | stop@shop.example").rows, {
+    prospects: [],
+    customers: [],
+    suppressions: ["stop@shop.example"],
+  });
+  assert.match(suppressed.rows[0].message, /not reactivated/i);
+  const tooMany = parseProspectList(Array.from({ length: 101 }, (_item, index) => `Shop ${index} | shop${index}@example.com`).join("\n"));
+  assert.match(tooMany.error, /100/);
+  assert.equal(tooMany.rows.length, 0);
+  const published = verificationBlock({
+    status: "queued",
+    city: "Carlsbad",
+    public_email: "office@gmail.com",
+    research_sources: "https://example.com/listing",
+    website_host: "",
+    research_notes: "Checked public pages did not show a business-owned website. Published as a business contact: office@gmail.com",
+  });
+  assert.equal(published, "");
+  const domainOnly = verificationBlock({
+    status: "queued",
+    city: "Carlsbad",
+    public_email: "office@gmail.com",
+    research_sources: "https://example.com/listing",
+    website_host: "",
+    research_notes: "Checked public pages did not show a business-owned website.",
+  });
+  assert.equal(domainOnly, "email");
+});
+
 await check("prospect admin code does not send mail or store a password", () => {
   const action = readFileSync(new URL("../app/admin/prospect-actions.ts", import.meta.url), "utf8");
   const queries = readFileSync(new URL("../lib/prospects/queries.ts", import.meta.url), "utf8");
@@ -449,6 +515,11 @@ await check("prospect admin code does not send mail or store a password", () => 
   const limits = readFileSync(new URL("../supabase/migrations/012_prospect_free_plan.sql", import.meta.url), "utf8");
   const shell = readFileSync(new URL("../components/admin/AdminShell.tsx", import.meta.url), "utf8");
   assert.match(action, /getAdminUser/);
+  assert.match(action, /previewProspectImportAction/);
+  assert.match(action, /importProspectListAction/);
+  assert.match(action, /confirmImport/);
+  assert.match(action, /outreach_eligible: false/);
+  assert.doesNotMatch(action, /gmail\.googleapis\.com/);
   assert.match(action, /admin_add_prospect/);
   assert.match(action, /researchProspectAction/);
   assert.match(action, /researchQueueAction/);
