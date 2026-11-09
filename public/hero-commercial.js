@@ -144,6 +144,16 @@
     measureBackdrop();
   }
 
+  function paintStillBackdrop() {
+    measureBackdrop();
+    if (!ctx || !poster || !poster.naturalWidth) return;
+    try {
+      ctx.drawImage(poster, 0, 0, canvas.width, canvas.height);
+    } catch (_) {
+      /* ignore */
+    }
+  }
+
   function showPoster() {
     if (playbackState === "active" || playbackState === "finished") return;
     playbackState = "poster";
@@ -151,7 +161,11 @@
     if (progress) progress.style.transform = "scaleX(0)";
     layer.classList.add("is-active", "is-poster");
     layer.setAttribute("aria-hidden", "false");
-    if (poster && poster.getAttribute("src")) return;
+    if (poster && poster.getAttribute("src")) {
+      if (poster.complete && poster.naturalWidth > 0) paintStillBackdrop();
+      else poster.addEventListener("load", paintStillBackdrop, { once: true });
+      return;
+    }
     load();
     if (video.readyState >= 2) paintPoster();
     else video.addEventListener("loadeddata", paintPoster, { once: true });
