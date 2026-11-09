@@ -268,6 +268,7 @@
   const offerAttestRow = document.getElementById("offer-attest-row");
   const offerServiceRow = document.getElementById("offer-service-row");
   let previewRequest = 0;
+  let previewTimer = 0;
 
   function selectedOfferPayload() {
     return {
@@ -377,6 +378,9 @@
     writeSummary(isMonthly ? money(monthlyTotal) : "Included in buy-out", dueLabel, thenLabel);
     const requestId = ++previewRequest;
     const offerPayload = selectedOfferPayload();
+    clearTimeout(previewTimer);
+    previewTimer = setTimeout(() => {
+    if (requestId !== previewRequest) return;
     fetch("/api/offer-preview", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -400,6 +404,7 @@
         writeSummary(firstMonth, data.dueLabel, data.thenLabel);
       })
       .catch(() => {});
+    }, 450);
   }
 
   function setStep(step) {

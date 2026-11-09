@@ -147,11 +147,12 @@
   function showPoster() {
     if (playbackState === "active" || playbackState === "finished") return;
     playbackState = "poster";
-    load();
     silence();
     if (progress) progress.style.transform = "scaleX(0)";
     layer.classList.add("is-active", "is-poster");
     layer.setAttribute("aria-hidden", "false");
+    if (poster && poster.getAttribute("src")) return;
+    load();
     if (video.readyState >= 2) paintPoster();
     else video.addEventListener("loadeddata", paintPoster, { once: true });
   }

@@ -660,9 +660,15 @@
         status.textContent = ready
           ? "Checking the first-month total…"
           : "Add the required details to show how this offer applies.";
-        refreshPlanTotals(ready);
+        clearTimeout(previewTimer);
+        if (!ready) {
+          refreshPlanTotals(false);
+          return;
+        }
+        previewTimer = setTimeout(() => refreshPlanTotals(true), 450);
       };
       let priceRequest = 0;
+      let previewTimer = 0;
       document.querySelectorAll(".plan-due").forEach((due) => {
         if (!due.dataset.standardDue) due.dataset.standardDue = due.textContent.trim();
       });
