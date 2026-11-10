@@ -20,7 +20,12 @@ const nextConfig = {
     ];
   },
   async rewrites() {
-    return [{ source: "/", destination: "/index.html" }];
+    return [
+      { source: "/", destination: "/index.html" },
+      { source: "/examples/desert-sunrise-coffee", destination: "/examples/desert-sunrise-coffee.html" },
+      { source: "/examples/canyon-trail-outfitters", destination: "/examples/canyon-trail-outfitters.html" },
+      { source: "/examples/canyon-trail-outfitters/:path*", destination: "/examples/canyon-trail-outfitters.html" },
+    ];
   },
   async headers() {
     return [
@@ -41,6 +46,18 @@ const nextConfig = {
             value: "public, max-age=31536000, immutable",
           },
         ],
+      },
+      {
+        source: "/examples/desert-sunrise-coffee",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/examples/canyon-trail-outfitters",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/examples/canyon-trail-outfitters/:path*",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
       {
         source: "/:path*.html",
