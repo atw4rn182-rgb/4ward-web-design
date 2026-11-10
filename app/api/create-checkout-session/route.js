@@ -34,42 +34,55 @@ import {
 const TIERS = {
   tier1: {
     id: "tier1",
-    name: "Tier 1 — Single Page Website",
+    name: "Tier 1 — Small Business Starter",
     amount: 9900,
     mode: "subscription",
   },
   tier2: {
     id: "tier2",
-    name: "Tier 2 — Two-Page Customized Site",
+    name: "Tier 2 — E-Commerce & Business Management",
     amount: 22500,
     mode: "subscription",
   },
   tier3: {
     id: "tier3",
-    name: "Tier 3 — Multi-Page Multi-Department Website",
+    name: "Tier 3 — Advanced Multi-Department Business",
     amount: 39900,
+    mode: "subscription",
+  },
+  tier4: {
+    id: "tier4",
+    name: "Tier 4 — Online Flyer",
+    amount: 4400,
     mode: "subscription",
   },
   "buyout-tier1": {
     id: "buyout-tier1",
-    name: "Tier 4 Buy-Out — 2 years of Tier 1",
+    name: "Upfront buyout — 2 years of Tier 1",
     amount: 9900 * 24,
     mode: "payment",
     baseTier: "tier1",
   },
   "buyout-tier2": {
     id: "buyout-tier2",
-    name: "Tier 4 Buy-Out — 2 years of Tier 2",
+    name: "Upfront buyout — 2 years of Tier 2",
     amount: 22500 * 24,
     mode: "payment",
     baseTier: "tier2",
   },
   "buyout-tier3": {
     id: "buyout-tier3",
-    name: "Tier 4 Buy-Out — 2 years of Tier 3",
+    name: "Upfront buyout — 2 years of Tier 3",
     amount: 39900 * 24,
     mode: "payment",
     baseTier: "tier3",
+  },
+  "buyout-tier4": {
+    id: "buyout-tier4",
+    name: "Upfront buyout — 2 years of Tier 4",
+    amount: 4400 * 24,
+    mode: "payment",
+    baseTier: "tier4",
   },
 };
 
@@ -81,6 +94,7 @@ const PRICE_ENV = {
   tier1: "STRIPE_PRICE_TIER1",
   tier2: "STRIPE_PRICE_TIER2",
   tier3: "STRIPE_PRICE_TIER3",
+  tier4: "STRIPE_PRICE_TIER4",
 };
 
 const ACCEPTED_AGREEMENT_VERSIONS = new Set(["service-agreement-v1"]);
@@ -93,7 +107,17 @@ const PRE_CHECKOUT_SUPABASE_TIMEOUT_MS = 6000;
 const PENDING_PAYMENT_SUPABASE_TIMEOUT_MS = 4000;
 
 function normalizeAddOns(raw, tier) {
-  return normalizeAddOnIds(raw, tier && tier.mode);
+  const ids = normalizeAddOnIds(raw, tier && tier.mode);
+  if (tier && tier.id === "tier4") return ids.filter((id) => id !== "admin_dashboard");
+  return ids;
+}
+
+function websiteLanguageCode(body) {
+  const choice = sanitize(body && body.websiteLanguages, 20);
+  const single = sanitize(body && body.websiteLanguage, 10);
+  if (choice === "both") return "en-es";
+  if (choice === "one" && (single === "en" || single === "es")) return single;
+  return "";
 }
 
 function recurringAddonLineItem(index, { id, name, amount }) {
@@ -395,6 +419,7 @@ async function saveOnboardingRecord(record, options = {}) {
         onboarding_ref: record.onboardingRef,
         agreement_version: record.agreementVersion,
         agreement_signed_at: record.agreementSignedAt,
+        website_languages: record.websiteLanguages || "",
       },
     };
 
@@ -522,6 +547,13 @@ export async function POST(request) {
     return json(400, { error: "Third-choice domain is not a valid domain name." });
   }
 
+  const websiteLanguages = websiteLanguageCode(body);
+  if (!websiteLanguages) {
+    return json(400, {
+      error: "Choose English and Spanish, or one language, before continuing to payment.",
+    });
+  }
+
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return json(400, { error: "Invalid email address" });
   }
@@ -606,6 +638,7 @@ export async function POST(request) {
     domain_preferred: domainPreferred,
     domain_second_choice: domainSecondChoice || "",
     domain_third_choice: domainThirdChoice || "",
+    website_languages: websiteLanguages,
     offer: offer.offer,
     offer_address: offer.address,
     offer_attested: offer.attested ? "yes" : "no",
@@ -628,6 +661,7 @@ export async function POST(request) {
       domainPreferred,
       domainSecondChoice,
       domainThirdChoice,
+      websiteLanguages,
       onboardingRef,
       agreementVersion,
       agreementSignedAt,

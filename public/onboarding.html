@@ -20,7 +20,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=x46promo" />
+  <link rel="stylesheet" href="styles.css?v=x47tiers" />
   <link rel="icon" href="assets/favicon.png?v=5" type="image/png" sizes="64x64" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=5" />
@@ -116,15 +116,15 @@
             <p><strong>Effective version:</strong> service-agreement-v1 · Carlsbad, New Mexico</p>
             <p>This Service Agreement (“Agreement”) is between <strong>4Ward Web Design, LLC</strong> (“Provider”) and the client identified during onboarding (“Client”).</p>
             <h4>1. Services</h4>
-            <p>Provider will design, develop, host, and maintain a website according to the Client’s selected tier. Every paid monthly tier is a full online overhaul: professional website, Google Business Profile setup, and a local SEO (Search Engine Optimization) foundation, plus hosting, development/creation, and ongoing maintenance within the included monthly update allowance.</p>
+            <p>Provider will design, develop, host, and maintain a website according to the Client’s selected tier, as described for that tier on the pricing page. Tier 1, Tier 2, and Tier 3 include Google Business Profile setup. Tier 4 — Online Flyer does not. Hosting and routine maintenance continue while a monthly subscription remains active, within that tier’s update allowance.</p>
             <h4>2. Fees &amp; billing</h4>
-            <p>A one-time <strong>$200 Launch Fee</strong> applies to all tiers and covers initial consultation, custom design/setup, domain/DNS if needed, basic on-page SEO, Google Analytics, contact forms, mobile optimization, testing, and onboarding. Client also authorizes recurring monthly charges for the selected subscription tier, or a one-time buy-out payment when Tier 4 is selected. Fees are billed through Stripe. Optional recurring website add-ons selected during onboarding (Monthly Performance Reports and/or Private Admin Dashboard) are added to the monthly subscription shown before payment. The Private Admin Dashboard is a private back-office feature — not customer-facing — and requires additional setup and ongoing maintenance. One-time or custom services (logo, print, chatbot, extra pages, extra updates) are quoted separately and billed with a Stripe payment link. Extra updates beyond the included monthly allowance that are not purchased as a quote are billed separately at the rates listed for that tier.</p>
+            <p>A one-time <strong>$200 Launch Fee</strong> applies to all tiers and covers initial consultation, custom design/setup, domain/DNS if needed, basic on-page SEO, Google Analytics, contact forms where the tier includes them, mobile optimization, testing, and onboarding. A standard domain registration is included only where the selected tier says so. Premium and aftermarket domains are not included. Client also authorizes recurring monthly charges for the selected subscription, or one upfront buyout payment of 24 months plus the launch fee. Monthly billing does not end automatically after 24 months. Fees are billed through Stripe. Optional recurring website add-ons selected during onboarding (Monthly Performance Reports and/or Private Admin Dashboard) are added to the monthly subscription shown before payment. The Private Admin Dashboard is not included with Tier 4. It is a private back-office feature — not customer-facing — and requires additional setup and ongoing maintenance. One-time or custom services (logo, print, chatbot, extra pages, extra updates) are quoted separately and billed with a Stripe payment link. Extra updates beyond the included monthly allowance that are not purchased as a quote are billed separately at the rates listed for that tier. English and Spanish, when requested, are included at no extra charge.</p>
             <h4>3. Client responsibilities</h4>
             <p>Client will provide accurate business information, logos, photos, copy, and timely feedback. Delays in Client materials may extend delivery timelines.</p>
             <h4>4. Intellectual property</h4>
             <p>Until all amounts due are paid, Provider retains rights in unfinished work product. After payment of amounts due under a buy-out, ownership of the delivered website design/content created specifically for Client transfers as described for that package. Subscription clients receive a license to use the live site while their account remains in good standing.</p>
             <h4>5. Term &amp; cancellation</h4>
-            <p>Monthly subscriptions continue until canceled. Client may cancel future billing through Provider with notice before the next renewal. The $200 launch fee is nonrefundable. The first monthly subscription payment may be refunded within 14 days if the client changes their mind. Later monthly payments that have already been processed are nonrefundable except where required by law.</p>
+            <p>Monthly subscriptions continue until canceled. They do not end automatically after 24 months. Client may cancel future billing through Provider with notice before the next renewal. The $200 launch fee is nonrefundable. The first monthly subscription payment may be refunded within 14 days of the original purchase if the client changes their mind. That 14-day period starts at purchase, not at website preview or completion. It does not apply to an upfront buyout. Later monthly payments that have already been processed are nonrefundable except where required by law. An upfront buyout pays 24 months plus the launch fee at once and transfers ownership of the delivered website as described above. Later hosting, domain renewal, support, and content updates are not included unless arranged separately.</p>
             <h4>6. Limitation of liability</h4>
             <p>Services are provided professionally and in good faith. Provider is not liable for indirect or consequential damages. Total liability under this Agreement is limited to fees paid by Client to Provider in the three (3) months preceding a claim.</p>
             <h4>7. Acceptance</h4>
@@ -148,19 +148,44 @@
 
         <section class="onboard-step" data-step="2" aria-labelledby="step2-heading" hidden>
           <h2 id="step2-heading">What’s included in your plan</h2>
-          <p class="onboard-step-lead">Confirm the tier you want. Every plan includes a $200 one-time Launch Fee. Monthly tiers (1–3) can add optional recurring add-ons below — Monthly Performance Reports ($20/mo) and/or Private Admin Dashboard ($50/mo). You’ll see the updated monthly total and first payment before checkout.</p>
+          <p class="onboard-step-lead">Confirm the package you want. Every plan includes a $200 one-time setup fee. Monthly plans can add optional recurring add-ons below, except the Admin Dashboard is not available on Tier 4. You’ll see the updated total before checkout.</p>
 
           <div class="form-row">
             <label for="tier-select">Chosen tier</label>
             <select id="tier-select" name="chosenTier" required>
-              <option value="tier1">Tier 1 — Single Page Website ($99/mo)</option>
-              <option value="tier2">Tier 2 — Two-Page Customized Site ($225/mo)</option>
-              <option value="tier3">Tier 3 — Multi-Page Multi-Department (from $399/mo)</option>
-              <option value="buyout-tier1">Tier 4 Buy-Out — 2 years of Tier 1 ($2,376)</option>
-              <option value="buyout-tier2">Tier 4 Buy-Out — 2 years of Tier 2 ($5,400)</option>
-              <option value="buyout-tier3">Tier 4 Buy-Out — 2 years of Tier 3 ($9,576)</option>
+              <option value="tier4">Tier 4 — Online Flyer ($44/mo, or $1,256 upfront)</option>
+              <option value="tier3">Tier 3 — Advanced Multi-Department Business ($399/mo)</option>
+              <option value="tier2">Tier 2 — E-Commerce &amp; Business Management ($225/mo)</option>
+              <option value="tier1">Tier 1 — Small Business Starter ($99/mo)</option>
+              <option value="buyout-tier4">Upfront buyout — Tier 4 ($1,056 + $200 setup)</option>
+              <option value="buyout-tier1">Upfront buyout — Tier 1 ($2,376 + $200 setup)</option>
+              <option value="buyout-tier2">Upfront buyout — Tier 2 ($5,400 + $200 setup)</option>
+              <option value="buyout-tier3">Upfront buyout — Tier 3 ($9,576 + $200 setup)</option>
             </select>
           </div>
+
+          <fieldset class="onboard-addons" id="language-fields">
+            <legend>Would you like your website available in both English and Spanish?</legend>
+            <p class="onboard-hint">This is free on every tier. It does not add a hosted email inbox.</p>
+            <div class="language-choice">
+              <label>
+                <input type="radio" name="websiteLanguages" value="both" required />
+                <span>Yes, English and Spanish</span>
+              </label>
+              <label>
+                <input type="radio" name="websiteLanguages" value="one" />
+                <span>No, one language only</span>
+              </label>
+            </div>
+            <div class="form-row" id="single-language-row" hidden>
+              <label for="website-language">Which language?</label>
+              <select id="website-language" name="websiteLanguage">
+                <option value="">Choose a language</option>
+                <option value="en">English</option>
+                <option value="es">Spanish</option>
+              </select>
+            </div>
+          </fieldset>
 
           <fieldset class="onboard-addons" id="offer-fields">
             <legend>First-month offer</legend>
@@ -190,7 +215,7 @@
 
           <fieldset class="onboard-addons" id="recurring-addons">
             <legend>Optional recurring website add-ons</legend>
-            <p class="onboard-hint">Available with every monthly website tier (Tier 1–3). Optional — select none, one, or both. These are added to your monthly Stripe subscription. One-time services use <a href="quote.html">Request a Quote</a>.</p>
+            <p class="onboard-hint">Optional on monthly plans. The Admin Dashboard is not offered with Tier 4. These are added to the monthly Stripe subscription. One-time services use <a href="quote.html">Request a Quote</a>.</p>
             <input type="hidden" name="recurringAddOns" id="recurring-addons-hidden" value="None selected" />
             <label class="onboard-check">
               <input id="addon-performance-reports" name="addonPerformanceReports" type="checkbox" value="performance_reports" />
@@ -354,6 +379,6 @@
 
   <script src="https://js.stripe.com/v3/"></script>
   <script src="pricing-addons.js"></script>
-  <script src="onboarding.js?v=6"></script>
+  <script src="onboarding.js?v=7"></script>
 </body>
 </html>

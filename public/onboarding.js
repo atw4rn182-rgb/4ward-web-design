@@ -15,12 +15,34 @@
   };
 
   function money(cents) {
-    return "$" + (cents / 100).toLocaleString("en-US", { minimumFractionDigits: 0 });
+    const whole = cents % 100 === 0;
+    return "$" + (cents / 100).toLocaleString("en-US", {
+      minimumFractionDigits: whole ? 0 : 2,
+      maximumFractionDigits: 2,
+    });
   }
 
   const TIERS = {
+    tier4: {
+      label: "Tier 4 — Online Flyer",
+      priceLabel: "$44/month",
+      monthlyCents: 4400,
+      mode: "subscription",
+      billing: "Recurring monthly via Stripe, plus a $200 one-time setup fee. Billing continues until you cancel.",
+      includes: [
+        "$200 one-time setup fee",
+        "Standard .com domain for the first year. Premium and aftermarket domains are quoted separately",
+        "Mobile-friendly single-page flyer",
+        "Business name, logo, branding, description, menu or services, prices when applicable, click-to-call, hours, location, and social links",
+        "Basic on-page SEO, metadata, sitemap, and Google indexing preparation",
+        "Hosting and routine maintenance while the subscription is active",
+        "One small content update per month upon request",
+        "English and Spanish on request, at no extra charge",
+        "No owner dashboard, online checkout, Google Business Profile, or sales commission",
+      ],
+    },
     tier1: {
-      label: "Tier 1 — Single Page Website",
+      label: "Tier 1 — Small Business Starter",
       priceLabel: "$99/month starting",
       monthlyCents: 9900,
       mode: "subscription",
@@ -36,7 +58,7 @@
       ],
     },
     tier2: {
-      label: "Tier 2 — Two-Page Customized Site",
+      label: "Tier 2 — E-Commerce & Business Management",
       priceLabel: "$225/month starting",
       monthlyCents: 22500,
       mode: "subscription",
@@ -54,7 +76,7 @@
       ],
     },
     tier3: {
-      label: "Tier 3 — Multi-Page Multi-Department Website",
+      label: "Tier 3 — Advanced Multi-Department Business",
       priceLabel: "From $399/month",
       monthlyCents: 39900,
       mode: "subscription",
@@ -71,8 +93,23 @@
         "Additional updates: $99 each",
       ],
     },
+    "buyout-tier4": {
+      label: "Upfront buyout — 2 years of Tier 4",
+      priceLabel: "$1,056 website + $200 setup",
+      monthlyCents: 0,
+      dueCents: 1056 * 100 + 20000,
+      mode: "payment",
+      billing: "One-time Stripe payment of 24 months plus the $200 setup fee. No monthly website subscription after that.",
+      includes: [
+        "$200 one-time setup fee included in the $1,256 due today",
+        "The Online Flyer package, paid upfront",
+        "Ownership of the delivered website under the buyout terms",
+        "Later hosting, domain renewal, and content updates are separate unless arranged",
+        "The 14-day monthly refund does not apply to this buyout",
+      ],
+    },
     "buyout-tier1": {
-      label: "Tier 4 Buy-Out — 2 years of Tier 1",
+      label: "Upfront buyout — 2 years of Tier 1",
       priceLabel: "$2,376 one-time",
       monthlyCents: 0,
       dueCents: 2376 * 100 + 20000,
@@ -87,7 +124,7 @@
       ],
     },
     "buyout-tier2": {
-      label: "Tier 4 Buy-Out — 2 years of Tier 2",
+      label: "Upfront buyout — 2 years of Tier 2",
       priceLabel: "$5,400 one-time",
       monthlyCents: 0,
       dueCents: 5400 * 100 + 20000,
@@ -102,7 +139,7 @@
       ],
     },
     "buyout-tier3": {
-      label: "Tier 4 Buy-Out — 2 years of Tier 3",
+      label: "Upfront buyout — 2 years of Tier 3",
       priceLabel: "$9,576 one-time",
       monthlyCents: 0,
       dueCents: 9576 * 100 + 20000,
@@ -158,10 +195,12 @@
     tier1: "tier1",
     tier2: "tier2",
     tier3: "tier3",
+    tier4: "tier4",
     buyout: "buyout-tier2",
     "buyout-tier1": "buyout-tier1",
     "buyout-tier2": "buyout-tier2",
     "buyout-tier3": "buyout-tier3",
+    "buyout-tier4": "buyout-tier4",
   };
 
   function normalizeDomain(value) {
@@ -209,6 +248,8 @@
       logoMeta,
       addonPerformanceReports: Boolean(performanceReportsInput && performanceReportsInput.checked),
       addonAdminDashboard: Boolean(adminDashboardInput && adminDashboardInput.checked),
+      websiteLanguages: (form.querySelector('input[name="websiteLanguages"]:checked') || {}).value || "",
+      websiteLanguage: (document.getElementById("website-language") || {}).value || "",
     };
     sessionStorage.setItem(STORAGE_KEY, JSON.stringify(state));
   }
@@ -236,6 +277,13 @@
     if (adminDashboardInput) {
       adminDashboardInput.checked = Boolean(state.addonAdminDashboard);
     }
+    if (state.websiteLanguages) {
+      const language = form.querySelector('input[name="websiteLanguages"][value="' + state.websiteLanguages + '"]');
+      if (language) language.checked = true;
+    }
+    if (state.websiteLanguage && document.getElementById("website-language")) {
+      document.getElementById("website-language").value = state.websiteLanguage;
+    }
   }
 
   function selectedAddOnIds(tier) {
@@ -244,7 +292,7 @@
     if (performanceReportsInput && performanceReportsInput.checked) {
       raw.push("performance_reports");
     }
-    if (adminDashboardInput && adminDashboardInput.checked) {
+    if (adminDashboardInput && adminDashboardInput.checked && !adminDashboardInput.disabled) {
       raw.push("admin_dashboard");
     }
     return pricingAddons.normalizeAddOnIds(raw, true);
@@ -279,6 +327,25 @@
     };
   }
 
+  function languageSummary() {
+    const choice = form.querySelector('input[name="websiteLanguages"]:checked');
+    if (!choice) return "—";
+    if (choice.value === "both") return "English and Spanish";
+    const single = document.getElementById("website-language");
+    if (single && single.value === "es") return "Spanish only";
+    if (single && single.value === "en") return "English only";
+    return "One language";
+  }
+
+  function syncLanguageFields() {
+    const choice = form.querySelector('input[name="websiteLanguages"]:checked');
+    const row = document.getElementById("single-language-row");
+    const select = document.getElementById("website-language");
+    const one = Boolean(choice && choice.value === "one");
+    if (row) row.hidden = !one;
+    if (select) select.required = one;
+  }
+
   function syncOfferFields() {
     const offer = offerSelect ? offerSelect.value : "";
     const local = offer === "local" || offer === "both";
@@ -292,10 +359,18 @@
     const tierKey = tierSelect.value;
     const tier = TIERS[tierKey] || TIERS.tier2;
     const isMonthly = tier.mode === "subscription";
+    const allowDashboard = isMonthly && tierKey !== "tier4";
+    if (adminDashboardInput) {
+      if (!allowDashboard) adminDashboardInput.checked = false;
+      adminDashboardInput.disabled = !allowDashboard;
+      const dashboardRow = adminDashboardInput.closest("label");
+      if (dashboardRow) dashboardRow.hidden = !allowDashboard;
+    }
     if (addonsField) addonsField.hidden = !isMonthly;
     const offerFields = document.getElementById("offer-fields");
     if (offerFields) offerFields.hidden = !isMonthly;
     syncOfferFields();
+    syncLanguageFields();
 
     const addOnIds = selectedAddOnIds(tier);
     const addonCents = addOnMonthlyCents(tierKey, addOnIds);
@@ -365,6 +440,9 @@
         "</dd></div>" +
         "<div><dt>Preferred domain</dt><dd>" +
         (normalizeDomain(form.domainPreferred && form.domainPreferred.value) || "—") +
+        "</dd></div>" +
+        "<div><dt>Languages</dt><dd>" +
+        languageSummary() +
         "</dd></div>" +
         "<div><dt>Agreement</dt><dd>" +
         (document.getElementById("signed-agreement")?.checked ? "Signed" : "Not signed") +
@@ -542,6 +620,8 @@
       businessAddress: offerAddress ? offerAddress.value : "",
       addressAttested: offerAttest && offerAttest.checked ? "yes" : "no",
       serviceBranch: offerService ? offerService.value : "",
+      websiteLanguages: (form.querySelector('input[name="websiteLanguages"]:checked') || {}).value || "",
+      websiteLanguage: (document.getElementById("website-language") || {}).value || "",
       _hp_ref: "",
     };
 
@@ -620,6 +700,17 @@
   });
 
   tierSelect?.addEventListener("change", () => {
+    renderTier();
+    saveState();
+  });
+  form?.querySelectorAll('input[name="websiteLanguages"]').forEach((input) => {
+    input.addEventListener("change", () => {
+      syncLanguageFields();
+      renderTier();
+      saveState();
+    });
+  });
+  document.getElementById("website-language")?.addEventListener("change", () => {
     renderTier();
     saveState();
   });

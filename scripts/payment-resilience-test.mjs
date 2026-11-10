@@ -401,6 +401,7 @@ async function callCheckout(overrides = {}) {
     domainSecondChoice: "",
     domainThirdChoice: "",
     signedAgreement: "yes",
+    websiteLanguages: "both",
     addOns: ["performance_reports"],
     _hp_ref: "",
     ...overrides,
@@ -795,6 +796,37 @@ clearOfferEnv();
 const buyout = await callCheckout({ tier: "buyout-tier2", addOns: [], offer: "both", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes", serviceBranch: "U.S. Air Force", percent: 30 });
 const buyoutSession = stripe.sessions.get(buyout.body.sessionId);
 check("buy-out keeps the full prepaid price and the $200 launch fee", buyout.status === 200 && buyoutSession && buyoutSession.amount_total === 22500 * 24 + 20000 && !buyoutSession._params["discounts[0][coupon]"]);
+
+const pricing = await import("../lib/pricing/first-month-offer.js");
+const tier4Preview = pricing.checkoutTotals({ tierCents: 4400, percent: 30, mode: "subscription" });
+check("Tier 4 with both first-month offers is 30% off $44, not the setup fee", tier4Preview.discountedTier === 3080 && tier4Preview.dueToday === 23080 && tier4Preview.renewal === 4400 && tier4Preview.launchFeeCents === 20000);
+const tier4BuyoutMath = pricing.checkoutTotals({ tierCents: 4400 * 24, percent: 30, mode: "payment" });
+check("Tier 4 upfront buyout stays $1,256 with no discount", tier4BuyoutMath.dueToday === 4400 * 24 + 20000 && tier4BuyoutMath.discountPercent === 0);
+
+const tier4 = await callCheckout({ tier: "tier4", addOns: ["admin_dashboard", "performance_reports"], offer: "" });
+const tier4Session = stripe.sessions.get(tier4.body.sessionId);
+check("Tier 4 monthly checkout is $44 + reports + $200, without the dashboard", tier4.status === 200 && tier4Session && tier4Session.amount_total === 4400 + 2000 + 20000 && tier4Session.metadata.tier === "tier4" && tier4Session.metadata.website_languages === "en-es" && tier4Session.metadata.admin_dashboard_requested === "no");
+const tier4Buyout = await callCheckout({ tier: "buyout-tier4", addOns: ["admin_dashboard"], offer: "both", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes", serviceBranch: "U.S. Air Force" });
+const tier4BuyoutSession = stripe.sessions.get(tier4Buyout.body.sessionId);
+check("Tier 4 buyout checkout is $1,056 + $200 and ignores the first-month offer", tier4Buyout.status === 200 && tier4BuyoutSession && tier4BuyoutSession.amount_total === 105600 + 20000 && tier4BuyoutSession.mode === "payment" && !tier4BuyoutSession._params["discounts[0][coupon]"]);
+const tier4Language = await callCheckout({ tier: "tier4", addOns: [], websiteLanguages: "" });
+check("Tier 4 checkout requires a language choice", tier4Language.status === 400 && /English and Spanish/i.test(tier4Language.body.error || ""));
+const tier4OneLanguage = await callCheckout({ tier: "tier4", addOns: [], websiteLanguages: "one", websiteLanguage: "es" });
+const tier4OneSession = stripe.sessions.get(tier4OneLanguage.body.sessionId);
+check("A single-language choice is stored as Spanish", tier4OneLanguage.status === 200 && tier4OneSession && tier4OneSession.metadata.website_languages === "es");
+const writesBeforeTier4Offer = stripeWrites();
+const tier4Offer = await callCheckout({ tier: "tier4", addOns: [], offer: "both", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes", serviceBranch: "U.S. Air Force" });
+check("Tier 4 discount does not start checkout until its Stripe price is configured", tier4Offer.status === 503 && /not configured|could not be confirmed|not be applied safely/i.test(tier4Offer.body.error || "") && stripeWrites() === writesBeforeTier4Offer);
+const consultation = await import("../lib/consultations/validate.js");
+const flyerConsult = consultation.validateConsultation({
+  businessName: "Flyer Co",
+  contactName: "Ada",
+  email: "ada@example.com",
+  description: "Food truck flyer",
+  contactMethod: "email",
+  tier: "tier4",
+});
+check("Tier 4 consultation keeps the database tier column within the existing allowed values", flyerConsult.ok && flyerConsult.value.preferred_tier === null && flyerConsult.value.payload.preferred_package === "tier4");
 
 // ---------------------------------------------------------------------------
 const all = results.flatMap((r) => r.checks);

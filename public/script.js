@@ -680,7 +680,7 @@
           });
           return;
         }
-        const plans = ["tier1", "tier2", "tier3"];
+        const plans = ["tier4", "tier1", "tier2", "tier3"];
         await Promise.all(
           plans.map(async (tier) => {
             const due = document.querySelector(`#plan-${tier} .plan-due`);

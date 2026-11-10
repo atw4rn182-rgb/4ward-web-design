@@ -216,6 +216,7 @@ async function testOnboardingValidation() {
     signerName: "E2E User",
     companyInformation: "E2E company info",
     signedAgreement: "yes",
+    websiteLanguages: "both",
     domainPreferred: "e2e-test.com",
     addOns: [],
   };

@@ -15,7 +15,17 @@
 
   if (year) year.textContent = String(new Date().getFullYear());
 
-  const allowedTiers = { tier1: "tier1", tier2: "tier2", tier3: "tier3", buyout: "buyout" };
+  const allowedTiers = {
+    tier1: "tier1",
+    tier2: "tier2",
+    tier3: "tier3",
+    tier4: "tier4",
+    buyout: "buyout",
+    "buyout-tier1": "buyout-tier1",
+    "buyout-tier2": "buyout-tier2",
+    "buyout-tier3": "buyout-tier3",
+    "buyout-tier4": "buyout-tier4",
+  };
   const params = new URLSearchParams(window.location.search);
   const requestedTier = allowedTiers[params.get("tier") || ""] || "";
   if (requestedTier && tierSelect) tierSelect.value = requestedTier;
