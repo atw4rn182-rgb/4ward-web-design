@@ -118,7 +118,7 @@
             <h4>1. Services</h4>
             <p>Provider will design, develop, host, and maintain a website according to the Client’s selected tier, as described for that tier on the pricing page. Tier 1, Tier 2, and Tier 3 include Google Business Profile setup. Tier 4 — Online Flyer does not. Hosting and routine maintenance continue while a monthly subscription remains active, within that tier’s update allowance.</p>
             <h4>2. Fees &amp; billing</h4>
-            <p>A one-time <strong>$200 Launch Fee</strong> applies to all tiers and covers initial consultation, custom design/setup, domain/DNS if needed, basic on-page SEO, Google Analytics, contact forms where the tier includes them, mobile optimization, testing, and onboarding. A standard domain registration is included only where the selected tier says so. Premium and aftermarket domains are not included. Client also authorizes recurring monthly charges for the selected subscription, or one upfront buyout payment of 24 months plus the launch fee. Monthly billing does not end automatically after 24 months. Fees are billed through Stripe. Optional recurring website add-ons selected during onboarding (Monthly Performance Reports and/or Private Admin Dashboard) are added to the monthly subscription shown before payment. The Private Admin Dashboard is not included with Tier 4. It is a private back-office feature — not customer-facing — and requires additional setup and ongoing maintenance. One-time or custom services (logo, print, chatbot, extra pages, extra updates) are quoted separately and billed with a Stripe payment link. Extra updates beyond the included monthly allowance that are not purchased as a quote are billed separately at the rates listed for that tier. English and Spanish, when requested, are included at no extra charge.</p>
+            <p>A one-time <strong>$200 Launch Fee</strong> applies to all tiers and covers initial consultation, custom design/setup, domain/DNS if needed, basic on-page SEO, Google Analytics, contact forms where the tier includes them, mobile optimization, testing, and onboarding. A standard domain registration is included only where the selected tier says so. Premium and aftermarket domains are not included. Client also authorizes recurring monthly charges for the selected subscription, or one upfront buyout payment of 24 months plus the launch fee. Monthly billing does not end automatically after 24 months. Fees are billed through Stripe. Optional recurring website add-ons selected during onboarding are added to the monthly subscription shown before payment. Tier 2 includes the private admin dashboard in its price. The dashboard remains an optional $50/month add-on on Tier 1 and Tier 3. It is not included with Tier 4. The dashboard is a private back-office for the business. It is not a public page, and it requires setup and ongoing maintenance. One-time or custom services (logo, print, chatbot, extra pages, extra updates) are quoted separately and billed with a Stripe payment link. Extra updates beyond the included monthly allowance that are not purchased as a quote are billed separately at the rates listed for that tier. English and Spanish, when requested, are included at no extra charge.</p>
             <h4>3. Client responsibilities</h4>
             <p>Client will provide accurate business information, logos, photos, copy, and timely feedback. Delays in Client materials may extend delivery timelines.</p>
             <h4>4. Intellectual property</h4>
@@ -148,7 +148,7 @@
 
         <section class="onboard-step" data-step="2" aria-labelledby="step2-heading" hidden>
           <h2 id="step2-heading">What’s included in your plan</h2>
-          <p class="onboard-step-lead">Confirm the package you want. Every plan includes a $200 one-time setup fee. Monthly plans can add optional recurring add-ons below, except the Admin Dashboard is not available on Tier 4. You’ll see the updated total before checkout.</p>
+          <p class="onboard-step-lead">Confirm the package you want. Every plan includes a $200 one-time setup fee. Tier 2 includes the admin dashboard. Monthly plans can add optional recurring add-ons below. The Admin Dashboard is not available on Tier 4. You’ll see the updated total before checkout.</p>
 
           <div class="form-row">
             <label for="tier-select">Chosen tier</label>
@@ -188,15 +188,15 @@
           </fieldset>
 
           <fieldset class="onboard-addons" id="offer-fields">
-            <legend>First-month offer</legend>
-            <p class="onboard-hint">Choose the offer that matches what you can confirm. Checkout checks the address, attestation, and branch or service. It ignores any price or coupon sent by the browser. The $200 launch fee stays $200. The regular monthly price returns on the next bill.</p>
+            <legend>Monthly discount</legend>
+            <p class="onboard-hint">Choose the offer that matches what you can confirm. Checkout checks the address, attestation, and branch or service. It ignores any price or coupon sent by the browser. The 10% local discount is applied first, then the 20% service discount, and the reduced rate continues until you cancel. The $200 launch fee and upfront buyouts are not discounted.</p>
             <div class="form-row">
               <label for="offer-select">Offer</label>
               <select id="offer-select" name="offer">
-                <option value="">No first-month offer</option>
-                <option value="local">Southeastern New Mexico address — 10% off the first month</option>
-                <option value="service">Military or first responder — 20% off the first month</option>
-                <option value="both">Both offers — 30% off the first month</option>
+                <option value="">No monthly discount</option>
+                <option value="local">Southeastern New Mexico address — 10% off the monthly plan</option>
+                <option value="service">Military or first responder — 20% off the monthly plan</option>
+                <option value="both">Both — 10% then 20% off the monthly plan</option>
               </select>
             </div>
             <div class="form-row" id="offer-address-row">
@@ -215,7 +215,8 @@
 
           <fieldset class="onboard-addons" id="recurring-addons">
             <legend>Optional recurring website add-ons</legend>
-            <p class="onboard-hint">Optional on monthly plans. The Admin Dashboard is not offered with Tier 4. These are added to the monthly Stripe subscription. One-time services use <a href="quote.html">Request a Quote</a>.</p>
+            <p class="onboard-hint">Optional on monthly plans. Tier 2 includes the admin dashboard. Tier 4 does not offer it. A selected add-on is added to the monthly Stripe subscription. One-time services use <a href="quote.html">Request a Quote</a>.</p>
+            <p class="onboard-hint" id="dashboard-included" hidden>Tier 2 includes your secure admin dashboard for products, prices, pictures, menus, and supported storefront content. There is no extra $50 charge.</p>
             <input type="hidden" name="recurringAddOns" id="recurring-addons-hidden" value="None selected" />
             <label class="onboard-check">
               <input id="addon-performance-reports" name="addonPerformanceReports" type="checkbox" value="performance_reports" />
@@ -379,6 +380,6 @@
 
   <script src="https://js.stripe.com/v3/"></script>
   <script src="pricing-addons.js"></script>
-  <script src="onboarding.js?v=7"></script>
+  <script src="onboarding.js?v=9"></script>
 </body>
 </html>

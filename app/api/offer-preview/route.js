@@ -31,7 +31,10 @@ export async function POST(request) {
     return json(400, { error: "Invalid plan selection" });
   }
   const mode = PLAN_MODE[tier];
-  const addOnIds = normalizeAddOnIds(body.addOns, mode);
+  const addOnIds = normalizeAddOnIds(body.addOns, mode).filter((id) => {
+    if (id !== "admin_dashboard") return true;
+    return tier !== "tier2" && tier !== "tier4" && tier !== "buyout-tier2";
+  });
   const addonCents = addOnIds.reduce((sum, id) => sum + (addonById(id)?.cents || 0), 0);
   const offer = resolveFirstMonthOffer({
     offer: body.offer,
@@ -43,12 +46,14 @@ export async function POST(request) {
   const totals = checkoutTotals({
     tierCents: PLAN_CENTS[tier],
     addonCents,
-    percent: offer.percent,
+    local: offer.local,
+    responder: offer.responder,
     mode,
   });
   return json(200, {
     tier,
-    percent: totals.discountPercent,
+    percent: totals.discountCents > 0 ? 1 : 0,
+    discountLabel: totals.discountLabel,
     dueTodayCents: totals.dueToday,
     renewalCents: totals.renewal,
     launchFeeCents: totals.launchFeeCents,

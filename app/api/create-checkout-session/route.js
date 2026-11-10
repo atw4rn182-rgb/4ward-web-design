@@ -23,8 +23,6 @@ import {
 } from "@/lib/pricing/add-ons";
 import { checkRateLimit, clientIp } from "@/lib/api/rate-limit";
 import {
-  COUPON_ENV_BY_PERCENT,
-  couponIsSafe,
   checkoutTotals,
   resolveFirstMonthOffer,
   RECORDED_SUBSCRIBER_STATUSES,
@@ -106,9 +104,15 @@ const AGREEMENT_REQUIRED_MESSAGE =
 const PRE_CHECKOUT_SUPABASE_TIMEOUT_MS = 6000;
 const PENDING_PAYMENT_SUPABASE_TIMEOUT_MS = 4000;
 
+function dashboardIncluded(tier) {
+  return Boolean(tier && (tier.id === "tier2" || tier.baseTier === "tier2"));
+}
+
 function normalizeAddOns(raw, tier) {
   const ids = normalizeAddOnIds(raw, tier && tier.mode);
-  if (tier && tier.id === "tier4") return ids.filter((id) => id !== "admin_dashboard");
+  if (tier && (tier.id === "tier4" || dashboardIncluded(tier))) {
+    return ids.filter((id) => id !== "admin_dashboard");
+  }
   return ids;
 }
 
@@ -192,12 +196,6 @@ function addonCents(addOnIds) {
   return addOnIds.reduce((sum, id) => sum + (addonById(id)?.cents || 0), 0);
 }
 
-function stripeProductId(product) {
-  if (typeof product === "string") return product;
-  if (product && typeof product.id === "string") return product.id;
-  return "";
-}
-
 async function listStripePages(secret, path) {
   const rows = [];
   let startingAfter = "";
@@ -246,18 +244,6 @@ async function offerBlockedByHistory(email, secret) {
   return "";
 }
 
-async function tierProductIds(secret) {
-  const products = new Map();
-  for (const [tierId, envName] of Object.entries(PRICE_ENV)) {
-    const priceId = String(process.env[envName] || "").trim();
-    if (!priceId) continue;
-    const price = await stripeGet(secret, `/prices/${encodeURIComponent(priceId)}`);
-    const productId = stripeProductId(price && price.product);
-    if (productId) products.set(tierId, { priceId, productId });
-  }
-  return products;
-}
-
 function launchFeeLineItem(index) {
   return {
     [`line_items[${index}][quantity]`]: 1,
@@ -272,12 +258,14 @@ function launchFeeLineItem(index) {
   };
 }
 
-function buildLineItemParams(tier, addOnIds) {
+function buildLineItemParams(tier, addOnIds, totals) {
   const priceEnvKey = PRICE_ENV[tier.id];
   const priceId = priceEnvKey ? process.env[priceEnvKey] : null;
+  const discounted = Boolean(totals && totals.discountCents > 0);
+  const planCents = discounted ? totals.discountedTier : tier.amount;
   let items;
 
-  if (tier.mode === "subscription" && priceId) {
+  if (tier.mode === "subscription" && priceId && !discounted) {
     items = {
       "line_items[0][price]": priceId,
       "line_items[0][quantity]": 1,
@@ -286,13 +274,14 @@ function buildLineItemParams(tier, addOnIds) {
     items = {
       "line_items[0][quantity]": 1,
       "line_items[0][price_data][currency]": "usd",
-      "line_items[0][price_data][unit_amount]": tier.amount,
+      "line_items[0][price_data][unit_amount]": planCents,
       "line_items[0][price_data][recurring][interval]": "month",
-      "line_items[0][price_data][product_data][name]":
-        `${tier.name} — first month`,
-      "line_items[0][price_data][product_data][description]":
-        `Due today with the $200 Launch Fee. Then $${Math.round(tier.amount / 100)}/month until canceled.`,
+      "line_items[0][price_data][product_data][name]": tier.name,
+      "line_items[0][price_data][product_data][description]": discounted
+        ? `${totals.discountLabel}. This monthly rate continues until the subscription is canceled. The $200 launch fee is not discounted.`
+        : `Due today with the $200 Launch Fee. Then $${Math.round(planCents / 100)}/month until canceled.`,
       "line_items[0][price_data][product_data][metadata][tier]": tier.id,
+      "line_items[0][price_data][product_data][metadata][kind]": "plan",
     };
   } else {
     items = {
@@ -411,6 +400,10 @@ async function saveOnboardingRecord(record, options = {}) {
       status: "payment_pending",
       payload: {
         ...addOnPayloadFlags(record.addOnIds),
+        admin_dashboard_requested:
+          record.addOnIds.includes("admin_dashboard") ||
+          record.tier === "tier2" ||
+          record.tier === "buyout-tier2",
         existing_links: record.existingLinks,
         logo_name: record.logoName,
         domain_preferred: record.domainPreferred,
@@ -568,43 +561,21 @@ export async function POST(request) {
   const totals = checkoutTotals({
     tierCents: tier.amount,
     addonCents: addonCents(addOnIds),
-    percent: offer.percent,
+    local: offer.local,
+    responder: offer.responder,
     mode: tier.mode,
   });
-  let offerCouponId = "";
-  if (offer.percent > 0) {
+  if (offer.local || offer.responder) {
     try {
       const blocked = await offerBlockedByHistory(email, secret);
       if (blocked) {
         return json(400, {
-          error: "This first-month offer is only for a new subscription. A current or former subscription is already on file for this email.",
+          error: "This discount is only for a new subscription. A current or former subscription is already on file for this email.",
         });
       }
-      const products = await tierProductIds(secret);
-      const tierPrice = products.get(tier.id);
-      const couponId = String(process.env[COUPON_ENV_BY_PERCENT[offer.percent]] || "").trim();
-      if (!tierPrice || !couponId) {
-        return json(503, {
-          error: "The first-month offer is not configured yet. Checkout was not started.",
-        });
-      }
-      const coupon = await stripeGet(secret, `/coupons/${encodeURIComponent(couponId)}?expand[]=applies_to`);
-      if (
-        Number(coupon.percent_off) !== offer.percent ||
-        !couponIsSafe({
-          coupon,
-          tierProductId: tierPrice.productId,
-          allowedProductIds: [...products.values()].map((item) => item.productId),
-        })
-      ) {
-        return json(503, {
-          error: "The first-month offer cannot be applied safely. Checkout was not started.",
-        });
-      }
-      offerCouponId = couponId;
     } catch {
       return json(503, {
-        error: "The first-month offer could not be confirmed. Checkout was not started.",
+        error: "The discount could not be confirmed. Checkout was not started.",
       });
     }
   }
@@ -634,7 +605,8 @@ export async function POST(request) {
     performance_reports_requested: addOnIds.includes("performance_reports")
       ? "yes"
       : "no",
-    admin_dashboard_requested: addOnIds.includes("admin_dashboard") ? "yes" : "no",
+    admin_dashboard_requested: dashboardIncluded(tier) || addOnIds.includes("admin_dashboard") ? "yes" : "no",
+    recurring_plan_cents: String(totals.discountedTier),
     domain_preferred: domainPreferred,
     domain_second_choice: domainSecondChoice || "",
     domain_third_choice: domainThirdChoice || "",
@@ -643,7 +615,7 @@ export async function POST(request) {
     offer_address: offer.address,
     offer_attested: offer.attested ? "yes" : "no",
     offer_service: offer.service,
-    first_month_percent: String(totals.discountPercent),
+    discount_applies: totals.discountCents > 0 ? "yes" : "no",
   };
 
   const saved = await saveOnboardingRecord(
@@ -712,14 +684,14 @@ export async function POST(request) {
       success_url: `${origin}/onboarding.html?success=1&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/onboarding.html?canceled=1&tier=${encodeURIComponent(tierKey)}`,
       billing_address_collection: "required",
-      ...(offerCouponId ? { "discounts[0][coupon]": offerCouponId } : { allow_promotion_codes: "true" }),
+      allow_promotion_codes: totals.discountCents > 0 ? "false" : "true",
       "custom_text[submit][message]":
         tier.mode === "subscription"
-          ? totals.discountPercent > 0
-            ? `Today you pay the $200 Launch Fee plus the first month after ${totals.discountPercent}% off the plan. The regular monthly price starts on the next bill. The launch fee is not discounted.`
+          ? totals.discountCents > 0
+            ? `Today you pay the $200 Launch Fee plus ${totals.discountLabel}. That monthly rate continues until you cancel. The launch fee is not discounted.`
             : "Today you pay the $200 Launch Fee plus the first month of your plan."
-          : "Today you pay the $200 Launch Fee plus two years of your chosen tier.",
-      ...buildLineItemParams(tier, addOnIds),
+          : "Today you pay the $200 Launch Fee plus two years of your chosen tier. This buyout is not discounted.",
+      ...buildLineItemParams(tier, addOnIds, totals),
       ...metadataParams("metadata", metadata),
     };
 

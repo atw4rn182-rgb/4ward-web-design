@@ -67,6 +67,8 @@
         "$200 one-time Launch Fee (consultation, design/setup, domain/DNS if needed, on-page SEO, Analytics, forms, mobile optimization, testing, onboarding)",
         "Full online overhaul: professional website + Google Business Profile + local SEO foundation",
         "Two-page site customized to the business",
+        "Secure admin dashboard included: products, prices, pictures, menus, and supported storefront content",
+        "Online ordering and payments when configured. Processor fees are separate, and 4Ward does not take a percentage of sales",
         "Photo gallery",
         "One request-a-quote form that sends directly to your email",
         "Hosting, development, and ongoing maintenance",
@@ -132,9 +134,10 @@
       billing: "One-time Stripe payment (no monthly fee after), plus a $200 Launch Fee",
       includes: [
         "$200 one-time Launch Fee at kickoff",
-        "Everything in Tier 2 for two years paid upfront",
+        "Everything in Tier 2 for two years paid upfront, including the admin dashboard",
         "Full overhaul: website, Google Business Profile, and local SEO",
-        "No monthly fee after purchase",
+        "No monthly website subscription after purchase",
+        "Later hosting, maintenance, and third-party service costs are separate",
         "Updates after buy-out: $99 each",
       ],
     },
@@ -359,7 +362,10 @@
     const tierKey = tierSelect.value;
     const tier = TIERS[tierKey] || TIERS.tier2;
     const isMonthly = tier.mode === "subscription";
-    const allowDashboard = isMonthly && tierKey !== "tier4";
+    const dashboardIncluded = tierKey === "tier2" || tierKey === "buyout-tier2";
+    const allowDashboard = isMonthly && !dashboardIncluded && tierKey !== "tier4";
+    const dashboardIncludedNote = document.getElementById("dashboard-included");
+    if (dashboardIncludedNote) dashboardIncludedNote.hidden = !dashboardIncluded;
     if (adminDashboardInput) {
       if (!allowDashboard) adminDashboardInput.checked = false;
       adminDashboardInput.disabled = !allowDashboard;
@@ -391,7 +397,7 @@
         money(LAUNCH_FEE_CENTS) +
         " launch + " +
         money(monthlyTotal) +
-        " first month)"
+        " this month)"
       : money(dueToday) + " today (buy-out + " + money(LAUNCH_FEE_CENTS) + " launch fee)";
     const thenLabel = isMonthly
       ? money(monthlyTotal) + "/month until canceled"
@@ -475,8 +481,8 @@
       .then((data) => {
         if (!data || requestId !== previewRequest) return;
         const firstMonth = isMonthly
-          ? data.percent > 0
-            ? data.firstMonthLabel + " after " + data.percent + "% off the plan"
+          ? data.discountLabel
+            ? data.firstMonthLabel + " (" + data.discountLabel + ")"
             : data.firstMonthLabel
           : "Included in buy-out";
         writeSummary(firstMonth, data.dueLabel, data.thenLabel);

@@ -607,20 +607,20 @@
   if (selectedOffer) {
     const offers = {
       local: {
-        title: "10% off the first month",
-        copy: "This southeastern New Mexico offer is selected. Add the business address and confirm that it is in southeastern New Mexico.",
+        title: "10% off the monthly plan",
+        copy: "This southeastern New Mexico offer is selected. Add the business address and confirm that it is in southeastern New Mexico. The 10% continues for the life of a new subscription.",
         address: true,
         service: false,
       },
       service: {
-        title: "20% off the first month",
-        copy: "This military and first responder offer is selected. List the branch or service in the description.",
+        title: "20% off the monthly plan",
+        copy: "This military and first responder offer is selected. List the branch or service. The 20% continues for the life of a new subscription.",
         address: false,
         service: true,
       },
       both: {
-        title: "30% off the first month",
-        copy: "Both offers are selected. Add the southeastern New Mexico business address and list the branch or service. Together they take 30% off the first month.",
+        title: "10% then 20% off the monthly plan",
+        copy: "Both offers are selected. The 10% local discount is applied first, then the 20% service discount. Tier 4 becomes $31.68/month for the life of a new subscription. The $200 setup fee and upfront buyouts are not discounted.",
         address: true,
         service: true,
       },
@@ -658,7 +658,7 @@
           })
         );
         status.textContent = ready
-          ? "Checking the first-month total…"
+          ? "Checking the monthly total…"
           : "Add the required details to show how this offer applies.";
         clearTimeout(previewTimer);
         if (!ready) {

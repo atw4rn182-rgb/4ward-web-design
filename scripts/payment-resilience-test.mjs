@@ -707,7 +707,7 @@ function clearOfferEnv() {
   stripe.subscriptionsByEmail = {};
 }
 
-test("TEST 9 — First-month offers discount only the new subscription plan");
+test("TEST 9 — Recurring discounts apply only to a new subscription plan");
 resetDb();
 supa.mode = "up";
 stripe.failCheckout = false;
@@ -717,10 +717,16 @@ const qualified = {
   addressAttested: "yes",
   serviceBranch: "U.S. Air Force",
 };
+function sequentialRate(cents, local, responder) {
+  let amount = cents;
+  if (local) amount = Math.round((amount * 90) / 100);
+  if (responder) amount = Math.round((amount * 80) / 100);
+  return amount;
+}
 const cases = [
-  { name: "10%", offer: "local", tier: "tier1", addOns: [], percent: 10, tierCents: 9900, addonCents: 0 },
-  { name: "20%", offer: "service", tier: "tier2", addOns: ["performance_reports"], percent: 20, tierCents: 22500, addonCents: 2000 },
-  { name: "30%", offer: "both", tier: "tier3", addOns: ["admin_dashboard"], percent: 30, tierCents: 39900, addonCents: 5000 },
+  { name: "10%", offer: "local", tier: "tier1", addOns: [], local: true, responder: false, tierCents: 9900, addonCents: 0 },
+  { name: "20%", offer: "service", tier: "tier2", addOns: ["performance_reports"], local: false, responder: true, tierCents: 22500, addonCents: 2000 },
+  { name: "10% then 20%", offer: "both", tier: "tier3", addOns: ["admin_dashboard"], local: true, responder: true, tierCents: 39900, addonCents: 5000 },
 ];
 for (const sample of cases) {
   const fields = {
@@ -735,20 +741,20 @@ for (const sample of cases) {
   const shown = await previewTotals(fields);
   const paid = await callCheckout({ ...fields, percent: 90, coupon: "coupon_attacker", amount: 100, price: 1 });
   const session = stripe.sessions.get(paid.body.sessionId);
-  const discount = Math.round((sample.tierCents * sample.percent) / 100);
-  const due = sample.tierCents - discount + sample.addonCents + 20000;
-  const renewal = sample.tierCents + sample.addonCents;
+  const plan = sequentialRate(sample.tierCents, sample.local, sample.responder);
+  const due = plan + sample.addonCents + 20000;
+  const renewal = plan + sample.addonCents;
+  const launchIndex = sample.addonCents > 0 ? 2 : 1;
   check(`${sample.name} preview matches Stripe checkout`, shown.status === 200 && shown.body.dueTodayCents === due && session && session.amount_total === due, `preview=${shown.body.dueTodayCents} stripe=${session && session.amount_total} expected=${due}`);
-  check(`${sample.name} uses the server coupon and keeps the full plan price`, session && session._params["discounts[0][coupon]"] === `coupon_test_${sample.percent}` && session._params["discounts[0][coupon]"] !== "coupon_attacker" && lineAmount(session._params, 0) === sample.tierCents);
-  check(`${sample.name} launch fee stays $200 and renewal returns to full price`, session && lineAmount(session._params, session._params["line_items[2][quantity]"] !== undefined ? 2 : 1) === 20000 && shown.body.renewalCents === renewal && shown.body.launchFeeCents === 20000);
-  check(`${sample.name} coupon is one invoice and limited to plan products`, TEST_COUPONS[`coupon_test_${sample.percent}`].duration === "once" && TEST_COUPONS[`coupon_test_${sample.percent}`].applies_to.products.includes(`prod_${sample.tier}`));
+  check(`${sample.name} renews at the discounted price without a coupon`, session && !session._params["discounts[0][coupon]"] && session._params["discounts[0][coupon]"] !== "coupon_attacker" && !session._params["line_items[0][price]"] && lineAmount(session._params, 0) === plan && session._params["line_items[0][price_data][recurring][interval]"] === "month");
+  check(`${sample.name} launch fee stays $200 and the monthly rate continues`, session && lineAmount(session._params, launchIndex) === 20000 && shown.body.renewalCents === renewal && shown.body.launchFeeCents === 20000);
 }
 const missing = await callCheckout({ offer: "both", businessAddress: "", addressAttested: "no", serviceBranch: " ", percent: 30, coupon: "coupon_test_30" });
 const missingSession = stripe.sessions.get(missing.body.sessionId);
 check("missing eligibility details leave the full price and no coupon", missing.status === 200 && missingSession && missingSession.amount_total === 22500 + 2000 + 20000 && !missingSession._params["discounts[0][coupon]"], `amount=${missingSession && missingSession.amount_total}`);
 const partial = await callCheckout({ offer: "both", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes", serviceBranch: "", percent: 30 });
 const partialSession = stripe.sessions.get(partial.body.sessionId);
-check("an incomplete combined offer applies only the eligible 10%", partial.status === 200 && partialSession && partialSession._params["discounts[0][coupon]"] === "coupon_test_10" && partialSession.amount_total === 22500 - 2250 + 2000 + 20000);
+check("an incomplete combined offer applies only the eligible 10%", partial.status === 200 && partialSession && !partialSession._params["discounts[0][coupon]"] && partialSession.amount_total === 20250 + 2000 + 20000 && lineAmount(partialSession._params, 0) === 20250);
 const sessionsBeforeReject = stripe.calls.filter((call) => call.path === "/v1/checkout/sessions").length;
 db.customers.push({ id: "cus_active_existing", company_name: "Existing Co", email: "existing-sub@example.com", status: "active", created_at: new Date().toISOString(), updated_at: new Date().toISOString() });
 const rejected = await callCheckout({ email: "existing-sub@example.com", offer: "local", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes", serviceBranch: "" });
@@ -772,35 +778,41 @@ db.payments.push({ id: "pay_abandoned", customer_id: "cus_abandoned", status: "c
 stripe.subscriptionsByEmail["abandoned@example.com"] = { customerId: "cus_stripe_abandoned", status: "" };
 const abandoned = await callCheckout({ email: "abandoned@example.com", tier: "tier1", addOns: [], offer: "local", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes" });
 const abandonedSession = stripe.sessions.get(abandoned.body.sessionId);
-check("an abandoned checkout with no subscription can use the offer", abandoned.status === 200 && abandonedSession && abandonedSession.amount_total === 9900 - 990 + 20000 && abandonedSession._params["discounts[0][coupon]"] === "coupon_test_10");
+check("an abandoned checkout with no subscription can use the offer", abandoned.status === 200 && abandonedSession && abandonedSession.amount_total === 8910 + 20000 && !abandonedSession._params["discounts[0][coupon]"] && lineAmount(abandonedSession._params, 0) === 8910);
 const stripeWrites = () => stripe.calls.filter((call) => call.method === "POST" && (call.path === "/v1/customers" || call.path === "/v1/checkout/sessions")).length;
 const writesBeforeTruncated = stripeWrites();
 stripe.truncateEmail = "truncated-history@example.com";
 const truncated = await callCheckout({ email: "truncated-history@example.com", tier: "tier1", addOns: [], offer: "local", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes", serviceBranch: "" });
 stripe.truncateEmail = "";
 check("unreadable subscription history stops checkout without charging", truncated.status === 503 && /could not be confirmed/i.test(truncated.body.error || "") && stripeWrites() === writesBeforeTruncated);
-const writesBeforeMissingCoupon = stripeWrites();
 delete process.env.STRIPE_COUPON_FIRST_MONTH_20;
-const missingCoupon = await callCheckout({ tier: "tier2", addOns: ["performance_reports"], offer: "service", businessAddress: "", addressAttested: "no", serviceBranch: "Carlsbad Fire Department" });
-check("a missing coupon stops checkout without charging", missingCoupon.status === 503 && /not configured/i.test(missingCoupon.body.error || "") && stripeWrites() === writesBeforeMissingCoupon);
-process.env.STRIPE_COUPON_FIRST_MONTH_20 = "coupon_test_20";
-const writesBeforeMissingPrice = stripeWrites();
 delete process.env.STRIPE_PRICE_TIER1;
-const missingPrice = await callCheckout({ tier: "tier1", addOns: [], offer: "local", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes", serviceBranch: "" });
-check("a missing plan price stops the discounted checkout without charging", missingPrice.status === 503 && /not configured/i.test(missingPrice.body.error || "") && stripeWrites() === writesBeforeMissingPrice);
+const missingCatalog = await callCheckout({ tier: "tier1", addOns: [], offer: "local", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes", serviceBranch: "" });
+const missingCatalogSession = stripe.sessions.get(missingCatalog.body.sessionId);
+check("a discounted checkout works without a catalog price or coupon", missingCatalog.status === 200 && missingCatalogSession && missingCatalogSession.amount_total === 8910 + 20000 && lineAmount(missingCatalogSession._params, 0) === 8910 && !missingCatalogSession._params["discounts[0][coupon]"]);
 process.env.STRIPE_PRICE_TIER1 = "price_test_tier1";
 process.env.STRIPE_COUPON_FIRST_MONTH_10 = "coupon_test_broad";
 const unsafe = await callCheckout({ tier: "tier2", addOns: [], offer: "local", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes" });
-check("a coupon that can reach another product does not start checkout", unsafe.status === 503 && /not be applied safely|could not be confirmed/i.test(unsafe.body.error || ""));
+const unsafeSession = stripe.sessions.get(unsafe.body.sessionId);
+check("an old coupon is not applied to the discounted monthly price", unsafe.status === 200 && unsafeSession && !unsafeSession._params["discounts[0][coupon]"] && lineAmount(unsafeSession._params, 0) === 20250 && unsafeSession.amount_total === 20250 + 20000);
+const tier2Included = await callCheckout({ tier: "tier2", addOns: ["admin_dashboard", "performance_reports"] });
+const tier2IncludedSession = stripe.sessions.get(tier2Included.body.sessionId);
+check("Tier 2 checkout includes the dashboard and does not add $50", tier2Included.status === 200 && tier2IncludedSession && tier2IncludedSession.amount_total === 22500 + 2000 + 20000 && tier2IncludedSession.metadata.admin_dashboard_requested === "yes" && lineAmount(tier2IncludedSession._params, 0) === 22500 && lineAmount(tier2IncludedSession._params, 1) === 2000);
+const tier2DashboardOnly = await callCheckout({ tier: "tier2", addOns: ["admin_dashboard"] });
+const tier2DashboardOnlySession = stripe.sessions.get(tier2DashboardOnly.body.sessionId);
+check("Tier 2 with only the dashboard add-on requested stays $225 plus setup", tier2DashboardOnly.status === 200 && tier2DashboardOnlySession && tier2DashboardOnlySession.amount_total === 22500 + 20000 && tier2DashboardOnlySession.metadata.tier === "tier2" && tier2DashboardOnlySession._params.cancel_url.includes("tier=tier2"));
+const tier1Dashboard = await callCheckout({ tier: "tier1", addOns: ["admin_dashboard"] });
+const tier1DashboardSession = stripe.sessions.get(tier1Dashboard.body.sessionId);
+check("Tier 1 still charges the optional $50 dashboard", tier1Dashboard.status === 200 && tier1DashboardSession && tier1DashboardSession.amount_total === 9900 + 5000 + 20000 && tier1DashboardSession.metadata.admin_dashboard_requested === "yes");
 clearOfferEnv();
 const buyout = await callCheckout({ tier: "buyout-tier2", addOns: [], offer: "both", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes", serviceBranch: "U.S. Air Force", percent: 30 });
 const buyoutSession = stripe.sessions.get(buyout.body.sessionId);
-check("buy-out keeps the full prepaid price and the $200 launch fee", buyout.status === 200 && buyoutSession && buyoutSession.amount_total === 22500 * 24 + 20000 && !buyoutSession._params["discounts[0][coupon]"]);
+check("buy-out keeps the full prepaid price and the $200 launch fee", buyout.status === 200 && buyoutSession && buyoutSession.amount_total === 22500 * 24 + 20000 && buyoutSession.metadata.admin_dashboard_requested === "yes" && !buyoutSession._params["discounts[0][coupon]"]);
 
 const pricing = await import("../lib/pricing/first-month-offer.js");
-const tier4Preview = pricing.checkoutTotals({ tierCents: 4400, percent: 30, mode: "subscription" });
-check("Tier 4 with both first-month offers is 30% off $44, not the setup fee", tier4Preview.discountedTier === 3080 && tier4Preview.dueToday === 23080 && tier4Preview.renewal === 4400 && tier4Preview.launchFeeCents === 20000);
-const tier4BuyoutMath = pricing.checkoutTotals({ tierCents: 4400 * 24, percent: 30, mode: "payment" });
+const tier4Preview = pricing.checkoutTotals({ tierCents: 4400, local: true, responder: true, mode: "subscription" });
+check("Tier 4 with both discounts is $31.68, not a flat 30% off", tier4Preview.discountedTier === 3168 && tier4Preview.dueToday === 23168 && tier4Preview.renewal === 3168 && tier4Preview.launchFeeCents === 20000);
+const tier4BuyoutMath = pricing.checkoutTotals({ tierCents: 4400 * 24, local: true, responder: true, mode: "payment" });
 check("Tier 4 upfront buyout stays $1,256 with no discount", tier4BuyoutMath.dueToday === 4400 * 24 + 20000 && tier4BuyoutMath.discountPercent === 0);
 
 const tier4 = await callCheckout({ tier: "tier4", addOns: ["admin_dashboard", "performance_reports"], offer: "" });
@@ -814,9 +826,9 @@ check("Tier 4 checkout requires a language choice", tier4Language.status === 400
 const tier4OneLanguage = await callCheckout({ tier: "tier4", addOns: [], websiteLanguages: "one", websiteLanguage: "es" });
 const tier4OneSession = stripe.sessions.get(tier4OneLanguage.body.sessionId);
 check("A single-language choice is stored as Spanish", tier4OneLanguage.status === 200 && tier4OneSession && tier4OneSession.metadata.website_languages === "es");
-const writesBeforeTier4Offer = stripeWrites();
 const tier4Offer = await callCheckout({ tier: "tier4", addOns: [], offer: "both", businessAddress: "100 Main St, Carlsbad, NM 88220", addressAttested: "yes", serviceBranch: "U.S. Air Force" });
-check("Tier 4 discount does not start checkout until its Stripe price is configured", tier4Offer.status === 503 && /not configured|could not be confirmed|not be applied safely/i.test(tier4Offer.body.error || "") && stripeWrites() === writesBeforeTier4Offer);
+const tier4OfferSession = stripe.sessions.get(tier4Offer.body.sessionId);
+check("Tier 4 discounted checkout is $31.68 plus the $200 setup fee", tier4Offer.status === 200 && tier4OfferSession && tier4OfferSession.amount_total === 3168 + 20000 && lineAmount(tier4OfferSession._params, 0) === 3168 && lineAmount(tier4OfferSession._params, 1) === 20000 && tier4OfferSession._params["line_items[0][price_data][recurring][interval]"] === "month" && tier4OfferSession.metadata.tier === "tier4" && tier4OfferSession.metadata.admin_dashboard_requested === "no" && tier4OfferSession._params.cancel_url.includes("tier=tier4") && !tier4OfferSession._params["discounts[0][coupon]"]);
 const consultation = await import("../lib/consultations/validate.js");
 const flyerConsult = consultation.validateConsultation({
   businessName: "Flyer Co",
