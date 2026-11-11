@@ -8,7 +8,7 @@
   <meta name="robots" content="noindex, nofollow" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,640&family=Nunito+Sans:wght@400;700;800&display=swap" />
-  <link rel="stylesheet" href="/examples/desert-sunrise.css?v=1" />
+  <link rel="stylesheet" href="/examples/desert-sunrise.css?v=5" />
 </head>
 <body>
   <a class="skip" href="#content">Skip to content</a>
@@ -18,75 +18,95 @@
   </div>
   <header class="site-header">
     <a class="brand" href="#top">
-      <svg width="42" height="42" viewBox="0 0 42 42" aria-hidden="true">
-        <circle cx="21" cy="21" r="21" fill="#8d3b2a" />
-        <circle cx="21" cy="16" r="6" fill="#e2b15a" />
-        <path d="M6 30c4-6 8-4 12-8 4 5 8 2 12 6v6H6z" fill="#f7f0e6" />
-      </svg>
-      <span><strong data-en="Desert Sunrise" data-es="Amanecer del Desierto">Desert Sunrise</strong><small>Coffee Co.</small></span>
+      <span><strong>Desert Sunrise</strong><small>Coffee Co.</small></span>
     </a>
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
-    <nav class="nav" id="site-nav">
-      <a href="#menu" data-en="Menu" data-es="Menú">Menu</a>
+    <nav class="nav" id="site-nav" aria-label="Coffee trailer">
+      <a href="#menu" data-open-menu data-en="Menu" data-es="Menú">Menu</a>
       <a href="#hours" data-en="Hours" data-es="Horario">Hours</a>
       <a href="#visit" data-en="Visit" data-es="Visítanos">Visit</a>
       <button class="lang-toggle" type="button" data-lang aria-pressed="false">Español</button>
     </nav>
   </header>
+
   <main id="content">
-    <section class="hero" id="top">
-      <div>
-        <p class="kicker">Tier 4 Example — Online Flyer</p>
-        <h1 data-en="Coffee worth the sunrise." data-es="Café que vale el amanecer.">Coffee worth the sunrise.</h1>
-        <p class="lede" data-en="A small coffee truck pouring slow mornings, iced afternoons, and a short menu you can read from the window. This page is a fictional demonstration." data-es="Un camión de café pequeño para mañanas lentas, tardes frías y un menú corto que se lee desde la ventana. Esta página es una demostración ficticia.">A small coffee truck pouring slow mornings, iced afternoons, and a short menu you can read from the window. This page is a fictional demonstration.</p>
-        <p data-en="An affordable, professional online presence with your own domain, menu, business information, and click-to-call functionality." data-es="Una presencia en línea profesional y accesible, con dominio propio, menú, información del negocio y llamada con un toque.">An affordable, professional online presence with your own domain, menu, business information, and click-to-call functionality.</p>
-        <div class="hero-actions">
-          <a class="btn" href="/consultation.html?tier=tier4">Get Started With Tier 4</a>
-          <a class="btn btn-gold" href="#menu" data-en="See the menu" data-es="Ver el menú">See the menu</a>
+    <section class="stage" id="top" aria-labelledby="trailer-heading">
+      <p class="kicker">Tier 4 Example — Online Flyer</p>
+      <h1 id="trailer-heading">Desert Sunrise Coffee Co.</h1>
+      <p class="lede" data-en="A fictional coffee trailer at a sample desert stop. Nothing here can be ordered online." data-es="Un tráiler de café ficticio en una parada de muestra del desierto. Aquí no se puede pedir en línea.">A fictional coffee trailer at a sample desert stop. Nothing here can be ordered online.</p>
+
+      <div class="stage-frame">
+        <img
+          class="stage-photo"
+          src="/examples/desert-sunrise-trailer.jpg"
+          alt="Fictional demonstration of the Desert Sunrise Coffee trailer at a desert sunset, with string lights and a menu board."
+          width="1280"
+          height="720"
+          decoding="async"
+          fetchpriority="high"
+        />
+        <div class="stage-actions">
+          <a class="btn btn-call" href="tel:+15550142200">Call to Order</a>
+          <button class="btn btn-gold" type="button" data-open-menu>View Menu</button>
         </div>
       </div>
-      <div class="hero-art" role="img" aria-label="Illustrated sunrise behind a coffee truck">
-        <span class="sun"></span>
-        <span class="mesa"></span>
-        <span class="truck"></span>
-      </div>
-    </section>
 
-    <section class="section" id="menu">
-      <h2 data-en="This morning’s menu" data-es="El menú de esta mañana">This morning’s menu</h2>
-      <p data-en="Sample prices for the demonstration. Nothing here can be ordered online." data-es="Precios de muestra para la demostración. Aquí no se puede pedir en línea.">Sample prices for the demonstration. Nothing here can be ordered online.</p>
-      <div class="menu-grid">
-        <article class="card"><div class="drink drink-latte"></div><h3>Sunrise Latte</h3><p data-en="Oat or whole milk, orange zest, and a short espresso." data-es="Leche de avena o entera, ralladura de naranja y un espresso corto.">Oat or whole milk, orange zest, and a short espresso.</p><p class="price">$4.75</p></article>
-        <article class="card"><div class="drink drink-mocha"></div><h3>Mesa Mocha</h3><p data-en="Dark cocoa, espresso, and a pinch of chile salt." data-es="Cacao oscuro, espresso y una pizca de sal con chile.">Dark cocoa, espresso, and a pinch of chile salt.</p><p class="price">$5.25</p></article>
-        <article class="card"><div class="drink drink-cold"></div><h3>Adobe Cold Brew</h3><p data-en="Steeped overnight and poured over ice." data-es="Reposado de noche y servido con hielo.">Steeped overnight and poured over ice.</p><p class="price">$4.50</p></article>
-        <article class="card"><div class="drink drink-horchata"></div><h3>Horchata Latte</h3><p data-en="Cinnamon rice milk with a soft espresso shot." data-es="Leche de arroz con canela y un espresso suave.">Cinnamon rice milk with a soft espresso shot.</p><p class="price">$5.00</p></article>
-        <article class="card"><div class="drink drink-cocoa"></div><h3>Campfire Cocoa</h3><p data-en="A smaller cup for cool mornings, no coffee." data-es="Una taza pequeña para mañanas frescas, sin café.">A smaller cup for cool mornings, no coffee.</p><p class="price">$3.75</p></article>
-        <article class="card"><div class="drink drink-pear"></div><h3>Prickly Pear Cooler</h3><p data-en="Sparkling, lightly sweet, and caffeine free." data-es="Con gas, poco dulce y sin cafeína.">Sparkling, lightly sweet, and caffeine free.</p><p class="price">$4.25</p></article>
-      </div>
-    </section>
-
-    <section class="section" id="hours">
-      <div class="info-grid">
-        <article class="card">
+      <div class="info-strip">
+        <article id="visit">
+          <h2 data-en="Find us" data-es="Encuéntranos">Find us</h2>
+          <p><strong>Fictional demonstration.</strong> <span data-en="Sample stop only: an imaginary lot on a desert highway. Desert Sunrise Coffee Co. is not a real business, and this is not a real address." data-es="Solo una parada de muestra: un lote imaginario en una carretera del desierto. Desert Sunrise Coffee Co. no es un negocio real y esta no es una dirección real.">Sample stop only: an imaginary lot on a desert highway. Desert Sunrise Coffee Co. is not a real business, and this is not a real address.</span></p>
+          <p class="fine" data-en="Click-to-call demonstration. This number is not in service." data-es="Demostración de llamada. Este número no está en servicio.">Click-to-call demonstration. This number is not in service.</p>
+        </article>
+        <article id="hours">
           <h2 data-en="Hours" data-es="Horario">Hours</h2>
           <div class="hours">
             <div><span data-en="Thursday – Sunday" data-es="Jueves a domingo">Thursday – Sunday</span><span>7:00 – 1:00</span></div>
             <div><span data-en="Monday – Wednesday" data-es="Lunes a miércoles">Monday – Wednesday</span><span data-en="Truck is parked" data-es="El camión descansa">Truck is parked</span></div>
           </div>
         </article>
-        <article class="card" id="visit">
-          <h2 data-en="Find the truck" data-es="Encuentra el camión">Find the truck</h2>
-          <p><strong>Fictional demonstration.</strong> <span data-en="Sample stop only: an imaginary lot on a desert highway. Desert Sunrise Coffee Co. is not a real business, and this is not a real address." data-es="Solo una parada de muestra: un lote imaginario en una carretera del desierto. Desert Sunrise Coffee Co. no es un negocio real y esta no es una dirección real.">Sample stop only: an imaginary lot on a desert highway. Desert Sunrise Coffee Co. is not a real business, and this is not a real address.</span></p>
-          <p><a class="call-link" href="tel:+15550142200">Call (555) 014-2200</a></p>
-          <p class="fine" data-en="Click-to-call demonstration. This number is not in service." data-es="Demostración de llamada. Este número no está en servicio.">Click-to-call demonstration. This number is not in service.</p>
-          <div class="socials">
-            <a href="#visit" aria-label="Sample Instagram link, not a real profile">Instagram</a>
-            <a href="#visit" aria-label="Sample Facebook link, not a real profile">Facebook</a>
-          </div>
-        </article>
+        <div class="socials">
+          <a href="#visit" aria-label="Sample Instagram link, not a real profile">Instagram</a>
+          <a href="#visit" aria-label="Sample Facebook link, not a real profile">Facebook</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="menu-sheet" id="menu" aria-labelledby="menu-heading" hidden>
+      <div class="menu-sheet-bar">
+        <h2 id="menu-heading" data-en="This morning’s menu" data-es="El menú de esta mañana">This morning’s menu</h2>
+        <button class="btn btn-close" type="button" data-close-menu data-en="Back" data-es="Volver">Back</button>
+      </div>
+      <p data-en="Sample prices for the demonstration. Nothing here can be ordered online." data-es="Precios de muestra para la demostración. Aquí no se puede pedir en línea.">Sample prices for the demonstration. Nothing here can be ordered online.</p>
+      <div class="menu-tabs" role="tablist" aria-label="Menu categories">
+        <button type="button" role="tab" id="tab-hot" aria-selected="true" aria-controls="panel-hot" data-tab="hot">Hot Coffee</button>
+        <button type="button" role="tab" id="tab-iced" aria-selected="false" aria-controls="panel-iced" data-tab="iced" tabindex="-1">Iced Drinks</button>
+        <button type="button" role="tab" id="tab-specialty" aria-selected="false" aria-controls="panel-specialty" data-tab="specialty" tabindex="-1">Specialty Drinks</button>
+        <button type="button" role="tab" id="tab-dessert" aria-selected="false" aria-controls="panel-dessert" data-tab="dessert" tabindex="-1">Desserts</button>
+      </div>
+      <div class="menu-panel" id="panel-hot" role="tabpanel" aria-labelledby="tab-hot">
+        <article><h3>Espresso</h3><p data-en="A short, dark shot from the trailer machine." data-es="Un espresso corto y oscuro de la máquina del tráiler.">A short, dark shot from the trailer machine.</p><p class="price">$3.00</p></article>
+        <article><h3>Sunrise Latte</h3><p data-en="Oat or whole milk, orange zest, and a short espresso." data-es="Leche de avena o entera, ralladura de naranja y un espresso corto.">Oat or whole milk, orange zest, and a short espresso.</p><p class="price">$4.75</p></article>
+        <article><h3>Cappuccino</h3><p data-en="Foam-forward and small enough to drink at the window." data-es="Con mucha espuma y lo bastante pequeño para tomarlo en la ventana.">Foam-forward and small enough to drink at the window.</p><p class="price">$4.25</p></article>
+        <article><h3>Mesa Mocha</h3><p data-en="Dark cocoa, espresso, and a pinch of chile salt." data-es="Cacao oscuro, espresso y una pizca de sal con chile.">Dark cocoa, espresso, and a pinch of chile salt.</p><p class="price">$5.25</p></article>
+      </div>
+      <div class="menu-panel" id="panel-iced" role="tabpanel" aria-labelledby="tab-iced" hidden>
+        <article><h3>Adobe Cold Brew</h3><p data-en="Steeped overnight and poured over ice." data-es="Reposado de noche y servido con hielo.">Steeped overnight and poured over ice.</p><p class="price">$4.50</p></article>
+        <article><h3>Iced Latte</h3><p data-en="Espresso and cold milk over a tall glass of ice." data-es="Espresso y leche fría sobre un vaso alto con hielo.">Espresso and cold milk over a tall glass of ice.</p><p class="price">$5.00</p></article>
+        <article><h3>Desert Frappé</h3><p data-en="Blended ice, espresso, and a little cane sugar." data-es="Hielo batido, espresso y un poco de azúcar de caña.">Blended ice, espresso, and a little cane sugar.</p><p class="price">$5.50</p></article>
+      </div>
+      <div class="menu-panel" id="panel-specialty" role="tabpanel" aria-labelledby="tab-specialty" hidden>
+        <article><h3>Horchata Latte</h3><p data-en="Cinnamon rice milk with a soft espresso shot." data-es="Leche de arroz con canela y un espresso suave.">Cinnamon rice milk with a soft espresso shot.</p><p class="price">$5.00</p></article>
+        <article><h3>Prickly Pear Cooler</h3><p data-en="Sparkling, lightly sweet, and caffeine free." data-es="Con gas, poco dulce y sin cafeína.">Sparkling, lightly sweet, and caffeine free.</p><p class="price">$4.25</p></article>
+        <article><h3>Campfire Cocoa</h3><p data-en="A smaller cup for cool mornings, no coffee." data-es="Una taza pequeña para mañanas frescas, sin café.">A smaller cup for cool mornings, no coffee.</p><p class="price">$3.75</p></article>
+      </div>
+      <div class="menu-panel" id="panel-dessert" role="tabpanel" aria-labelledby="tab-dessert" hidden>
+        <article><h3>Mesa Cookie</h3><p data-en="A thick chocolate chip cookie, baked that morning." data-es="Una galleta gruesa de chispas de chocolate, horneada esa mañana.">A thick chocolate chip cookie, baked that morning.</p><p class="price">$3.25</p></article>
+        <article><h3>Adobe Brownie</h3><p data-en="A fudgy square with a pinch of salt." data-es="Un cuadro de brownie con una pizca de sal.">A fudgy square with a pinch of salt.</p><p class="price">$3.50</p></article>
+        <article><h3>Sunrise Muffin</h3><p data-en="Orange and blueberry, wrapped for the road." data-es="Naranja y arándano, envuelto para el camino.">Orange and blueberry, wrapped for the road.</p><p class="price">$3.75</p></article>
       </div>
     </section>
   </main>
+
   <footer class="site-footer">
     <p class="kicker">4Ward Web Design — Example Website</p>
     <h2>Get Started With Tier 4</h2>
@@ -94,6 +114,6 @@
     <p><a class="btn btn-gold" href="/consultation.html?tier=tier4">Get Started With Tier 4</a></p>
     <p class="fine">Desert Sunrise Coffee Co. is a fictional sample created by 4Ward Web Design. It is not a client and it does not take orders.</p>
   </footer>
-  <script src="/examples/desert-sunrise.js?v=4"></script>
+  <script src="/examples/desert-sunrise.js?v=5"></script>
 </body>
 </html>
