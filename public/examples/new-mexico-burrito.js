@@ -20,15 +20,25 @@
     }
   }
 
+  let closeTimer = 0;
+
+  function frameBox() {
+    const parts = (scene?.dataset.frame || "").split(",").map(Number);
+    if (parts.length !== 4 || parts.some((n) => Number.isNaN(n))) return null;
+    return parts.map((n) => n / 100);
+  }
+
   function zoomToBoard() {
-    if (!scene || !board || reduceMotion) {
-      if (scene) scene.style.transform = "none";
-      return;
-    }
+    if (!scene) return;
     const frame = scene.parentElement;
-    const originX = board.offsetLeft + board.offsetWidth / 2;
-    const originY = board.offsetTop + board.offsetHeight / 2;
-    const scale = Math.min(frame.clientWidth / board.offsetWidth, frame.clientHeight / board.offsetHeight) * 0.9;
+    const box = frameBox();
+    if (!frame || !box) return;
+    const [left, top, width, height] = box;
+    const originX = scene.offsetWidth * (left + width / 2);
+    const originY = scene.offsetHeight * (top + height / 2);
+    const boardW = scene.offsetWidth * width;
+    const boardH = scene.offsetHeight * height;
+    const scale = Math.min(frame.clientWidth / boardW, frame.clientHeight / boardH) * 0.9;
     const dx = frame.clientWidth / 2 - (scene.offsetLeft + originX);
     const dy = frame.clientHeight / 2 - (scene.offsetTop + originY);
     scene.style.transformOrigin = originX + "px " + originY + "px";
@@ -36,19 +46,29 @@
   }
 
   function openMenu() {
+    if (!scene) return;
+    window.clearTimeout(closeTimer);
+    scene.style.width = scene.offsetWidth + "px";
     document.body.classList.add("is-menu");
-    board?.setAttribute("aria-hidden", "false");
-    window.requestAnimationFrame(() => {
-      window.requestAnimationFrame(zoomToBoard);
-    });
+    if (board) board.inert = false;
+    window.requestAnimationFrame(() => window.requestAnimationFrame(zoomToBoard));
     board?.querySelector(".board-back")?.focus();
   }
 
   function closeMenu() {
-    document.body.classList.remove("is-menu");
-    board?.setAttribute("aria-hidden", "true");
-    if (scene) scene.style.transform = "none";
-    document.querySelector("[data-open-menu]")?.focus();
+    if (!scene) return;
+    scene.style.transform = "none";
+    const release = () => {
+      document.body.classList.remove("is-menu");
+      scene.style.width = "";
+      scene.style.transform = "";
+      scene.style.transformOrigin = "";
+      if (board) board.inert = true;
+    };
+    window.clearTimeout(closeTimer);
+    if (reduceMotion) release();
+    else closeTimer = window.setTimeout(release, 1180);
+    document.querySelector(".order-bar [data-open-menu]")?.focus();
   }
 
   function jumpTo(id) {
