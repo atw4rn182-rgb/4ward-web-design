@@ -38,12 +38,19 @@
     const originY = scene.offsetHeight * (top + height / 2);
     const boardW = scene.offsetWidth * width;
     const boardH = scene.offsetHeight * height;
-    const scale = Math.min(frame.clientWidth / boardW, frame.clientHeight / boardH) * 0.88;
+    const scale = Math.min(frame.clientWidth / boardW, frame.clientHeight / boardH) * 0.92;
     const tilt = (scene.dataset.tilt || "0,0").split(",").map(Number);
     const rx = tilt[0] || 0;
     const ry = tilt[1] || 0;
-    const dx = frame.clientWidth / 2 - (scene.offsetLeft + originX);
-    const dy = frame.clientHeight / 2 - (scene.offsetTop + originY);
+    const place = (origin, size, frameSize) => {
+      const centered = frameSize / 2;
+      const min = frameSize - (size - origin) * scale;
+      const max = origin * scale;
+      if (size * scale <= frameSize) return centered;
+      return Math.min(max, Math.max(min, centered));
+    };
+    const dx = place(originX, scene.offsetWidth, frame.clientWidth) - (scene.offsetLeft + originX);
+    const dy = place(originY, scene.offsetHeight, frame.clientHeight) - (scene.offsetTop + originY);
     scene.style.transformOrigin = originX + "px " + originY + "px";
     scene.style.transform = "translate(" + dx + "px, " + dy + "px) scale(" + scale + ") rotateX(" + rx + "deg) rotateY(" + ry + "deg)";
   }
@@ -60,9 +67,10 @@
 
   function closeMenu() {
     if (!scene) return;
+    document.body.classList.add("is-closing");
     scene.style.transform = "none";
     const release = () => {
-      document.body.classList.remove("is-menu");
+      document.body.classList.remove("is-menu", "is-closing");
       scene.style.width = "";
       scene.style.transform = "";
       scene.style.transformOrigin = "";
@@ -70,7 +78,7 @@
     };
     window.clearTimeout(closeTimer);
     if (reduceMotion) release();
-    else closeTimer = window.setTimeout(release, 1620);
+    else closeTimer = window.setTimeout(release, 1880);
     document.querySelector(".order-bar [data-open-menu]")?.focus();
   }
 
