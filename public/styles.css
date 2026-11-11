@@ -3961,7 +3961,7 @@ body.home-premium .example-card {
 }
 
 body.home-premium .example-preview-coffee img {
-  object-position: center 42%;
+  object-position: center 24%;
 }
 
 body.home-premium .example-preview {
@@ -3999,6 +3999,14 @@ body.home-premium .tier4-example .example-preview img {
   height: 100%;
   object-fit: cover;
   object-position: center center;
+}
+
+body.home-premium .tier4-example .example-preview-coffee img {
+  object-position: center 24%;
+}
+
+body.home-premium .tier4-example .example-preview-burrito img {
+  object-position: center 38%;
 }
 
 body.home-premium .tier1-example h3,
