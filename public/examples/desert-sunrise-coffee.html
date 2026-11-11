@@ -7,8 +7,8 @@
   <meta name="description" content="A fictional Tier 4 online flyer demonstration by 4Ward Web Design. Desert Sunrise Coffee Co. is not a real business." />
   <meta name="robots" content="noindex, nofollow" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,640&family=Nunito+Sans:wght@400;700;800&display=swap" />
-  <link rel="stylesheet" href="/examples/desert-sunrise.css?v=7" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fraunces:opsz,wght@9..144,560;9..144,640&family=Nunito+Sans:wght@400;700;800&display=swap" />
+  <link rel="stylesheet" href="/examples/desert-sunrise.css?v=9" />
 </head>
 <body>
   <a class="skip" href="#content">Skip to content</a>
@@ -36,7 +36,7 @@
       <p class="lede" data-en="A fictional coffee trailer at a sample desert stop. Nothing here can be ordered online." data-es="Un tráiler de café ficticio en una parada de muestra del desierto. Aquí no se puede pedir en línea.">A fictional coffee trailer at a sample desert stop. Nothing here can be ordered online.</p>
 
       <div class="stage-frame">
-        <div class="scene" id="scene">
+        <div class="scene" id="scene" data-frame="65.5,34,19.5,44">
           <img
             class="stage-photo"
             src="/examples/desert-sunrise-trailer.jpg"
@@ -46,11 +46,10 @@
             decoding="async"
             fetchpriority="high"
           />
-          <div class="board" id="menu" aria-hidden="true">
+          <div class="board" id="menu" inert>
             <div class="board-inner">
               <div class="board-top">
-                <h2 id="menu-heading">Our Menu</h2>
-                <button class="board-back" type="button" data-close-menu>Back to Trailer</button>
+                <button class="board-back" type="button" data-close-menu data-en="Back to Trailer" data-es="Volver al tráiler">Back to Trailer</button>
               </div>
               <div class="menu-tabs" role="tablist" aria-label="Menu categories">
                 <button type="button" data-jump="hot">Hot Coffee</button>
@@ -87,12 +86,12 @@
               </div>
             </div>
           </div>
-          <div class="stage-actions">
-            <a class="btn btn-call" href="tel:+15550142200">Call to Order</a>
-            <button class="btn btn-gold" type="button" data-open-menu>View Menu</button>
-            <p class="call-note">Demonstration number, (555) 014-2200. Not in service.</p>
-          </div>
         </div>
+      </div>
+      <div class="order-bar">
+        <a class="btn btn-call" href="tel:+15550142200">Call to Order</a>
+        <button class="btn btn-gold" type="button" data-open-menu>View Menu</button>
+        <p class="call-note">Demonstration number, (555) 014-2200. Not in service.</p>
       </div>
 
       <div class="info-strip">
@@ -124,6 +123,6 @@
     <p><a class="btn btn-gold" href="/consultation.html?tier=tier4">Get Started With Tier 4</a></p>
     <p class="fine">Desert Sunrise Coffee Co. is a fictional sample created by 4Ward Web Design. It is not a client and it does not take orders.</p>
   </footer>
-  <script src="/examples/desert-sunrise.js?v=7"></script>
+  <script src="/examples/desert-sunrise.js?v=10"></script>
 </body>
 </html>
