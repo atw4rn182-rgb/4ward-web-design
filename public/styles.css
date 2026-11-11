@@ -3946,6 +3946,7 @@ body.home-premium .example-sites h2 {
 body.home-premium .example-grid {
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.9rem;
+  align-items: start;
 }
 
 body.home-premium .example-card {
@@ -3977,31 +3978,36 @@ body.home-premium .example-card-stack {
   grid-column: 1 / -1;
 }
 
-body.home-premium .tier1-example {
+body.home-premium .tier1-example,
+body.home-premium .tier4-example {
   display: flex;
   flex-direction: column;
   gap: 0.55rem;
   min-width: 0;
 }
 
-body.home-premium .tier1-example .example-preview {
+body.home-premium .tier1-example .example-preview,
+body.home-premium .tier4-example .example-preview {
   width: 100%;
   aspect-ratio: 16 / 10;
   margin-bottom: 0;
 }
 
-body.home-premium .tier1-example .example-preview img {
+body.home-premium .tier1-example .example-preview img,
+body.home-premium .tier4-example .example-preview img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   object-position: center center;
 }
 
-body.home-premium .tier1-example h3 {
+body.home-premium .tier1-example h3,
+body.home-premium .tier4-example h3 {
   font-size: 1.2rem;
 }
 
-body.home-premium .tier1-example .btn-accent {
+body.home-premium .tier1-example .btn-accent,
+body.home-premium .tier4-example .btn-accent {
   width: 100%;
 }
 
@@ -4058,7 +4064,8 @@ body.home-premium .example-actions {
 }
 
 body.home-premium .example-actions .btn-accent,
-body.home-premium .tier1-example .btn-accent {
+body.home-premium .tier1-example .btn-accent,
+body.home-premium .tier4-example .btn-accent {
   width: 100%;
   border: 0;
   background: linear-gradient(90deg, #2563eb 0%, #d97706 100%);
