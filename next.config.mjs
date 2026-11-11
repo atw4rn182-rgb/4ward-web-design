@@ -23,6 +23,7 @@ const nextConfig = {
     return [
       { source: "/", destination: "/index.html" },
       { source: "/examples/desert-sunrise-coffee", destination: "/examples/desert-sunrise-coffee.html" },
+      { source: "/examples/new-mexico-burrito", destination: "/examples/new-mexico-burrito.html" },
       { source: "/examples/canyon-trail-outfitters", destination: "/examples/canyon-trail-outfitters.html" },
       { source: "/examples/canyon-trail-outfitters/:path*", destination: "/examples/canyon-trail-outfitters.html" },
     ];
@@ -49,6 +50,10 @@ const nextConfig = {
       },
       {
         source: "/examples/desert-sunrise-coffee",
+        headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
+      },
+      {
+        source: "/examples/new-mexico-burrito",
         headers: [{ key: "X-Robots-Tag", value: "noindex, nofollow" }],
       },
       {

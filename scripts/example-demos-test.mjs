@@ -6,6 +6,7 @@ const root = new URL("../", import.meta.url);
 const read = (path) => readFileSync(new URL(path, root), "utf8");
 
 const coffee = read("public/examples/desert-sunrise-coffee.html");
+const burrito = read("public/examples/new-mexico-burrito.html");
 const canyon = read("public/examples/canyon-trail-outfitters.html");
 const canyonScript = read("public/examples/canyon-trail.js");
 const home = read("public/index.html");
@@ -25,14 +26,16 @@ check("coffee CTA uses the existing Tier 4 inquiry", coffee.includes('href="/con
 check("coffee page is a single flyer without checkout or a dashboard", !/admin dashboard|checkout|stripe|supabase/i.test(coffee));
 check("coffee demo opts out of search indexing and local-business data", coffee.includes('content="noindex, nofollow"') && !coffee.includes("application/ld+json"));
 check("coffee demo includes menu, hours, fictional location, call, language, and social samples", ["Menu", "Hours", "Fictional demonstration", "tel:+15550142200", "data-lang", "aria-label=\"Sample Instagram"].every((part) => coffee.includes(part)));
+check("burrito demo is a fictional tier 4 flyer", burrito.includes("New Mexico Burrito Co.") && burrito.includes("Tier 4 Example — Online Flyer") && burrito.includes("An affordable, professional online presence with your own domain, menu, business information, and click-to-call functionality.") && burrito.includes('href="/consultation.html?tier=tier4"') && burrito.includes("Get Started With Tier 4"));
+check("burrito demo stays fictional and has the left-board menu", ["Fictional demonstration", "tel:+15550143310", "data-lang", "data-jump=\"burritos\"", "data-jump=\"tacos\"", "data-jump=\"quesadillas\"", "data-jump=\"sides\"", "data-jump=\"drinks\"", "Back to Trailer", 'content="noindex, nofollow"'].every((part) => burrito.includes(part)) && !/checkout|stripe|supabase/i.test(burrito));
 
 check("canyon demo is labeled with the Tier 2 promise", canyon.includes("Tier 2 Example — E-Commerce &amp; Business Management") && canyon.includes("YOUR WEBSITE. YOUR STORE. YOUR CONTROL.") && canyon.includes("Manage your products, update prices, upload pictures, and control your website through your own secure dashboard."));
 check("canyon CTA uses the existing Tier 2 inquiry", canyon.includes('href="/consultation.html?tier=tier2"') && canyon.includes("Get Started With Tier 2"));
 check("canyon demo opts out of search indexing and local-business data", canyon.includes('content="noindex, nofollow"') && !canyon.includes("application/ld+json"));
 check("canyon script never calls Stripe, Supabase, or fetch", !/stripe|supabase|fetch\(|checkout\.stripe|XMLHttpRequest/i.test(canyonScript));
 
-check("demo routes are rewritten to the example pages", config.includes('"/examples/desert-sunrise-coffee"') && config.includes('"/examples/canyon-trail-outfitters/:path*"'));
-check("homepage keeps the real portfolio and adds example cards", ["Desert Sunrise Coffee Co.", "4 Elements Oilfield Services", "S&amp;R Concrete Crafts", "Accu-Fab NM", "Black Mesa Welding", 'id="example-websites"', "View Concept", "Visit Website", "Visit Accu-Fab Website", "Visit Black Mesa Website", "View Tier 4", "View Tier 1", "$44/month", "$399/month", "$225/month", "$99/month", "Your Future Website Concept", "Your Website. Your Way.", "optional paid add-on", "Starting at $44/Month"].every((part) => home.includes(part)) && !home.includes("/examples/canyon-trail-outfitters") && !home.includes("Canyon Trail Outfitters") && !home.includes("Explore Demo") && !home.includes("example-preview-pair"));
+check("demo routes are rewritten to the example pages", config.includes('"/examples/desert-sunrise-coffee"') && config.includes('"/examples/new-mexico-burrito"') && config.includes('"/examples/canyon-trail-outfitters/:path*"'));
+check("homepage keeps the real portfolio and adds example cards", ["Desert Sunrise Coffee Co.", "New Mexico Burrito Co.", "Imagine your own food trailer transformed into an interactive website", "4 Elements Oilfield Services", "S&amp;R Concrete Crafts", "Accu-Fab NM", "Black Mesa Welding", 'id="example-websites"', "View Concept", 'href="/examples/desert-sunrise-coffee"', 'href="/examples/new-mexico-burrito"', "Visit Website", "Visit Accu-Fab Website", "Visit Black Mesa Website", "View Tier 4", "View Tier 1", "$44/month", "$399/month", "$225/month", "$99/month", "Your Future Website Concept", "Your Website. Your Way.", "optional paid add-on", "Starting at $44/Month"].every((part) => home.includes(part)) && !home.includes("/examples/canyon-trail-outfitters") && !home.includes("Canyon Trail Outfitters") && !home.includes("Explore Demo") && !home.includes("example-preview-pair"));
 check("homepage hero commercial is unchanged", home.includes("4ward-commercial.mp4?v=noflash1") && home.includes('preload="none"') && home.includes("hero-commercial.js?v=hero-x2e"));
 
 const homeRoute = parseDemoPath("/examples/canyon-trail-outfitters");

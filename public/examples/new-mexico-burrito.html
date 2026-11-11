@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tier 4 Example — New Mexico Burrito Co. | Fictional flyer</title>
+  <meta name="description" content="A fictional Tier 4 online flyer demonstration by 4Ward Web Design. New Mexico Burrito Co. is not a real business." />
+  <meta name="robots" content="noindex, nofollow" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,640&family=Nunito+Sans:wght@400;700;800&display=swap" />
+  <link rel="stylesheet" href="/examples/new-mexico-burrito.css?v=1" />
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <div class="demo-banner">
+    <span>4Ward Web Design — Example Website</span>
+    <a href="/">Back to 4Ward Web Design</a>
+  </div>
+  <header class="site-header">
+    <a class="brand" href="#top">
+      <span><strong>New Mexico</strong><small>Burrito Co.</small></span>
+    </a>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" data-en="Menu" data-es="Menú">Menu</button>
+    <nav class="nav" id="site-nav" aria-label="Burrito trailer">
+      <a href="#menu" data-open-menu data-en="Menu" data-es="Menú">Menu</a>
+      <a href="#hours" data-en="Hours" data-es="Horario">Hours</a>
+      <a href="#visit" data-en="Visit" data-es="Visítanos">Visit</a>
+      <button class="lang-toggle" type="button" data-lang aria-pressed="false">Español</button>
+    </nav>
+  </header>
+
+  <main id="content">
+    <section class="stage" id="top" aria-labelledby="trailer-heading">
+      <p class="kicker">Tier 4 Example — Online Flyer</p>
+      <h1 id="trailer-heading">New Mexico Burrito Co.</h1>
+      <p class="lede" data-en="A fictional food trailer at a sample desert stop. Nothing here can be ordered online." data-es="Un tráiler de comida ficticio en una parada de muestra del desierto. Aquí no se puede pedir en línea.">A fictional food trailer at a sample desert stop. Nothing here can be ordered online.</p>
+
+      <div class="stage-frame">
+        <div class="scene" id="scene">
+          <img
+            class="stage-photo"
+            src="/examples/nm-burrito-trailer.jpg"
+            alt="Fictional demonstration of the New Mexico Burrito Co. trailer at a desert sunset, with string lights and a chalkboard menu."
+            width="1280"
+            height="720"
+            decoding="async"
+            fetchpriority="high"
+          />
+          <div class="board" id="menu" aria-hidden="true">
+            <div class="board-inner">
+              <div class="board-top">
+                <h2 id="menu-heading">Our Menu</h2>
+                <button class="board-back" type="button" data-close-menu data-en="Back to Trailer" data-es="Volver al tráiler">Back to Trailer</button>
+              </div>
+              <div class="menu-tabs" role="tablist" aria-label="Menu categories">
+                <button type="button" data-jump="burritos" data-en="Burritos" data-es="Burritos">Burritos</button>
+                <button type="button" data-jump="tacos" data-en="Tacos" data-es="Tacos">Tacos</button>
+                <button type="button" data-jump="quesadillas" data-en="Quesadillas" data-es="Quesadillas">Quesadillas</button>
+                <button type="button" data-jump="sides" data-en="Sides" data-es="Acompañamientos">Sides</button>
+                <button type="button" data-jump="drinks" data-en="Drinks" data-es="Bebidas">Drinks</button>
+              </div>
+              <div class="board-scroll" id="board-scroll">
+                <section id="burritos">
+                  <h3 data-en="Burritos" data-es="Burritos">Burritos</h3>
+                  <article><strong>Carne Asada</strong><span>$12.99</span><p data-en="Grilled steak, salsa roja, onion, and cilantro." data-es="Carne asada, salsa roja, cebolla y cilantro.">Grilled steak, salsa roja, onion, and cilantro.</p></article>
+                  <article><strong>Chicken</strong><span>$11.99</span><p data-en="Seasoned chicken, cheese, and mild green chile." data-es="Pollo sazonado, queso y chile verde suave.">Seasoned chicken, cheese, and mild green chile.</p></article>
+                  <article><strong>Carnitas</strong><span>$10.99</span><p data-en="Slow-cooked pork with salsa and pickled onion." data-es="Cerdo cocido despacio, con salsa y cebolla encurtida.">Slow-cooked pork with salsa and pickled onion.</p></article>
+                  <article><strong>Vegetarian</strong><span>$11.99</span><p data-en="Beans, rice, roasted vegetables, and guacamole." data-es="Frijoles, arroz, verduras asadas y guacamole.">Beans, rice, roasted vegetables, and guacamole.</p></article>
+                  <article><strong>Breakfast Burrito</strong><span>$9.99</span><p data-en="Egg, potato, cheese, and red or green chile." data-es="Huevo, papa, queso y chile rojo o verde.">Egg, potato, cheese, and red or green chile.</p></article>
+                </section>
+                <section id="tacos">
+                  <h3 data-en="Tacos" data-es="Tacos">Tacos</h3>
+                  <article><strong>Asada</strong><span>$10.99</span><p data-en="Three steak tacos with onion, cilantro, and salsa." data-es="Tres tacos de asada con cebolla, cilantro y salsa.">Three steak tacos with onion, cilantro, and salsa.</p></article>
+                  <article><strong>Chicken</strong><span>$9.99</span><p data-en="Three chicken tacos with a squeeze of lime." data-es="Tres tacos de pollo con un chorrito de limón.">Three chicken tacos with a squeeze of lime.</p></article>
+                  <article><strong>Carnitas</strong><span>$9.99</span><p data-en="Three pork tacos, crisp at the edge." data-es="Tres tacos de cerdo, crujientes en la orilla.">Three pork tacos, crisp at the edge.</p></article>
+                </section>
+                <section id="quesadillas">
+                  <h3 data-en="Quesadillas" data-es="Quesadillas">Quesadillas</h3>
+                  <article><strong>Cheese</strong><span>$8.99</span><p data-en="A flour tortilla toasted with melted cheese." data-es="Una tortilla de harina tostada con queso derretido.">A flour tortilla toasted with melted cheese.</p></article>
+                  <article><strong>Chicken</strong><span>$11.99</span><p data-en="Cheese and seasoned chicken, cut to share." data-es="Queso y pollo sazonado, cortada para compartir.">Cheese and seasoned chicken, cut to share.</p></article>
+                  <article><strong>Carne Asada</strong><span>$12.99</span><p data-en="Cheese and grilled steak in a crisp tortilla." data-es="Queso y carne asada en una tortilla crujiente.">Cheese and grilled steak in a crisp tortilla.</p></article>
+                </section>
+                <section id="sides">
+                  <h3 data-en="Sides" data-es="Acompañamientos">Sides</h3>
+                  <article><strong data-en="Chips and Salsa" data-es="Totopos y salsa">Chips and Salsa</strong><span>$4.99</span><p data-en="Warm chips with a fresh roasted-tomato salsa." data-es="Totopos calientes con salsa fresca de tomate asado.">Warm chips with a fresh roasted-tomato salsa.</p></article>
+                  <article><strong>Guacamole</strong><span>$3.99</span><p data-en="Avocado, lime, onion, and a little cilantro." data-es="Aguacate, limón, cebolla y un poco de cilantro.">Avocado, lime, onion, and a little cilantro.</p></article>
+                  <article><strong data-en="Mexican Rice" data-es="Arroz mexicano">Mexican Rice</strong><span>$3.99</span><p data-en="Tomato rice, finished with a squeeze of lime." data-es="Arroz con tomate, terminado con limón.">Tomato rice, finished with a squeeze of lime.</p></article>
+                </section>
+                <section id="drinks">
+                  <h3 data-en="Drinks" data-es="Bebidas">Drinks</h3>
+                  <article><strong>Horchata</strong><span>$4.50</span><p data-en="A cold cinnamon rice drink." data-es="Una bebida fría de arroz con canela.">A cold cinnamon rice drink.</p></article>
+                  <article><strong>Jamaica</strong><span>$4.50</span><p data-en="Hibiscus agua fresca, tart and iced." data-es="Agua de jamaica, ácida y con hielo.">Hibiscus agua fresca, tart and iced.</p></article>
+                  <article><strong data-en="Mexican Sodas" data-es="Refrescos mexicanos">Mexican Sodas</strong><span>$2.50</span><p data-en="A chilled glass bottle from the trailer cooler." data-es="Una botella de vidrio bien fría del tráiler.">A chilled glass bottle from the trailer cooler.</p></article>
+                </section>
+              </div>
+            </div>
+          </div>
+          <div class="stage-actions">
+            <a class="btn btn-call" href="tel:+15550143310" data-en="Call to Order" data-es="Llamar para ordenar">Call to Order</a>
+            <button class="btn btn-gold" type="button" data-open-menu data-en="View Menu" data-es="Ver menú">View Menu</button>
+            <p class="call-note">Demonstration number, (555) 014-3310. Not in service.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="info-strip">
+        <article id="visit">
+          <h2 data-en="Find us" data-es="Encuéntranos">Find us</h2>
+          <p><strong>Fictional demonstration.</strong> <span data-en="Sample stop only: an imaginary lot on a desert highway. New Mexico Burrito Co. is not a real business, and this is not a real address." data-es="Solo una parada de muestra: un lote imaginario en una carretera del desierto. New Mexico Burrito Co. no es un negocio real y esta no es una dirección real.">Sample stop only: an imaginary lot on a desert highway. New Mexico Burrito Co. is not a real business, and this is not a real address.</span></p>
+          <p class="fine" data-en="Click-to-call demonstration. This number is not in service." data-es="Demostración de llamada. Este número no está en servicio.">Click-to-call demonstration. This number is not in service.</p>
+        </article>
+        <article id="hours">
+          <h2 data-en="Hours" data-es="Horario">Hours</h2>
+          <div class="hours">
+            <div><span data-en="Monday – Saturday" data-es="Lunes a sábado">Monday – Saturday</span><span>6:00 AM – 9:00 PM</span></div>
+            <div><span data-en="Sunday" data-es="Domingo">Sunday</span><span>7:00 AM – 7:00 PM</span></div>
+          </div>
+        </article>
+        <div class="socials">
+          <a href="#visit" aria-label="Sample Facebook link, not a real profile">Facebook</a>
+          <a href="#visit" aria-label="Sample Instagram link, not a real profile">Instagram</a>
+          <a href="#visit" aria-label="Sample TikTok link, not a real profile">TikTok</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p class="kicker">4Ward Web Design — Example Website</p>
+    <h2>Get Started With Tier 4</h2>
+    <p>An affordable, professional online presence with your own domain, menu, business information, and click-to-call functionality.</p>
+    <p><a class="btn btn-gold" href="/consultation.html?tier=tier4">Get Started With Tier 4</a></p>
+    <p class="fine">New Mexico Burrito Co. is a fictional sample created by 4Ward Web Design. It is not a client and it does not take orders.</p>
+  </footer>
+  <script src="/examples/new-mexico-burrito.js?v=1"></script>
+</body>
+</html>
