@@ -38,11 +38,14 @@
     const originY = scene.offsetHeight * (top + height / 2);
     const boardW = scene.offsetWidth * width;
     const boardH = scene.offsetHeight * height;
-    const scale = Math.min(frame.clientWidth / boardW, frame.clientHeight / boardH) * 0.9;
+    const scale = Math.min(frame.clientWidth / boardW, frame.clientHeight / boardH) * 0.88;
+    const tilt = (scene.dataset.tilt || "0,0").split(",").map(Number);
+    const rx = tilt[0] || 0;
+    const ry = tilt[1] || 0;
     const dx = frame.clientWidth / 2 - (scene.offsetLeft + originX);
     const dy = frame.clientHeight / 2 - (scene.offsetTop + originY);
     scene.style.transformOrigin = originX + "px " + originY + "px";
-    scene.style.transform = "translate(" + dx + "px, " + dy + "px) scale(" + scale + ")";
+    scene.style.transform = "translate(" + dx + "px, " + dy + "px) scale(" + scale + ") rotateX(" + rx + "deg) rotateY(" + ry + "deg)";
   }
 
   function openMenu() {
@@ -67,7 +70,7 @@
     };
     window.clearTimeout(closeTimer);
     if (reduceMotion) release();
-    else closeTimer = window.setTimeout(release, 1180);
+    else closeTimer = window.setTimeout(release, 1620);
     document.querySelector(".order-bar [data-open-menu]")?.focus();
   }
 

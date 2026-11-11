@@ -94,19 +94,38 @@ h1, h2, h3 { font-family: var(--display); line-height: 1.1; margin: 0; }
 h1 { font-size: clamp(2rem, 5vw, 3.4rem); margin-bottom: 0.4rem; }
 .lede { max-width: 40rem; color: #ecdccb; margin: 0 0 1rem; }
 
-.stage-frame {
+.scene-set {
   position: relative;
   overflow: hidden;
   border-radius: 22px;
   box-shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
-  background: #2a1812;
+  background: #96543e;
+}
+.scene-set::before {
+  content: "";
+  position: absolute;
+  left: -6%;
+  right: -6%;
+  bottom: 0;
+  height: 240px;
+  background: url("/examples/nm-burrito-trailer.jpg") center bottom / 112% auto no-repeat;
+  filter: blur(18px) saturate(1.05);
+  transform: scaleY(-1);
+  transform-origin: center bottom;
+  pointer-events: none;
+}
+.stage-frame {
+  position: relative;
+  z-index: 1;
+  overflow: hidden;
+  background: transparent;
 }
 .scene {
   position: relative;
   width: 100%;
   margin-inline: auto;
   transform-origin: center center;
-  transition: transform 1150ms cubic-bezier(0.45, 0.05, 0.2, 1);
+  transition: transform 1550ms cubic-bezier(0.4, 0.02, 0.2, 1);
 }
 .stage-photo { width: 100%; height: auto; }
 .board {
@@ -123,6 +142,7 @@ h1 { font-size: clamp(2rem, 5vw, 3.4rem); margin-bottom: 0.4rem; }
   border-radius: 0;
   container-type: size;
   font-family: "Caveat", cursive;
+  clip-path: polygon(6% 0, 86% 0, 100% 100%, 1% 100%);
 }
 .board-inner { height: 100%; display: flex; flex-direction: column; padding: 1.4cqh 5cqw 1.4cqh; }
 .board-top { display: flex; justify-content: flex-end; margin-bottom: 1cqh; }
@@ -153,13 +173,13 @@ h1 { font-size: clamp(2rem, 5vw, 3.4rem); margin-bottom: 0.4rem; }
   overflow: auto;
   flex: 1;
   min-height: 0;
-  padding-right: 10px;
+  padding-right: 8px;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  scrollbar-color: rgba(226, 177, 90, 0.9) transparent;
+  scrollbar-color: rgba(244, 239, 230, 0.32) transparent;
 }
-.board-scroll::-webkit-scrollbar { width: 6px; }
-.board-scroll::-webkit-scrollbar-thumb { background: rgba(226, 177, 90, 0.9); border-radius: 99px; }
+.board-scroll::-webkit-scrollbar { width: 3px; }
+.board-scroll::-webkit-scrollbar-thumb { background: rgba(244, 239, 230, 0.32); border-radius: 99px; }
 .board-scroll section { padding-bottom: 2cqh; }
 .board-scroll h3 { font-size: 6.2cqw; margin: 1cqh 0 0.4cqh; color: #e2b15a; }
 .board-scroll article {
@@ -180,29 +200,32 @@ body.is-menu .stage-frame {
   width: 100vw;
   height: 100dvh;
   border-radius: 0;
-  background: #120e0c;
+  background: #c47a68;
   overflow: hidden;
 }
 .order-bar {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
   gap: 0.75rem;
-  width: min(100%, 42rem);
-  margin: 0.9rem auto 0;
-  padding: 1rem 1rem 0.95rem;
-  border-radius: 18px;
-  background: #241812;
-  border: 1px solid rgba(226, 177, 90, 0.35);
+  width: 100%;
+  margin: 0;
+  padding: 1.15rem 8% 1.35rem;
+  border: 0;
+  border-radius: 0;
+  background: linear-gradient(to bottom, rgba(150, 84, 62, 0.12), rgba(150, 84, 62, 0.5));
 }
-.order-bar .btn { flex: 1 1 11rem; min-height: 52px; box-shadow: 0 8px 18px rgba(0, 0, 0, 0.25); }
+.order-bar .btn { flex: 1 1 10rem; min-height: 52px; box-shadow: 0 10px 22px rgba(42, 24, 18, 0.28); }
 .call-note {
   flex-basis: 100%;
   margin: 0;
   text-align: center;
   font-size: 0.82rem;
-  font-weight: 700;
-  color: #f6efe6;
+  font-weight: 800;
+  color: #2a1812;
+  text-shadow: 0 1px 0 rgba(255, 236, 220, 0.35);
 }
 
 .info-strip {
@@ -234,7 +257,7 @@ body.is-menu .stage-frame {
 
 @media (max-width: 800px) {
   .info-strip { grid-template-columns: 1fr; }
-  .stage-frame { border-radius: 16px; }
+  .scene-set { border-radius: 16px; }
   .order-bar .btn { min-height: 52px; }
 }
 @media (max-width: 720px) {
