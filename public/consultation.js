@@ -46,9 +46,7 @@
     [directCheckout, successCheckout, navCheckout].forEach((link) => {
       if (link) link.href = href;
     });
-    const method = form ? form.querySelector('input[name="contactMethod"]:checked') : null;
-    const needsPhone = !method || method.value === "call" || method.value === "text";
-    if (phoneInput) phoneInput.required = needsPhone;
+    if (phoneInput) phoneInput.required = false;
   }
 
   syncCheckoutLinks();
@@ -70,8 +68,10 @@
   form?.addEventListener("submit", async (event) => {
     event.preventDefault();
     if (sending) return;
+    sending = true;
     syncCheckoutLinks();
     if (!form.checkValidity()) {
+      sending = false;
       form.reportValidity();
       return;
     }
@@ -85,6 +85,7 @@
       phone: data.get("phone") || "",
       city: data.get("city") || "",
       industry: data.get("industry") || "",
+      hasWebsite: data.get("hasWebsite") || "",
       website: data.get("website") || "",
       tier: data.get("tier") || "",
       description: data.get("description") || "",
@@ -93,7 +94,6 @@
       _hp_ref: data.get("_hp_ref") || "",
     };
 
-    sending = true;
     statusEl.classList.remove("is-error");
     statusEl.textContent = "Sending your request…";
     submitBtn.disabled = true;

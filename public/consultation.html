@@ -20,7 +20,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=x47tiers" />
+  <link rel="stylesheet" href="styles.css?v=x54contact" />
   <link rel="icon" href="assets/favicon.png?v=5" type="image/png" sizes="64x64" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=5" />
@@ -71,10 +71,11 @@
       <div class="onboard-panel" id="consult-success" tabindex="-1" hidden>
         <p class="eyebrow">Request received</p>
         <h2>Thank You! We've Received Your Request.</h2>
-        <p class="section-lead">We'll review your information and aim to get back to you within one business day. We're looking forward to learning more about your business.</p>
+        <p class="section-lead">Thanks for reaching out to 4Ward Web Design! We'll review your information and get back to you as soon as possible.</p>
+        <p class="onboard-hint">This request did not start a payment. If you already know the package you want, you can purchase it separately.</p>
         <div class="onboard-actions">
-          <a class="btn btn-accent" id="success-checkout" href="onboarding.html">Continue to checkout</a>
-          <a class="btn btn-outline" href="/">Return home</a>
+          <a class="btn btn-accent" href="/">Return home</a>
+          <a class="btn btn-outline" id="success-checkout" href="onboarding.html">Purchase a package</a>
         </div>
       </div>
 
@@ -95,34 +96,45 @@
             <input id="consult-email" name="email" type="email" autocomplete="email" required inputmode="email" placeholder="you@business.com" />
           </div>
           <div class="form-row">
-            <label for="consult-phone">Phone number</label>
-            <input id="consult-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" required placeholder="(575) 555-1234" />
+            <label for="consult-phone">Phone number <span class="optional">(optional)</span></label>
+            <input id="consult-phone" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="(575) 555-1234" />
           </div>
           <div class="form-row">
             <label for="consult-city">City or service area <span class="optional">(optional)</span></label>
             <input id="consult-city" name="city" type="text" autocomplete="address-level2" placeholder="Carlsbad, NM" />
           </div>
           <div class="form-row">
-            <label for="consult-industry">Business industry <span class="optional">(optional)</span></label>
+            <label for="consult-industry">Type of business <span class="optional">(optional)</span></label>
             <input id="consult-industry" name="industry" type="text" placeholder="What you do" />
+          </div>
+          <div class="form-row form-span">
+            <fieldset class="choice-list">
+              <legend>Do you already have a website?</legend>
+              <div class="choice-options">
+                <label><input type="radio" name="hasWebsite" value="no" checked /> No</label>
+                <label><input type="radio" name="hasWebsite" value="yes" /> Yes</label>
+              </div>
+            </fieldset>
           </div>
           <div class="form-row form-span">
             <label for="consult-website">Existing website <span class="optional">(optional)</span></label>
             <input id="consult-website" name="website" type="text" inputmode="url" autocomplete="url" placeholder="https://yourbusiness.com" />
           </div>
           <div class="form-row form-span">
-            <label for="consult-tier">Preferred website tier</label>
+            <label for="consult-tier">Website package of interest</label>
             <select id="consult-tier" name="tier">
-              <option value="">Not sure yet — help me choose</option>
-              <option value="tier4">Tier 4 — Online Flyer ($44/mo)</option>
-              <option value="tier3">Tier 3 — Advanced Multi-Department Business ($399/mo)</option>
-              <option value="tier2">Tier 2 — E-Commerce &amp; Business Management ($225/mo)</option>
-              <option value="tier1">Tier 1 — Small Business Starter ($99/mo)</option>
-              <option value="buyout-tier4">Upfront buyout — Tier 4 ($1,256)</option>
-              <option value="buyout-tier3">Upfront buyout — Tier 3 ($9,776)</option>
-              <option value="buyout-tier2">Upfront buyout — Tier 2 ($5,600)</option>
-              <option value="buyout-tier1">Upfront buyout — Tier 1 ($2,576)</option>
-              <option value="buyout">Upfront buyout — help me choose the tier</option>
+              <option value="">Not Sure — Help Me Choose</option>
+              <option value="tier4">Tier 4 — Online Flyer — $44/month</option>
+              <option value="tier1">Tier 1 — Small Business Starter — $99/month</option>
+              <option value="tier2">Tier 2 — E-Commerce &amp; Business Management — $225/month</option>
+              <option value="tier3">Tier 3 — Advanced Multi-Department — $399/month</option>
+              <optgroup label="Purchase a package instead">
+                <option value="buyout-tier4">Upfront buyout — Tier 4 ($1,256)</option>
+                <option value="buyout-tier1">Upfront buyout — Tier 1 ($2,576)</option>
+                <option value="buyout-tier2">Upfront buyout — Tier 2 ($5,600)</option>
+                <option value="buyout-tier3">Upfront buyout — Tier 3 ($9,776)</option>
+                <option value="buyout">Upfront buyout — help me choose the tier</option>
+              </optgroup>
             </select>
           </div>
           <div class="form-row form-span">
@@ -169,6 +181,6 @@
     </div>
   </footer>
 
-  <script src="consultation.js?v=x47tiers"></script>
+  <script src="consultation.js?v=x54contact"></script>
 </body>
 </html>

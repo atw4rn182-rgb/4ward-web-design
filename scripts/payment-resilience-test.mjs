@@ -839,6 +839,16 @@ const flyerConsult = consultation.validateConsultation({
   tier: "tier4",
 });
 check("Tier 4 consultation keeps the database tier column within the existing allowed values", flyerConsult.ok && flyerConsult.value.preferred_tier === null && flyerConsult.value.payload.preferred_package === "tier4");
+const freeConsult = consultation.validateConsultation({
+  businessName: "Question Co",
+  contactName: "Ada",
+  email: "ada@example.com",
+  description: "I have a question before I buy.",
+  contactMethod: "text",
+  tier: "",
+  hasWebsite: "no",
+});
+check("A free consultation can omit a phone number and a package", freeConsult.ok && freeConsult.value.phone === null && freeConsult.value.preferred_tier === null && freeConsult.value.payload.has_website === "no" && freeConsult.value.payload.preferred_package === "" && freeConsult.value.payload.preferred_package_label === "Not Sure — Help Me Choose");
 
 // ---------------------------------------------------------------------------
 const all = results.flatMap((r) => r.checks);

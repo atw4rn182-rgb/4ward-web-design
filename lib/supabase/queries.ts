@@ -271,6 +271,32 @@ export async function getQuotesWithEmailFailures() {
   return result<QuoteEmailFailureRow>(data, error);
 }
 
+export type ConsultationRow = {
+  id: string;
+  business_name: string;
+  contact_name: string;
+  email: string;
+  phone: string | null;
+  industry: string | null;
+  preferred_tier: string | null;
+  project_description: string;
+  status: string;
+  created_at: string;
+  payload: { preferred_package_label?: string; has_website?: string } | null;
+};
+
+export async function getConsultations() {
+  const supabase = await adminDb();
+  const { data, error } = await supabase
+    .from("consultations")
+    .select(
+      "id, business_name, contact_name, email, phone, industry, preferred_tier, project_description, status, created_at, payload"
+    )
+    .order("created_at", { ascending: false })
+    .limit(50);
+  return result<ConsultationRow>(data, error);
+}
+
 export async function getOnboardings() {
   const supabase = await adminDb();
   const { data, error } = await supabase
