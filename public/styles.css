@@ -4082,3 +4082,78 @@ body.home-premium .find-tier-links a {
   }
 }
 
+/* Warmer mobile homepage. Desktop rules above stay as they are. */
+@media (max-width: 767px) {
+  body.home-premium {
+    background: #302722;
+  }
+
+  body.home-premium .site-header,
+  body.home-premium .site-header.is-scrolled {
+    background: rgba(56, 48, 45, 0.94);
+    border-bottom-color: rgba(224, 168, 104, 0.42);
+    box-shadow: 0 8px 20px rgba(40, 24, 14, 0.22);
+  }
+
+  body.home-premium .nav-toggle {
+    background: #453c37;
+    border-color: rgba(224, 168, 104, 0.55);
+  }
+
+  body.home-premium #site-nav,
+  body.home-premium #site-nav.is-open {
+    background: #38302d;
+    border-color: rgba(224, 168, 104, 0.35);
+  }
+
+  body.home-premium main > section:not(.hero) {
+    --bg: #302722;
+    --bg-deep: #2a221e;
+    --bg-mid: #38302d;
+    --bg-elevated: #4a403a;
+    background: #302722;
+    border-top-color: rgba(224, 168, 104, 0.16);
+  }
+
+  body.home-premium main > section.example-sites {
+    background: linear-gradient(180deg, rgba(138, 92, 58, 0.72) 0%, rgba(48, 39, 34, 0.35) 92px, #302722 180px);
+    border-top-color: transparent;
+  }
+
+  body.home-premium .example-card {
+    background:
+      linear-gradient(180deg, rgba(255, 214, 160, 0.12), transparent 34%),
+      #4a403a;
+    border-color: rgba(224, 168, 104, 0.62);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 226, 190, 0.16),
+      0 12px 24px rgba(36, 22, 14, 0.22);
+  }
+
+  body.home-premium .example-preview {
+    border-color: #5c514a;
+    background: #2c2521;
+  }
+
+  body.home-premium .plan,
+  body.home-premium .launch-fee,
+  body.home-premium .community-support,
+  body.home-premium .find-tier-panel,
+  body.home-premium .starter-points li,
+  body.home-premium .contact-cta-card,
+  body.home-premium .impact-card,
+  body.home-premium .ready-forward,
+  body.home-premium .pricing-compare,
+  body.home-premium .pricing-addons,
+  body.home-premium .service-item {
+    background: #4a403a;
+    border-color: rgba(224, 168, 104, 0.38);
+    box-shadow: 0 12px 24px rgba(36, 22, 14, 0.18);
+  }
+
+  body.home-premium .site-footer {
+    background: #38302d;
+    border-top-color: rgba(224, 168, 104, 0.32);
+  }
+}
+
