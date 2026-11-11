@@ -1,13 +1,11 @@
 (function () {
   const nav = document.getElementById("site-nav");
   const menuButton = document.querySelector(".nav-toggle");
-  const sheet = document.getElementById("menu");
-  const photo = document.querySelector(".stage-photo");
-  const tabs = [...document.querySelectorAll("[data-tab]")];
-  const panels = [...document.querySelectorAll(".menu-panel")];
+  const scene = document.getElementById("scene");
+  const board = document.getElementById("menu");
+  const scroller = document.getElementById("board-scroll");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let spanish = false;
-  let menuTimer = 0;
   document.documentElement.dataset.coffeeDemo = "ready";
 
   function applyLanguage() {
@@ -22,39 +20,48 @@
     }
   }
 
-  function showCategory(name) {
-    tabs.forEach((tab) => {
-      const selected = tab.getAttribute("data-tab") === name;
-      tab.setAttribute("aria-selected", selected ? "true" : "false");
-      tab.tabIndex = selected ? 0 : -1;
-    });
-    panels.forEach((panel) => {
-      const match = panel.id === "panel-" + name;
-      panel.hidden = !match;
-      panel.classList.remove("is-fading");
-    });
+  function zoomToBoard() {
+    if (!scene || !board || reduceMotion) {
+      if (scene) scene.style.transform = "none";
+      return;
+    }
+    const frame = scene.parentElement;
+    const originX = board.offsetLeft + board.offsetWidth / 2;
+    const originY = board.offsetTop + board.offsetHeight / 2;
+    const scale = Math.min(frame.clientWidth / board.offsetWidth, frame.clientHeight / board.offsetHeight) * 0.9;
+    const dx = frame.clientWidth / 2 - (scene.offsetLeft + originX);
+    const dy = frame.clientHeight / 2 - (scene.offsetTop + originY);
+    scene.style.transformOrigin = originX + "px " + originY + "px";
+    scene.style.transform = "translate(" + dx + "px, " + dy + "px) scale(" + scale + ")";
   }
 
   function openMenu() {
-    if (!sheet) return;
     document.body.classList.add("is-menu");
-    window.clearTimeout(menuTimer);
-    const reveal = () => {
-      sheet.hidden = false;
-      const close = sheet.querySelector("[data-close-menu]");
-      close?.focus();
-      if (!reduceMotion) sheet.scrollIntoView({ behavior: "smooth", block: "start" });
-    };
-    if (reduceMotion) reveal();
-    else menuTimer = window.setTimeout(reveal, 720);
+    board?.setAttribute("aria-hidden", "false");
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(zoomToBoard);
+    });
+    board?.querySelector(".board-back")?.focus();
   }
 
   function closeMenu() {
-    window.clearTimeout(menuTimer);
     document.body.classList.remove("is-menu");
-    if (sheet) sheet.hidden = true;
+    board?.setAttribute("aria-hidden", "true");
+    if (scene) scene.style.transform = "none";
     document.querySelector("[data-open-menu]")?.focus();
-    if (!reduceMotion) photo?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+
+  function jumpTo(id) {
+    const section = document.getElementById(id);
+    if (!section || !scroller) return;
+    const top = section.offsetTop;
+    scroller.scrollTo({
+      top: Math.max(0, top - 4),
+      behavior: reduceMotion ? "auto" : "smooth",
+    });
+    document.querySelectorAll("[data-jump]").forEach((button) => {
+      button.setAttribute("aria-current", button.getAttribute("data-jump") === id ? "true" : "false");
+    });
   }
 
   document.addEventListener("click", (event) => {
@@ -82,11 +89,9 @@
       closeMenu();
       return;
     }
-    const tab = event.target.closest("[data-tab]");
-    if (tab) {
-      const panel = document.getElementById("panel-" + tab.getAttribute("data-tab"));
-      if (!reduceMotion && panel) panel.classList.add("is-fading");
-      window.setTimeout(() => showCategory(tab.getAttribute("data-tab")), reduceMotion ? 0 : 120);
+    const jump = event.target.closest("[data-jump]");
+    if (jump) {
+      jumpTo(jump.getAttribute("data-jump"));
       return;
     }
     if (event.target.closest("#site-nav a") && nav && menuButton) {
@@ -97,11 +102,9 @@
 
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && document.body.classList.contains("is-menu")) closeMenu();
-    const current = document.activeElement?.closest?.("[data-tab]");
-    if (!current || (event.key !== "ArrowRight" && event.key !== "ArrowLeft")) return;
-    const index = tabs.indexOf(current);
-    const next = event.key === "ArrowRight" ? (index + 1) % tabs.length : (index - 1 + tabs.length) % tabs.length;
-    tabs[next].focus();
-    showCategory(tabs[next].getAttribute("data-tab"));
+  });
+
+  window.addEventListener("resize", () => {
+    if (document.body.classList.contains("is-menu")) zoomToBoard();
   });
 })();

@@ -8,7 +8,7 @@
   <meta name="robots" content="noindex, nofollow" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,560;9..144,640&family=Nunito+Sans:wght@400;700;800&display=swap" />
-  <link rel="stylesheet" href="/examples/desert-sunrise.css?v=5" />
+  <link rel="stylesheet" href="/examples/desert-sunrise.css?v=7" />
 </head>
 <body>
   <a class="skip" href="#content">Skip to content</a>
@@ -36,18 +36,62 @@
       <p class="lede" data-en="A fictional coffee trailer at a sample desert stop. Nothing here can be ordered online." data-es="Un tráiler de café ficticio en una parada de muestra del desierto. Aquí no se puede pedir en línea.">A fictional coffee trailer at a sample desert stop. Nothing here can be ordered online.</p>
 
       <div class="stage-frame">
-        <img
-          class="stage-photo"
-          src="/examples/desert-sunrise-trailer.jpg"
-          alt="Fictional demonstration of the Desert Sunrise Coffee trailer at a desert sunset, with string lights and a menu board."
-          width="1280"
-          height="720"
-          decoding="async"
-          fetchpriority="high"
-        />
-        <div class="stage-actions">
-          <a class="btn btn-call" href="tel:+15550142200">Call to Order</a>
-          <button class="btn btn-gold" type="button" data-open-menu>View Menu</button>
+        <div class="scene" id="scene">
+          <img
+            class="stage-photo"
+            src="/examples/desert-sunrise-trailer.jpg"
+            alt="Fictional demonstration of the Desert Sunrise Coffee trailer at a desert sunset, with string lights and a menu board."
+            width="1280"
+            height="720"
+            decoding="async"
+            fetchpriority="high"
+          />
+          <div class="board" id="menu" aria-hidden="true">
+            <div class="board-inner">
+              <div class="board-top">
+                <h2 id="menu-heading">Our Menu</h2>
+                <button class="board-back" type="button" data-close-menu>Back to Trailer</button>
+              </div>
+              <div class="menu-tabs" role="tablist" aria-label="Menu categories">
+                <button type="button" data-jump="hot">Hot Coffee</button>
+                <button type="button" data-jump="iced">Iced Drinks</button>
+                <button type="button" data-jump="specialty">Specialty Drinks</button>
+                <button type="button" data-jump="dessert">Desserts</button>
+              </div>
+              <div class="board-scroll" id="board-scroll">
+                <section id="hot">
+                  <h3>Hot Coffee</h3>
+                  <article><strong>Espresso</strong><span>$3.00</span><p data-en="A short, dark shot from the trailer machine." data-es="Un espresso corto y oscuro de la máquina del tráiler.">A short, dark shot from the trailer machine.</p></article>
+                  <article><strong>Sunrise Latte</strong><span>$4.75</span><p data-en="Oat or whole milk, orange zest, and a short espresso." data-es="Leche de avena o entera, ralladura de naranja y un espresso corto.">Oat or whole milk, orange zest, and a short espresso.</p></article>
+                  <article><strong>Cappuccino</strong><span>$4.25</span><p data-en="Foam-forward and small enough to drink at the window." data-es="Con mucha espuma y lo bastante pequeño para tomarlo en la ventana.">Foam-forward and small enough to drink at the window.</p></article>
+                  <article><strong>Mesa Mocha</strong><span>$5.25</span><p data-en="Dark cocoa, espresso, and a pinch of chile salt." data-es="Cacao oscuro, espresso y una pizca de sal con chile.">Dark cocoa, espresso, and a pinch of chile salt.</p></article>
+                </section>
+                <section id="iced">
+                  <h3>Iced Drinks</h3>
+                  <article><strong>Adobe Cold Brew</strong><span>$4.50</span><p data-en="Steeped overnight and poured over ice." data-es="Reposado de noche y servido con hielo.">Steeped overnight and poured over ice.</p></article>
+                  <article><strong>Iced Latte</strong><span>$5.00</span><p data-en="Espresso and cold milk over a tall glass of ice." data-es="Espresso y leche fría sobre un vaso alto con hielo.">Espresso and cold milk over a tall glass of ice.</p></article>
+                  <article><strong>Desert Frappé</strong><span>$5.50</span><p data-en="Blended ice, espresso, and a little cane sugar." data-es="Hielo batido, espresso y un poco de azúcar de caña.">Blended ice, espresso, and a little cane sugar.</p></article>
+                </section>
+                <section id="specialty">
+                  <h3>Specialty Drinks</h3>
+                  <article><strong>Horchata Latte</strong><span>$5.00</span><p data-en="Cinnamon rice milk with a soft espresso shot." data-es="Leche de arroz con canela y un espresso suave.">Cinnamon rice milk with a soft espresso shot.</p></article>
+                  <article><strong>Prickly Pear Cooler</strong><span>$4.25</span><p data-en="Sparkling, lightly sweet, and caffeine free." data-es="Con gas, poco dulce y sin cafeína.">Sparkling, lightly sweet, and caffeine free.</p></article>
+                  <article><strong>Campfire Cocoa</strong><span>$3.75</span><p data-en="A smaller cup for cool mornings, no coffee." data-es="Una taza pequeña para mañanas frescas, sin café.">A smaller cup for cool mornings, no coffee.</p></article>
+                </section>
+                <section id="dessert">
+                  <h3>Desserts</h3>
+                  <article><strong>Mesa Cookie</strong><span>$3.25</span><p data-en="A thick chocolate chip cookie, baked that morning." data-es="Una galleta gruesa de chispas de chocolate, horneada esa mañana.">A thick chocolate chip cookie, baked that morning.</p></article>
+                  <article><strong>Adobe Brownie</strong><span>$3.50</span><p data-en="A fudgy square with a pinch of salt." data-es="Un cuadro de brownie con una pizca de sal.">A fudgy square with a pinch of salt.</p></article>
+                  <article><strong>Sunrise Muffin</strong><span>$3.75</span><p data-en="Orange and blueberry, wrapped for the road." data-es="Naranja y arándano, envuelto para el camino.">Orange and blueberry, wrapped for the road.</p></article>
+                </section>
+              </div>
+            </div>
+          </div>
+          <div class="stage-actions">
+            <a class="btn btn-call" href="tel:+15550142200">Call to Order</a>
+            <button class="btn btn-gold" type="button" data-open-menu>View Menu</button>
+            <p class="call-note">Demonstration number, (555) 014-2200. Not in service.</p>
+          </div>
         </div>
       </div>
 
@@ -71,40 +115,6 @@
       </div>
     </section>
 
-    <section class="menu-sheet" id="menu" aria-labelledby="menu-heading" hidden>
-      <div class="menu-sheet-bar">
-        <h2 id="menu-heading" data-en="This morning’s menu" data-es="El menú de esta mañana">This morning’s menu</h2>
-        <button class="btn btn-close" type="button" data-close-menu data-en="Back" data-es="Volver">Back</button>
-      </div>
-      <p data-en="Sample prices for the demonstration. Nothing here can be ordered online." data-es="Precios de muestra para la demostración. Aquí no se puede pedir en línea.">Sample prices for the demonstration. Nothing here can be ordered online.</p>
-      <div class="menu-tabs" role="tablist" aria-label="Menu categories">
-        <button type="button" role="tab" id="tab-hot" aria-selected="true" aria-controls="panel-hot" data-tab="hot">Hot Coffee</button>
-        <button type="button" role="tab" id="tab-iced" aria-selected="false" aria-controls="panel-iced" data-tab="iced" tabindex="-1">Iced Drinks</button>
-        <button type="button" role="tab" id="tab-specialty" aria-selected="false" aria-controls="panel-specialty" data-tab="specialty" tabindex="-1">Specialty Drinks</button>
-        <button type="button" role="tab" id="tab-dessert" aria-selected="false" aria-controls="panel-dessert" data-tab="dessert" tabindex="-1">Desserts</button>
-      </div>
-      <div class="menu-panel" id="panel-hot" role="tabpanel" aria-labelledby="tab-hot">
-        <article><h3>Espresso</h3><p data-en="A short, dark shot from the trailer machine." data-es="Un espresso corto y oscuro de la máquina del tráiler.">A short, dark shot from the trailer machine.</p><p class="price">$3.00</p></article>
-        <article><h3>Sunrise Latte</h3><p data-en="Oat or whole milk, orange zest, and a short espresso." data-es="Leche de avena o entera, ralladura de naranja y un espresso corto.">Oat or whole milk, orange zest, and a short espresso.</p><p class="price">$4.75</p></article>
-        <article><h3>Cappuccino</h3><p data-en="Foam-forward and small enough to drink at the window." data-es="Con mucha espuma y lo bastante pequeño para tomarlo en la ventana.">Foam-forward and small enough to drink at the window.</p><p class="price">$4.25</p></article>
-        <article><h3>Mesa Mocha</h3><p data-en="Dark cocoa, espresso, and a pinch of chile salt." data-es="Cacao oscuro, espresso y una pizca de sal con chile.">Dark cocoa, espresso, and a pinch of chile salt.</p><p class="price">$5.25</p></article>
-      </div>
-      <div class="menu-panel" id="panel-iced" role="tabpanel" aria-labelledby="tab-iced" hidden>
-        <article><h3>Adobe Cold Brew</h3><p data-en="Steeped overnight and poured over ice." data-es="Reposado de noche y servido con hielo.">Steeped overnight and poured over ice.</p><p class="price">$4.50</p></article>
-        <article><h3>Iced Latte</h3><p data-en="Espresso and cold milk over a tall glass of ice." data-es="Espresso y leche fría sobre un vaso alto con hielo.">Espresso and cold milk over a tall glass of ice.</p><p class="price">$5.00</p></article>
-        <article><h3>Desert Frappé</h3><p data-en="Blended ice, espresso, and a little cane sugar." data-es="Hielo batido, espresso y un poco de azúcar de caña.">Blended ice, espresso, and a little cane sugar.</p><p class="price">$5.50</p></article>
-      </div>
-      <div class="menu-panel" id="panel-specialty" role="tabpanel" aria-labelledby="tab-specialty" hidden>
-        <article><h3>Horchata Latte</h3><p data-en="Cinnamon rice milk with a soft espresso shot." data-es="Leche de arroz con canela y un espresso suave.">Cinnamon rice milk with a soft espresso shot.</p><p class="price">$5.00</p></article>
-        <article><h3>Prickly Pear Cooler</h3><p data-en="Sparkling, lightly sweet, and caffeine free." data-es="Con gas, poco dulce y sin cafeína.">Sparkling, lightly sweet, and caffeine free.</p><p class="price">$4.25</p></article>
-        <article><h3>Campfire Cocoa</h3><p data-en="A smaller cup for cool mornings, no coffee." data-es="Una taza pequeña para mañanas frescas, sin café.">A smaller cup for cool mornings, no coffee.</p><p class="price">$3.75</p></article>
-      </div>
-      <div class="menu-panel" id="panel-dessert" role="tabpanel" aria-labelledby="tab-dessert" hidden>
-        <article><h3>Mesa Cookie</h3><p data-en="A thick chocolate chip cookie, baked that morning." data-es="Una galleta gruesa de chispas de chocolate, horneada esa mañana.">A thick chocolate chip cookie, baked that morning.</p><p class="price">$3.25</p></article>
-        <article><h3>Adobe Brownie</h3><p data-en="A fudgy square with a pinch of salt." data-es="Un cuadro de brownie con una pizca de sal.">A fudgy square with a pinch of salt.</p><p class="price">$3.50</p></article>
-        <article><h3>Sunrise Muffin</h3><p data-en="Orange and blueberry, wrapped for the road." data-es="Naranja y arándano, envuelto para el camino.">Orange and blueberry, wrapped for the road.</p><p class="price">$3.75</p></article>
-      </div>
-    </section>
   </main>
 
   <footer class="site-footer">
@@ -114,6 +124,6 @@
     <p><a class="btn btn-gold" href="/consultation.html?tier=tier4">Get Started With Tier 4</a></p>
     <p class="fine">Desert Sunrise Coffee Co. is a fictional sample created by 4Ward Web Design. It is not a client and it does not take orders.</p>
   </footer>
-  <script src="/examples/desert-sunrise.js?v=5"></script>
+  <script src="/examples/desert-sunrise.js?v=7"></script>
 </body>
 </html>
