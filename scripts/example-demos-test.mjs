@@ -32,7 +32,7 @@ check("canyon demo opts out of search indexing and local-business data", canyon.
 check("canyon script never calls Stripe, Supabase, or fetch", !/stripe|supabase|fetch\(|checkout\.stripe|XMLHttpRequest/i.test(canyonScript));
 
 check("demo routes are rewritten to the example pages", config.includes('"/examples/desert-sunrise-coffee"') && config.includes('"/examples/canyon-trail-outfitters/:path*"'));
-check("homepage keeps the real portfolio and adds example cards", ["4 Elements Oilfield Services", "S&amp;R Concrete Crafts", "Accu-Fab NM", "Black Mesa Welding", 'id="example-websites"', "Explore Demo", "View Package"].every((part) => home.includes(part)));
+check("homepage keeps the real portfolio and adds example cards", ["4 Elements Oilfield Services", "S&amp;R Concrete Crafts", "Accu-Fab NM", "Black Mesa Welding", 'id="example-websites"', "Explore Demo", "View Tier 4", "View Tier 2", "Visit Website", "Starting at $44/Month"].every((part) => home.includes(part)));
 check("homepage hero commercial is unchanged", home.includes("4ward-commercial.mp4?v=noflash1") && home.includes('preload="none"') && home.includes("hero-commercial.js?v=hero-x2e"));
 
 const homeRoute = parseDemoPath("/examples/canyon-trail-outfitters");

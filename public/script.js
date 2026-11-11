@@ -583,7 +583,7 @@
       return;
     }
 
-    const portfolioLink = event.target.closest("#work a[href^='http']");
+    const portfolioLink = event.target.closest("#work a[href^='http'], #more-projects a[href^='http']");
     if (portfolioLink) {
       const project = portfolioLink.closest(".ba-project");
       const heading = project ? project.querySelector("h3") : null;
