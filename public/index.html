@@ -162,7 +162,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=x52home" />
+  <link rel="stylesheet" href="styles.css?v=x55premium" />
   <link rel="icon" href="assets/favicon.png?v=5" type="image/png" sizes="64x64" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=5" />
@@ -172,7 +172,7 @@
     </style>
   </noscript>
 </head>
-<body>
+<body class="home-premium">
   <a class="skip-link" href="#main">Skip to content</a>
 
   <header class="site-header" id="top">
@@ -327,7 +327,7 @@
       <div class="container">
         <header class="section-intro">
           <p class="eyebrow">Website examples</p>
-          <h2 id="examples-heading">See What We Can Build for Your Business</h2>
+          <h2 id="examples-heading">See What We Can Build for <span class="copper-words">Your Business</span></h2>
           <p class="section-lead">From a simple online flyer to a full e-commerce website, see how 4Ward brings businesses online.</p>
         </header>
         <div class="example-grid" id="example-websites" data-example-block="tier4-prompt-2">
@@ -344,35 +344,30 @@
                 </ul>
               </div>
             </div>
-            <p class="example-kicker">Fictional demonstration</p>
-            <p class="example-tier">Tier 4 — Online Flyer · $44/month</p>
+            <p class="showcase-price">Tier 4 — $44/month</p>
             <h3>Desert Sunrise Coffee Co.</h3>
-            <p>A fictional coffee truck with a one-page website: menu, hours, contact information, and a layout that fits a phone. This is not a real customer.</p>
+            <p class="showcase-kind">Online Flyer</p>
+            <p class="example-kicker">Fictional demonstration</p>
             <div class="example-actions">
               <a class="btn btn-accent" href="/examples/desert-sunrise-coffee">Explore Demo</a>
-              <a class="btn btn-outline" href="#plan-tier4">View Tier 4</a>
+              <a class="showcase-tier-link" href="#plan-tier4">View Tier 4</a>
             </div>
           </article>
-          <article class="example-card">
-            <div class="example-preview example-preview-canyon" role="img" aria-label="Preview of the fictional Canyon Trail Outfitters catalog, cart, and sample owner dashboard">
-              <div class="shot-chrome" aria-hidden="true"><span></span><span></span><span></span><em>Sample store</em></div>
-              <div class="shot-page shot-page-canyon" aria-hidden="true">
-                <p class="shot-kicker">Tier 2 example</p>
-                <p class="shot-title">Your store. Your control.</p>
-                <div class="shot-products">
-                  <span>Trail Hat<span>$38</span></span>
-                  <span>Daypack<span>$86</span></span>
-                  <span>Cart<span>Demo</span></span>
-                </div>
-              </div>
+          <article class="example-card example-card-client">
+            <div class="example-preview example-preview-client">
+              <div class="shot-chrome" aria-hidden="true"><span></span><span></span><span></span><em>4elementsoilfieldservices.com</em></div>
+              <picture>
+                <source srcset="assets/work-4elements-home.webp" type="image/webp" />
+                <img src="assets/work-4elements-home.jpg" alt="Homepage of the 4 Elements Oilfield Services website, a real multi-department client site" width="1440" height="900" loading="lazy" decoding="async" />
+              </picture>
             </div>
-            <p class="example-kicker">Fictional demonstration</p>
-            <p class="example-tier">Tier 2 — E-Commerce &amp; Business Management · $225/month</p>
-            <h3>Canyon Trail Outfitters</h3>
-            <p>A fictional shop with product listings, a shopping cart, and a sample owner dashboard. You can try product management in the demo. It does not process real payments. A production website can keep saved management and payment setup.</p>
+            <p class="showcase-price">Tier 3 — $399/month</p>
+            <h3>4 Elements Oilfield Services</h3>
+            <p class="showcase-kind">Advanced Multi-Department</p>
+            <p>A real multi-department website. Trucking, repair, construction, safety, and hydrovac each have a place on one site.</p>
             <div class="example-actions">
-              <a class="btn btn-accent" href="/examples/canyon-trail-outfitters">Explore Demo</a>
-              <a class="btn btn-outline" href="#plan-tier2">View Tier 2</a>
+              <a class="btn btn-accent" href="https://4elementsoilfieldservices.com/" target="_blank" rel="noopener noreferrer">Visit Website</a>
+              <a class="showcase-tier-link" href="#plan-tier3">View Tier 3</a>
             </div>
           </article>
           <article class="example-card example-card-client">
@@ -383,12 +378,34 @@
                 <img src="assets/work-sandr-home.jpg" alt="Homepage of the S&amp;R Concrete Crafts website, a real 4Ward Web Design client" width="1280" height="800" loading="lazy" decoding="async" />
               </picture>
             </div>
-            <p class="example-kicker">Real client project</p>
-            <p class="example-tier">Tier 2 — E-Commerce &amp; Business Management</p>
+            <p class="showcase-price">Tier 2 — $225/month</p>
             <h3>S&amp;R Concrete Crafts</h3>
-            <p>An actual 4Ward client, not a fictional example. The live site shows handmade concrete products, collections, and availability. This listing does not claim that every Tier 2 feature, including a dashboard or checkout, is turned on there.</p>
+            <p class="showcase-kind">E-Commerce &amp; Business Management</p>
+            <p>An actual 4Ward client site for handmade concrete products. This card does not claim that every Tier 2 feature is turned on there.</p>
             <div class="example-actions">
               <a class="btn btn-accent" href="https://www.sandrconcretecrafts.com/" target="_blank" rel="noopener noreferrer">Visit Website</a>
+              <a class="showcase-tier-link" href="#plan-tier2">View Tier 2</a>
+            </div>
+          </article>
+          <article class="example-card example-card-client example-card-pair">
+            <div class="example-preview example-preview-pair">
+              <picture>
+                <source srcset="assets/after-accufab.webp?v=home3" type="image/webp" />
+                <img src="assets/after-accufab.jpg?v=home4" alt="Accu-Fab NM website designed by 4Ward Web Design" width="2880" height="1800" loading="lazy" decoding="async" />
+              </picture>
+              <picture>
+                <source srcset="assets/after-blackmesa.webp" type="image/webp" />
+                <img src="assets/after-blackmesa.jpg" alt="Black Mesa Welding website designed by 4Ward Web Design" width="640" height="400" loading="lazy" decoding="async" />
+              </picture>
+            </div>
+            <p class="showcase-price">Tier 1 — $99/month</p>
+            <h3>Accu-Fab NM &amp; Black Mesa Welding</h3>
+            <p class="showcase-kind">Small Business Starter</p>
+            <p>Two real Tier 1 websites: Accu-Fab NM in Milan, and Black Mesa Welding in New Mexico.</p>
+            <div class="example-actions">
+              <a class="btn btn-accent" href="https://accufabnm.com" target="_blank" rel="noopener noreferrer">Visit Website</a>
+              <a class="btn btn-accent" href="https://www.blackmesawelding.com/" target="_blank" rel="noopener noreferrer">Visit Website</a>
+              <a class="showcase-tier-link" href="#plan-tier1">View Tier 1</a>
             </div>
           </article>
         </div>
@@ -770,97 +787,18 @@
       </div>
     </section>
 
-    <section class="work section has-motifs" id="more-projects" aria-labelledby="more-heading">
-      <div class="section-motifs" aria-hidden="true">
-        <span class="nm-motif nm-motif--tr nm-motif--sm"></span>
-        <span class="nm-motif nm-motif--roadrunner nm-motif--bl nm-motif--sm"></span>
-      </div>
+    <section class="ready-forward section" id="ready-forward" aria-labelledby="ready-forward-heading">
       <div class="container">
-        <header class="section-intro reveal">
-          <p class="eyebrow">More client work</p>
-          <h2 id="more-heading">More projects</h2>
-          <p class="section-lead">More live websites 4Ward has built for New Mexico businesses. Each card keeps the original project link.</p>
+        <header class="section-intro">
+          <p class="eyebrow">Free consultation</p>
+          <h2 id="ready-forward-heading">Ready to Move Your Business Forward?</h2>
+          <p class="section-lead">Whether you need a simple online presence or a complete business website, we're here to help. Tell us about your business, and we'll help you find the right solution.</p>
         </header>
-
-        <div class="ba-list">
-          <article class="ba-project ba-project-featured reveal">
-            <div class="ba-header">
-              <div class="ba-badges">
-                <p class="ba-badge">Featured Project</p>
-                <a class="tier-badge" href="#plan-tier3" data-tier-badge="tier3">Tier 3</a>
-              </div>
-              <h3>4 Elements Oilfield Services</h3>
-              <p>Multi-division website for a Carlsbad oilfield services company, bringing trucking, automotive and diesel repair, construction, safety, and hydrovac services together under one professional online presence.</p>
-              <a class="btn btn-accent btn-sm" href="https://4elementsoilfieldservices.com/" target="_blank" rel="noopener noreferrer">View live site</a>
-            </div>
-            <a class="ba-frame" href="https://4elementsoilfieldservices.com/" target="_blank" rel="noopener noreferrer">
-              <picture>
-                <source srcset="assets/work-4elements-home.webp" type="image/webp" />
-                <img src="assets/work-4elements-home.jpg" alt="Homepage of the 4 Elements Oilfield Services website designed by 4Ward Web Design" width="1440" height="900" loading="lazy" decoding="async" />
-              </picture>
-            </a>
-          </article>
-
-          <article class="ba-project reveal">
-            <div class="ba-header">
-              <div class="ba-badges">
-                <a class="tier-badge" href="#plan-tier1" data-tier-badge="tier1">Tier 1</a>
-              </div>
-              <h3>Accu-Fab NM</h3>
-              <p>Precision metal fabrication and welding company website serving Milan, NM and the Four Corners region.</p>
-              <a class="work-link" href="https://accufabnm.com" target="_blank" rel="noopener noreferrer">Visit live site</a>
-            </div>
-            <div class="ba-compare">
-              <figure class="ba-panel">
-                <figcaption class="ba-label ba-before">Before</figcaption>
-                <div class="ba-frame">
-                  <picture>
-                    <source srcset="assets/before-accufab.webp" type="image/webp" />
-                    <img src="assets/before-accufab.jpg" alt="Before screenshot of Accu-Fab NM outdated website design" width="640" height="400" loading="lazy" decoding="async" />
-                  </picture>
-                </div>
-              </figure>
-              <figure class="ba-panel">
-                <figcaption class="ba-label ba-after">After</figcaption>
-                <a class="ba-frame" href="https://accufabnm.com" target="_blank" rel="noopener noreferrer">
-                  <picture>
-                    <source srcset="assets/after-accufab.webp?v=home3" type="image/webp" />
-                    <img src="assets/after-accufab.jpg?v=home4" alt="After screenshot of Accu-Fab NM professional website designed by 4Ward" width="2880" height="1800" loading="lazy" decoding="async" />
-                  </picture>
-                </a>
-              </figure>
-            </div>
-          </article>
-
-          <article class="ba-project reveal">
-            <div class="ba-header">
-              <div class="ba-badges">
-                <a class="tier-badge" href="#plan-tier1" data-tier-badge="tier1">Tier 1</a>
-              </div>
-              <h3>Black Mesa Welding</h3>
-              <p>Professional welding and machining services website for a New Mexico client—built to showcase craftsmanship and generate quote requests.</p>
-              <a class="work-link" href="https://www.blackmesawelding.com/" target="_blank" rel="noopener noreferrer">Visit live site</a>
-            </div>
-            <div class="ba-compare ba-compare-single">
-              <figure class="ba-panel ba-panel-empty">
-                <figcaption class="ba-label ba-before">Before</figcaption>
-                <div class="ba-empty">
-                  <p class="ba-empty-title">No previous website</p>
-                  <p>First professional website built for this client.</p>
-                </div>
-              </figure>
-              <figure class="ba-panel">
-                <figcaption class="ba-label ba-after">After</figcaption>
-                <a class="ba-frame" href="https://www.blackmesawelding.com/" target="_blank" rel="noopener noreferrer">
-                  <picture>
-                    <source srcset="assets/after-blackmesa.webp" type="image/webp" />
-                    <img src="assets/after-blackmesa.jpg" alt="After screenshot of Black Mesa Welding website designed by 4Ward Web Design" width="640" height="400" loading="lazy" decoding="async" />
-                  </picture>
-                </a>
-              </figure>
-            </div>
-          </article>
+        <div class="example-actions">
+          <a class="btn btn-accent" href="consultation.html#consult-form">Get Started — Free Consultation</a>
+          <a class="btn btn-outline" href="#pricing">View Our Packages</a>
         </div>
+        <p class="ready-forward-note">Asking a question does not start a payment or a subscription. Package checkout stays separate for when you are ready to buy.</p>
       </div>
     </section>
 
@@ -972,9 +910,10 @@
           <p>Pick a plan and share a few details about your business. We’ll take it from there.</p>
           <p>You can ask a question before you buy. <a href="consultation.html">Request a consultation</a> or <a href="quote.html">get a quote for extra work</a>. Neither one opens a payment page.</p>
           <div class="contact-cta-actions">
-            <a class="btn btn-accent" href="consultation.html">Start your website</a>
-            <a class="btn btn-outline" href="quote.html">Get a quote for extra work</a>
+            <a class="btn btn-accent" href="consultation.html#consult-form">Get Started — Free Consultation</a>
+            <a class="btn btn-outline" href="#pricing">View Our Packages</a>
           </div>
+          <p><a href="quote.html">Get a quote for extra work</a></p>
         </div>
       </div>
     </section>
