@@ -569,6 +569,17 @@
     });
   });
 
+  document.querySelectorAll("[data-results-toggle]").forEach((btn) => {
+    const panel = document.getElementById(btn.getAttribute("aria-controls"));
+    const block = btn.closest(".plan-results");
+    if (!panel || !block) return;
+    btn.addEventListener("click", () => {
+      const open = btn.getAttribute("aria-expanded") === "true";
+      btn.setAttribute("aria-expanded", open ? "false" : "true");
+      block.classList.toggle("is-open", !open);
+    });
+  });
+
   function trackEvent(name, params) {
     if (typeof window.gtag !== "function") return;
     window.gtag("event", name, params);
