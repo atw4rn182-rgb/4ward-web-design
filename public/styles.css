@@ -4209,8 +4209,63 @@ body.home-premium main > section:not(.hero) {
 }
 
 body.home-premium main > section.example-sites {
-  background: linear-gradient(180deg, #e6a36b 0%, #d8c2ad 72px, #40312b 210px);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background: #d8c2ad;
   border-top: 0;
+}
+
+body.home-premium main > section.example-sites::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: -30% -55%;
+  pointer-events: none;
+  background: linear-gradient(
+    118deg,
+    transparent 34%,
+    rgba(64, 49, 43, 0.05) 42%,
+    rgba(64, 49, 43, 0.28) 50%,
+    rgba(64, 49, 43, 0.05) 58%,
+    transparent 66%
+  );
+  transform: translate3d(-62%, 10%, 0);
+  animation: examples-shimmer 10s linear infinite;
+}
+
+body.home-premium main > section.example-sites > .container {
+  position: relative;
+  z-index: 1;
+}
+
+body.home-premium .example-sites .section-intro h2 {
+  color: #30231e;
+}
+
+body.home-premium .example-sites .section-intro .copper-words {
+  color: #8a4e1d;
+}
+
+body.home-premium .example-sites .section-intro .eyebrow {
+  color: #7a4520;
+}
+
+body.home-premium .example-sites .section-intro .section-lead {
+  color: #40312b;
+}
+
+@keyframes examples-shimmer {
+  0% { transform: translate3d(-62%, 10%, 0); }
+  26% { transform: translate3d(62%, -10%, 0); }
+  100% { transform: translate3d(62%, -10%, 0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.home-premium main > section.example-sites::before {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 body.home-premium .copper-words {
