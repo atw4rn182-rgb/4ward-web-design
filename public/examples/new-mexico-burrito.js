@@ -61,34 +61,26 @@
       return;
     }
     const frame = scene.parentElement;
-    const fr = frame.getBoundingClientRect();
-    const br = board.getBoundingClientRect();
-    const size = 48;
-    const gap = 18;
-    const spaceRight = fr.right - br.right;
-    const spaceLeft = br.left - fr.left;
-    let x;
-    let y = br.top - fr.top + Math.max(0, (br.height - size) / 2);
-    if (spaceRight >= size + gap) x = br.right - fr.left + gap;
-    else if (spaceLeft >= size + gap) x = br.left - fr.left - size - gap;
-    else {
-      x = br.left - fr.left;
-      y = br.bottom - fr.top + gap;
-    }
-    x = Math.max(8, Math.min(fr.width - size - 8, x));
-    y = Math.max(56, Math.min(fr.height - size - 8, y));
-    glass.style.left = x + "px";
-    glass.style.top = y + "px";
+    const bar = frame.querySelector(".order-bar");
     const hint = frame.querySelector(".menu-hint-closed");
-    if (hint) {
-      const hintW = hint.offsetWidth || 148;
-      const hintH = hint.offsetHeight || 28;
-      let hx = x + size + 6;
-      let hy = y + (size - hintH) / 2;
-      if (hx + hintW > fr.width - 8) hx = Math.max(8, x - hintW - 6);
-      hint.style.left = Math.max(8, Math.min(fr.width - hintW - 8, hx)) + "px";
-      hint.style.top = Math.max(52, hy) + "px";
-    }
+    if (!bar || !hint) return;
+    const fr = frame.getBoundingClientRect();
+    const barR = bar.getBoundingClientRect();
+    const size = 48;
+    const pairGap = 8;
+    const clearance = 12;
+    const hintW = hint.offsetWidth || 150;
+    const hintH = hint.offsetHeight || 32;
+    const clusterH = Math.max(size, hintH);
+    const total = size + pairGap + hintW;
+    const x = Math.max(8, (fr.width - total) / 2);
+    const barTop = barR.top - fr.top;
+    let y = barTop - clearance - clusterH;
+    y = Math.max(56, Math.min(y, fr.height - clusterH - 8));
+    glass.style.left = x + "px";
+    glass.style.top = y + (clusterH - size) / 2 + "px";
+    hint.style.left = x + size + pairGap + "px";
+    hint.style.top = y + (clusterH - hintH) / 2 + "px";
   }
 
   function zoomToBoard(zoomLevel) {
