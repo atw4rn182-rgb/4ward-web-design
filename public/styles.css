@@ -4208,32 +4208,70 @@ body.home-premium main > section:not(.hero) {
   border-top: 1px solid rgba(185, 120, 80, 0.28);
 }
 
-body.home-premium main > section.example-sites {
+body.home-premium main > section.example-sites,
+body.home-premium main > section.tier-finder,
+body.home-premium main > section.starter-offer,
+body.home-premium main > section.pricing,
+body.home-premium main > section.ready-forward,
+body.home-premium main > section.services,
+body.home-premium main > section.impact,
+body.home-premium main > section.contact {
   position: relative;
   isolation: isolate;
   overflow: hidden;
+}
+
+body.home-premium main > section.example-sites {
   background: #d8c2ad;
   border-top: 0;
 }
 
-body.home-premium main > section.example-sites::before {
+body.home-premium main > section.example-sites::before,
+body.home-premium main > section.tier-finder::before,
+body.home-premium main > section.starter-offer::before,
+body.home-premium main > section.pricing::before,
+body.home-premium main > section.ready-forward::before,
+body.home-premium main > section.services::before,
+body.home-premium main > section.impact::before,
+body.home-premium main > section.contact::before {
   content: "";
   position: absolute;
-  z-index: 0;
+  z-index: -1;
   inset: 0;
   pointer-events: none;
+  background-repeat: no-repeat;
+  background-size: 120vw 100%;
+  background-position: -96vw 0;
+  animation: section-shimmer-ltr 10s ease-in-out infinite;
+}
+
+body.home-premium main > section.example-sites::before,
+body.home-premium main > section.tier-finder::before {
   background-image: linear-gradient(
-    104deg,
-    transparent 18%,
-    rgba(64, 49, 43, 0.16) 36%,
-    rgba(64, 49, 43, 0.55) 50%,
-    rgba(64, 49, 43, 0.16) 64%,
-    transparent 82%
+    118deg,
+    transparent 10%,
+    rgba(64, 49, 43, 0.12) 32%,
+    rgba(64, 49, 43, 0.46) 50%,
+    rgba(64, 49, 43, 0.12) 68%,
+    transparent 90%
   );
-  background-repeat: repeat-y;
-  background-size: 150vw 100vh;
-  background-position: 150vw 0;
-  animation: examples-shimmer 10s linear infinite;
+}
+
+body.home-premium main > section.starter-offer::before,
+body.home-premium main > section.pricing::before,
+body.home-premium main > section.ready-forward::before,
+body.home-premium main > section.services::before,
+body.home-premium main > section.impact::before,
+body.home-premium main > section.contact::before {
+  background-image: linear-gradient(
+    118deg,
+    transparent 10%,
+    rgba(245, 226, 196, 0.14) 32%,
+    rgba(255, 228, 186, 0.44) 50%,
+    rgba(245, 226, 196, 0.14) 68%,
+    transparent 90%
+  );
+  animation-delay: 5s;
 }
 
 body.home-premium main > section.example-sites > .container {
@@ -4257,14 +4295,21 @@ body.home-premium .example-sites .section-intro .section-lead {
   color: #40312b;
 }
 
-@keyframes examples-shimmer {
-  0% { background-position: 150vw 0; }
-  26% { background-position: -150vw 0; }
-  100% { background-position: -150vw 0; }
+@keyframes section-shimmer-ltr {
+  0% { background-position: -96vw 0; }
+  30% { background-position: 76vw 0; }
+  100% { background-position: 76vw 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  body.home-premium main > section.example-sites::before {
+  body.home-premium main > section.example-sites::before,
+  body.home-premium main > section.tier-finder::before,
+  body.home-premium main > section.starter-offer::before,
+  body.home-premium main > section.pricing::before,
+  body.home-premium main > section.ready-forward::before,
+  body.home-premium main > section.services::before,
+  body.home-premium main > section.impact::before,
+  body.home-premium main > section.contact::before {
     animation: none;
     opacity: 0;
   }
