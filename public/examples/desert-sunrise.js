@@ -5,6 +5,7 @@
   const board = document.getElementById("menu");
   const scroller = document.getElementById("board-scroll");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const mobileScene = window.matchMedia("(max-width: 900px) and (orientation: portrait)");
   let spanish = false;
   document.documentElement.dataset.coffeeDemo = "ready";
 
@@ -23,7 +24,8 @@
   let closeTimer = 0;
 
   function frameBox() {
-    const parts = (scene?.dataset.frame || "").split(",").map(Number);
+    const raw = mobileScene.matches && scene?.dataset.frameMobile ? scene.dataset.frameMobile : scene?.dataset.frame;
+    const parts = (raw || "").split(",").map(Number);
     if (parts.length !== 4 || parts.some((n) => Number.isNaN(n))) return null;
     return parts.map((n) => n / 100);
   }
@@ -62,7 +64,8 @@
     document.body.classList.add("is-menu");
     if (board) board.inert = false;
     window.requestAnimationFrame(() => window.requestAnimationFrame(zoomToBoard));
-    board?.querySelector(".board-back")?.focus();
+    const back = mobileScene.matches ? scene.parentElement.querySelector(".mobile-back") : board?.querySelector(".board-back");
+    back?.focus();
   }
 
   function closeMenu() {
