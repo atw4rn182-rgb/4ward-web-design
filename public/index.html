@@ -162,7 +162,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=cards1" />
+  <link rel="stylesheet" href="styles.css?v=finder2" />
   <link rel="icon" href="assets/favicon.png?v=5" type="image/png" sizes="64x64" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=5" />
@@ -337,7 +337,7 @@
           <p class="section-lead">From a simple online flyer to a full e-commerce website, see how 4Ward brings businesses online.</p>
         </header>
         <div class="example-grid" id="example-websites" data-example-block="tier4-prompt-2">
-          <article class="example-card example-card-tier4">
+          <article class="example-card example-card-tier4" id="example-tier4">
             <p class="showcase-price">Tier 4 — $44/month</p>
             <div class="tier4-example">
               <div class="example-preview example-preview-coffee">
@@ -396,7 +396,7 @@
             <p class="growth-footnote"><strong>Real Client Results:</strong> These figures are actual reported results from 4 Elements Oilfield Services, a 4Ward Web Design Tier 3 client, during September–October 2026.</p>
             <a class="btn btn-accent" href="/case-studies/4-elements">View the Full Case Study</a>
           </section>
-          <article class="example-card example-card-client">
+          <article class="example-card example-card-client" id="example-tier3">
             <div class="example-preview example-preview-client">
               <div class="shot-chrome" aria-hidden="true"><span></span><span></span><span></span><em>4elementsoilfieldservices.com</em></div>
               <picture>
@@ -406,14 +406,14 @@
             </div>
             <p class="showcase-price">Tier 3 — $399/month</p>
             <h3>4 Elements Oilfield Services</h3>
-            <p class="showcase-kind">Advanced Multi-Department</p>
+            <p class="showcase-kind">Premium Multi-Department</p>
             <p>Built for a business with several departments, services, or divisions. Trucking, repair, construction, safety, and hydrovac each have a place on one professional site. The admin dashboard is an optional paid add-on and is not included at $399/month.</p>
             <div class="example-actions">
               <a class="btn btn-accent" href="https://4elementsoilfieldservices.com/" target="_blank" rel="noopener noreferrer">Visit Website</a>
               <a class="showcase-tier-link" href="#plan-tier3">View Tier 3</a>
             </div>
           </article>
-          <article class="example-card example-card-client">
+          <article class="example-card example-card-client" id="example-tier2">
             <div class="example-preview example-preview-client">
               <div class="shot-chrome" aria-hidden="true"><span></span><span></span><span></span><em>sandrconcretecrafts.com</em></div>
               <picture>
@@ -423,7 +423,7 @@
             </div>
             <p class="showcase-price">Tier 2 — $225/month</p>
             <h3>S&amp;R Concrete Crafts</h3>
-            <p class="showcase-kind">E-Commerce &amp; Business Management</p>
+            <p class="showcase-kind">Business Management</p>
             <p class="showcase-headline">Your Website. Your Way.</p>
             <p>We design and build your website around your business, and you stay in control. With your included admin dashboard, you can update photos, change supported text, and manage the content set up for your site without contacting us for every small update.</p>
             <div class="example-actions">
@@ -431,9 +431,9 @@
               <a class="showcase-tier-link" href="#plan-tier2">View Tier 2</a>
             </div>
           </article>
-          <article class="example-card example-card-client example-card-stack">
+          <article class="example-card example-card-client example-card-stack" id="example-tier1">
             <p class="showcase-price">Tier 1 — $99/month</p>
-            <p class="showcase-kind">Small Business Starter</p>
+            <p class="showcase-kind">Small Business Website</p>
             <div class="tier1-example">
               <div class="example-preview">
                 <picture>
@@ -487,17 +487,31 @@
       </div>
     </section>
 
-    <section class="find-tier section" id="find-my-tier" aria-labelledby="find-tier-heading">
+    <section class="find-tier tier-finder section" id="find-my-tier" aria-labelledby="find-tier-heading">
       <div class="container">
-        <div class="find-tier-panel">
-          <p class="eyebrow">Choose a package</p>
-          <h2 id="find-tier-heading">Not Sure Which Package Fits?</h2>
-          <p>Find the right website package for your business in about 60 seconds.</p>
-          <p class="find-tier-note">Compare the four packages below, or tell us about the business. Asking a question does not start a payment.</p>
-          <p class="find-tier-links">
-            <a href="#pricing">Compare the four packages</a>
-            <a href="consultation.html">Request a consultation</a>
-          </p>
+        <div class="tier-finder-shell" data-tier-finder>
+          <div class="tier-finder-intro" data-tier-intro>
+            <p class="eyebrow">Tier finder</p>
+            <h2 id="find-tier-heading">Not Sure Which Website Fits Your Business?</h2>
+            <p class="tier-finder-lead">Find your perfect website in 60 seconds. Just answer four quick questions!</p>
+            <button class="btn btn-accent tier-finder-start" type="button" data-tier-start>
+              Find My Perfect Fit <span aria-hidden="true">🚀</span>
+            </button>
+            <p class="tier-finder-note">No account, email, or payment. Asking a question does not start a checkout.</p>
+          </div>
+          <div class="tier-finder-panel" data-tier-panel hidden>
+            <div class="tier-finder-chrome">
+              <p class="tier-finder-step" data-tier-step>Question 1 of 4</p>
+              <div class="tier-finder-progress" data-tier-progress role="progressbar" aria-valuemin="0" aria-valuemax="4" aria-valuenow="0" aria-valuetext="Question 1 of 4">
+                <span class="tier-finder-progress-fill" data-tier-fill></span>
+              </div>
+            </div>
+            <div class="tier-finder-stage" data-tier-stage></div>
+            <div class="tier-finder-nav">
+              <button class="btn btn-outline" type="button" data-tier-back>Back</button>
+              <button class="tier-finder-restart" type="button" data-tier-restart>Restart Quiz</button>
+            </div>
+          </div>
         </div>
       </div>
     </section>
@@ -601,12 +615,12 @@
             <p class="plan-badge">Most Popular</p>
             <header class="plan-header">
               <p class="plan-tier">Tier 3</p>
-              <h3>Advanced Multi-Department Business</h3>
+              <h3>Premium Multi-Department Website</h3>
               <p class="plan-price"><span>$399</span><small>/ mo</small></p>
               <p class="plan-fee">+$200 setup fee, once</p>
               <p class="plan-due">Due today: <strong>$599</strong></p>
               <p class="plan-buyout-line">Or <strong>$9,776</strong> upfront <span>(24 × $399 + $200 setup)</span></p>
-              <p class="plan-summary">For a larger company that needs separate departments, quote requests, and a broader site.</p>
+              <p class="plan-summary">For a company that needs separate departments, detailed service pages, and quote requests routed to the right team.</p>
             </header>
             <ul class="plan-features">
               <li>Advanced multipage website</li>
@@ -617,7 +631,7 @@
               <li>Broader customization within the agreed project</li>
               <li>English and Spanish on request, at no extra charge</li>
             </ul>
-            <p class="plan-clarify">A chatbot, extra integrations, and work beyond the agreed scope are quoted separately. They are not included in the $399 price.</p>
+            <p class="plan-clarify">A chatbot, a dashboard, online payments, and work beyond the agreed scope are quoted separately. They are not included in the $399 price. No payment add-on price is assumed here.</p>
             <div class="plan-actions">
               <a class="btn btn-accent" href="consultation.html?tier=tier3">Start at $399/month</a>
               <a class="btn btn-outline" href="consultation.html?tier=buyout-tier3">Pay $9,776 upfront</a>
@@ -665,13 +679,13 @@
           <article class="plan reveal" id="plan-tier2">
             <header class="plan-header">
               <p class="plan-tier">Tier 2</p>
-              <h3>E-Commerce &amp; Business Management</h3>
-              <p class="plan-promise">Your website. Your store. Your control.</p>
+              <h3>Business Management</h3>
+              <p class="plan-promise">Your website. Your content. Your control.</p>
               <p class="plan-price"><span>$225</span><small>/ mo</small></p>
               <p class="plan-fee">+$200 setup fee, once</p>
               <p class="plan-due">Due today: <strong>$425</strong>, dashboard included</p>
               <p class="plan-buyout-line">Or <strong>$5,600</strong> upfront <span>(24 × $225 + $200 setup, dashboard included)</span></p>
-              <p class="plan-summary">A professional multipage site with your own secure dashboard included in the $225.</p>
+              <p class="plan-summary">An advanced multi-page website with an admin dashboard included, so you can update the content set up for your site.</p>
             </header>
             <ul class="plan-features">
               <li>Professional multipage website</li>
@@ -725,23 +739,24 @@
           <article class="plan reveal" id="plan-tier1">
             <header class="plan-header">
               <p class="plan-tier">Tier 1</p>
-              <h3>Small Business Starter</h3>
+              <h3>Small Business Website</h3>
               <p class="plan-price"><span>$99</span><small>/ mo</small></p>
               <p class="plan-with-dashboard">or <span>$149</span><small>/ mo with the optional Admin Dashboard</small></p>
               <p class="plan-fee">+$200 setup fee, once</p>
               <p class="plan-due">Due today: <strong>$299</strong> on the standard plan</p>
               <p class="plan-buyout-line">Or <strong>$2,576</strong> upfront <span>(24 × $99 + $200 setup)</span></p>
-              <p class="plan-summary">Everything in the Online Flyer, plus a more complete presence for a business that wants 4Ward to handle the site.</p>
+              <p class="plan-summary">A professional multi-page website with service pages and a contact form that emails an inbox you already have.</p>
             </header>
             <ul class="plan-features">
-              <li>More complete business information, including About content</li>
-              <li>Photo gallery or video content</li>
-              <li>Contact form that emails your existing inbox</li>
-              <li>Google Business Profile setup and expanded local SEO</li>
+              <li>Professional multi-page website</li>
+              <li>Pages for business information and services</li>
+              <li>Mobile-friendly design and basic search engine setup</li>
+              <li>Phone and contact information</li>
+              <li>Contact form that emails an inbox you already have</li>
               <li>Hosting, maintenance, and 2 updates / month</li>
               <li>English and Spanish on request, at no extra charge</li>
             </ul>
-            <p class="plan-clarify">The contact form sends a message to an email address you already have. It does not create a hosted email inbox. The $99 price does not include the Admin Dashboard. That dashboard is an optional $50/mo add-on. Content changes beyond the two monthly updates are requested through 4Ward. Online checkout is not part of this plan.</p>
+            <p class="plan-clarify">The contact form asks for a name, email address, and message, then delivers that inquiry to an email address you already use. It does not create a hosted mailbox. Optional online payment integration is available with setup assistance and is not included in the $99 subscription. It is not full e-commerce, inventory management, or online ordering. The admin dashboard remains an optional $50/month add-on.</p>
             <div class="plan-actions">
               <a class="btn btn-outline" href="consultation.html?tier=tier1">Start at $99/month</a>
               <a class="btn btn-outline" href="consultation.html?tier=buyout-tier1">Pay $2,576 upfront</a>
@@ -791,9 +806,9 @@
                 <tr>
                   <th scope="col">Included</th>
                   <th scope="col">Tier 4 Online Flyer $44</th>
-                  <th scope="col">Tier 3 Advanced $399</th>
-                  <th scope="col">Tier 2 E-Commerce $225</th>
-                  <th scope="col">Tier 1 Starter $99</th>
+                  <th scope="col">Tier 3 Premium $399</th>
+                  <th scope="col">Tier 2 Business Management $225</th>
+                  <th scope="col">Tier 1 Small Business Website $99</th>
                 </tr>
               </thead>
               <tbody>
@@ -808,13 +823,13 @@
                   <th scope="row">Pages</th>
                   <td>One flyer page</td>
                   <td>Multiple departments</td>
-                  <td>Multipage site</td>
-                  <td>Small-business site</td>
+                  <td>Advanced multi-page site</td>
+                  <td>Multi-page business site</td>
                 </tr>
                 <tr>
                   <th scope="row">Owner dashboard</th>
                   <td>No</td>
-                  <td>Where the project supports it</td>
+                  <td>Optional, $50/mo</td>
                   <td>Included</td>
                   <td>Optional, $50/mo</td>
                 </tr>
@@ -823,14 +838,14 @@
                   <td>No</td>
                   <td>Only if scoped</td>
                   <td>When configured</td>
-                  <td>No</td>
+                  <td>Optional, with setup assistance</td>
                 </tr>
                 <tr>
                   <th scope="row">Google Business Profile</th>
                   <td>No</td>
                   <td>Yes</td>
                   <td>Yes</td>
-                  <td>Yes</td>
+                  <td>No</td>
                 </tr>
                 <tr>
                   <th scope="row">Monthly content help</th>
@@ -1124,5 +1139,6 @@
 
   <script src="hero-commercial.js?v=hero-x2e"></script>
   <script src="script.js?v=growth2"></script>
+  <script type="module" src="tier-finder.js?v=finder4"></script>
 </body>
 </html>
