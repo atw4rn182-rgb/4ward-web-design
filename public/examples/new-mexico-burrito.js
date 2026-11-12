@@ -64,8 +64,7 @@
     document.body.classList.add("is-menu");
     if (board) board.inert = false;
     window.requestAnimationFrame(() => window.requestAnimationFrame(zoomToBoard));
-    const back = mobileScene.matches ? scene.parentElement.querySelector(".mobile-back") : board?.querySelector(".board-back");
-    back?.focus();
+    scene.parentElement.querySelector(".mobile-back")?.focus();
   }
 
   function closeMenu() {
