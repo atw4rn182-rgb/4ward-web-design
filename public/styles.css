@@ -4291,7 +4291,7 @@ body.home-premium .example-card {
   padding: 0.85rem 0.85rem 1rem;
   border-radius: 22px;
   border: 1px solid rgba(214, 154, 84, 0.45);
-  background: #62483a;
+  background: #7a6358;
   border-color: #b97850;
   box-shadow: 0 10px 18px rgba(48, 35, 30, 0.16);
 }
@@ -4411,7 +4411,7 @@ body.home-premium .shot-chrome {
 body.home-premium .showcase-price {
   order: -1;
   margin: 0;
-  color: #e6a36b !important;
+  color: #f5d0a6 !important;
   font-size: 0.78rem;
   font-weight: 800;
   letter-spacing: 0.04em;
