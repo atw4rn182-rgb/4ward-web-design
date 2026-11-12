@@ -4006,7 +4006,7 @@ body.home-premium .tier4-example .example-preview-coffee img {
 }
 
 body.home-premium .tier4-example .example-preview-burrito img {
-  object-position: center 38%;
+  object-position: center center;
 }
 
 body.home-premium .tier1-example h3,
