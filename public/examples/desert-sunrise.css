@@ -333,7 +333,15 @@ body.is-menu .zoom-glass {
 .board-scroll h3 { font-size: 6.5cqw; margin: 1.2cqh 0 0.6cqh; color: #e2b15a; }
 .board-scroll article { display: grid; grid-template-columns: 1fr auto; gap: 0 2cqw; padding: 0.8cqh 0; border-bottom: 1px solid rgba(246, 241, 230, 0.14); font-size: 4.6cqw; }
 .board-scroll article p { grid-column: 1 / -1; margin: 0.3cqh 0 0; color: #e6d8c8; font-size: 3.8cqw; }
-.hours-row { margin: 1.2cqh 0 0.4cqh; }
+.hours-footer {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 0;
+  padding: 0.5cqh 1cqw 0.2cqh;
+  text-align: center;
+}
 .hours-link, .chalk-back, .place-pick, .place-phone {
   border: 0;
   border-radius: 0;
@@ -350,11 +358,16 @@ body.is-menu .zoom-glass {
   text-underline-offset: 0.18em;
   text-decoration-color: rgba(243, 236, 228, 0.5);
 }
-.hours-link, .chalk-back { padding: 3cqh 1.2cqw; }
-.hours-link { font-size: 5.6cqw; }
+.hours-link, .chalk-back { padding: 1.1cqh 0.6cqw; }
+.hours-footer .hours-link {
+  font-size: 9.2cqw;
+  line-height: 0.95;
+  text-align: center;
+}
 .board-places[hidden] { display: none; }
 .board.is-hours .menu-tabs,
-.board.is-hours .board-scroll { display: none; }
+.board.is-hours .board-scroll,
+.board.is-hours .hours-footer { display: none; }
 .board-places {
   flex: 1;
   min-height: 0;

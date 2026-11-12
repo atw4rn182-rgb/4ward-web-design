@@ -339,7 +339,15 @@ body.is-menu .zoom-glass {
   line-height: 1.05;
 }
 .board-scroll article p { grid-column: 1 / -1; margin: 0.15cqh 0 0; color: #efe4d4; font-size: 5cqw; line-height: 1.1; }
-.hours-row { margin: 1.1cqh 0 0.4cqh; }
+.hours-footer {
+  flex: none;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 0;
+  padding: 0.5cqh 1cqw 0.2cqh;
+  text-align: center;
+}
 .hours-link, .chalk-back, .place-pick, .place-phone {
   border: 0;
   border-radius: 0;
@@ -356,11 +364,16 @@ body.is-menu .zoom-glass {
   text-underline-offset: 0.18em;
   text-decoration-color: rgba(246, 239, 228, 0.5);
 }
-.hours-link, .chalk-back { padding: 3cqh 1.2cqw; }
-.hours-link { font-size: 7.6cqw; }
+.hours-link, .chalk-back { padding: 1.1cqh 0.6cqw; }
+.hours-footer .hours-link {
+  font-size: 9.8cqw;
+  line-height: 0.95;
+  text-align: center;
+}
 .board-places[hidden] { display: none; }
 .board.is-hours .menu-tabs,
-.board.is-hours .board-scroll { display: none; }
+.board.is-hours .board-scroll,
+.board.is-hours .hours-footer { display: none; }
 .board-places {
   flex: 1;
   min-height: 0;
