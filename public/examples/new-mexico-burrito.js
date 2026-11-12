@@ -23,6 +23,7 @@
 
   let closeTimer = 0;
   let level = 1;
+  let boardDrag = false;
 
   function frameBox() {
     const raw = mobileScene.matches && scene?.dataset.frameMobile ? scene.dataset.frameMobile : scene?.dataset.frame;
@@ -55,7 +56,7 @@
     const fr = frame.getBoundingClientRect();
     const br = board.getBoundingClientRect();
     const size = 48;
-    const gap = 10;
+    const gap = 18;
     const spaceRight = fr.right - br.right;
     const spaceLeft = br.left - fr.left;
     let x;
@@ -183,6 +184,17 @@
       jumpTo(jump.getAttribute("data-jump"));
       return;
     }
+    if (
+      board &&
+      event.target.closest("#menu") &&
+      document.body.classList.contains("is-menu") &&
+      level < 3 &&
+      !boardDrag &&
+      !event.target.closest("button, a, article, h3, p, strong, span")
+    ) {
+      openMenu(3);
+      return;
+    }
     if (event.target.closest("#site-nav a") && nav && menuButton) {
       nav.classList.remove("is-open");
       menuButton.setAttribute("aria-expanded", "false");
@@ -192,6 +204,27 @@
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && document.body.classList.contains("is-menu")) closeMenu();
   });
+
+  if (board) {
+    let tracking = false;
+    let start = null;
+    board.addEventListener("pointerdown", (event) => {
+      tracking = true;
+      boardDrag = false;
+      start = { x: event.clientX, y: event.clientY };
+    });
+    board.addEventListener("pointermove", (event) => {
+      if (!tracking || !start) return;
+      const dx = event.clientX - start.x;
+      const dy = event.clientY - start.y;
+      if (dx * dx + dy * dy > 64) boardDrag = true;
+    });
+    const stop = () => {
+      tracking = false;
+    };
+    board.addEventListener("pointerup", stop);
+    board.addEventListener("pointercancel", stop);
+  }
 
   window.addEventListener("resize", () => {
     if (document.body.classList.contains("is-menu")) zoomToBoard(level);
