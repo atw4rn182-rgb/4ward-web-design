@@ -301,7 +301,7 @@
       event.target.closest("#menu") &&
       document.body.classList.contains("is-menu") &&
       !boardDrag &&
-      !event.target.closest("button, a, article, h3, p, strong, span, .board-places, .hours-row")
+      !event.target.closest("button, a, article, h3, p, strong, span, .board-places, .hours-footer")
     ) {
       quietHint();
       openMenu(level === 3 ? 2 : 3);
