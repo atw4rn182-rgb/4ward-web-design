@@ -24,6 +24,29 @@
   let closeTimer = 0;
   let level = 1;
   let boardDrag = false;
+  let savedScroll = 0;
+  let savedJump = "burritos";
+  const locations = [
+    {
+      id: "mesa",
+      areaEn: "Sample stop on an imaginary desert highway",
+      areaEs: "Parada de muestra en una carretera imaginaria del desierto",
+      hoursEn: "Mon–Sat 6:00 AM – 9:00 PM · Sun 7:00 AM – 7:00 PM",
+      hoursEs: "Lun–sáb 6:00 AM – 9:00 PM · Dom 7:00 AM – 7:00 PM",
+      phone: "+15550143310",
+      display: "(555) 014-3310",
+    },
+    {
+      id: "canyon",
+      areaEn: "Fictional canyon-road pullout. Sample only.",
+      areaEs: "Apartadero ficticio en un camino del cañón. Solo muestra.",
+      hoursEn: "Fri–Sun 11:00 AM – 8:00 PM",
+      hoursEs: "Vie–dom 11:00 AM – 8:00 PM",
+      phone: "+15550143318",
+      display: "(555) 014-3318",
+    },
+  ];
+  let selectedId = "mesa";
 
   function frameBox() {
     const raw = mobileScene.matches && scene?.dataset.frameMobile ? scene.dataset.frameMobile : scene?.dataset.frame;
@@ -96,15 +119,16 @@
     const frame = scene.parentElement;
     if (!frame) return;
     const closer = zoomLevel >= 3;
+    const portrait = mobileScene.matches;
     const originX = board.offsetLeft + board.offsetWidth / 2;
     const originY = board.offsetTop + board.offsetHeight / 2;
-    const targetW = board.offsetWidth * (closer ? 1.02 : 1.1);
-    const targetH = board.offsetHeight * (closer ? 1.04 : 1.14);
+    const targetW = board.offsetWidth * (closer ? (portrait ? 1 : 1.01) : 1.1);
+    const targetH = board.offsetHeight * (closer ? (portrait ? 1.02 : 1.03) : 1.14);
     const insetBottom = 78;
     const availW = Math.max(120, frame.clientWidth - 16);
     const availH = Math.max(120, frame.clientHeight - insetBottom);
     const fit = Math.min(availW / targetW, availH / targetH);
-    const scale = fit * 0.92;
+    const scale = fit * (closer ? (portrait ? 0.96 : 0.95) : 0.92);
     const tilt = (scene.dataset.tilt || "0,0").split(",").map(Number);
     const rx = tilt[0] || 0;
     const ry = tilt[1] || 0;
@@ -154,6 +178,54 @@
     document.querySelector(".order-bar [data-open-menu]")?.focus();
   }
 
+  function setBilingual(node, en, es) {
+    if (!node) return;
+    node.setAttribute("data-en", en);
+    node.setAttribute("data-es", es);
+    node.textContent = spanish ? es : en;
+  }
+
+  function selectLocation(id) {
+    const place = locations.find((item) => item.id === id) || locations[0];
+    selectedId = place.id;
+    document.querySelectorAll("[data-location]").forEach((button) => {
+      button.setAttribute("aria-current", button.getAttribute("data-location") === place.id ? "true" : "false");
+    });
+    setBilingual(board?.querySelector("[data-phone-area]"), place.areaEn, place.areaEs);
+    setBilingual(board?.querySelector("[data-phone-hours]"), place.hoursEn, place.hoursEs);
+    document.querySelectorAll("[data-phone]").forEach((node) => {
+      node.textContent = place.display;
+    });
+    document.querySelectorAll('a[href^="tel:"]').forEach((node) => {
+      node.setAttribute("href", "tel:" + place.phone);
+    });
+    setBilingual(
+      document.querySelector(".call-note"),
+      "Demonstration number, " + place.display + ". Not in service.",
+      "Número de demostración, " + place.display + ". Fuera de servicio."
+    );
+  }
+
+  function showHours() {
+    if (!board || !scroller) return;
+    savedScroll = scroller.scrollTop;
+    savedJump = document.querySelector("[data-jump][aria-current='true']")?.getAttribute("data-jump") || savedJump;
+    board.classList.add("is-hours");
+    board.querySelector(".board-places")?.removeAttribute("hidden");
+  }
+
+  function showMenu() {
+    if (!board || !scroller) return;
+    board.classList.remove("is-hours");
+    board.querySelector(".board-places")?.setAttribute("hidden", "");
+    document.querySelectorAll("[data-jump]").forEach((button) => {
+      button.setAttribute("aria-current", button.getAttribute("data-jump") === savedJump ? "true" : "false");
+    });
+    window.requestAnimationFrame(() => {
+      scroller.scrollTop = savedScroll;
+    });
+  }
+
   function jumpTo(id) {
     const section = document.getElementById(id);
     if (!section || !scroller) return;
@@ -201,6 +273,23 @@
       closeMenu();
       return;
     }
+    if (event.target.closest("[data-show-hours]")) {
+      event.preventDefault();
+      quietHint();
+      showHours();
+      return;
+    }
+    if (event.target.closest("[data-show-menu]")) {
+      event.preventDefault();
+      showMenu();
+      return;
+    }
+    const place = event.target.closest("[data-location]");
+    if (place) {
+      event.preventDefault();
+      selectLocation(place.getAttribute("data-location"));
+      return;
+    }
     const jump = event.target.closest("[data-jump]");
     if (jump) {
       quietHint();
@@ -212,7 +301,7 @@
       event.target.closest("#menu") &&
       document.body.classList.contains("is-menu") &&
       !boardDrag &&
-      !event.target.closest("button, a, article, h3, p, strong, span")
+      !event.target.closest("button, a, article, h3, p, strong, span, .board-places, .hours-row")
     ) {
       quietHint();
       openMenu(level === 3 ? 2 : 3);
@@ -261,4 +350,5 @@
   });
   window.addEventListener("load", placeGlass);
   placeGlass();
+  selectLocation(selectedId);
 })();
