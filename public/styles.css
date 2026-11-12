@@ -539,7 +539,7 @@ p {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
-  top: min(calc(100dvh - 5.5rem - env(safe-area-inset-bottom, 0px)), calc(100% - 5.5rem));
+  top: min(calc(100dvh - 8.6rem - env(safe-area-inset-bottom, 0px)), calc(100% - 8.6rem));
   bottom: auto;
   z-index: 6;
   display: flex;
@@ -807,6 +807,7 @@ p {
   font-weight: 650;
   line-height: 1.15;
   letter-spacing: -0.02em;
+  color: #fff8ee;
 }
 
 .hero-commercial-invite p {
@@ -854,30 +855,31 @@ p {
 .hero-scroll-cue {
   position: absolute;
   z-index: 30;
-  left: 50%;
-  bottom: max(0.55rem, calc(100% - 100svh + 0.7rem));
-  transform: translateX(-50%);
-  display: flex;
-  flex-direction: column;
+  left: auto;
+  right: max(0.7rem, env(safe-area-inset-right, 0px));
+  bottom: max(0.4rem, calc(100% - 100svh + 0.45rem));
+  transform: none;
+  display: inline-flex;
+  flex-direction: row;
   align-items: center;
-  gap: 0.1rem;
+  gap: 0.15rem;
   margin: 0;
-  padding: 0.45rem 0.95rem 0.35rem;
+  padding: 0.22rem 0.5rem 0.18rem;
   border: 1px solid rgba(255, 255, 255, 0.22);
   border-radius: 999px;
   background: rgba(8, 14, 26, 0.58);
   color: #fff;
   font-family: var(--font-body);
-  font-size: 0.72rem;
+  font-size: 0.62rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  line-height: 1.2;
+  letter-spacing: 0.06em;
+  line-height: 1.1;
   text-transform: uppercase;
   text-decoration: none;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.16),
-    0 8px 18px rgba(0, 0, 0, 0.24);
+    0 6px 14px rgba(0, 0, 0, 0.22);
   pointer-events: auto;
   opacity: 0;
   transition: opacity 700ms ease;
@@ -888,8 +890,8 @@ p {
 }
 
 .hero-scroll-cue svg {
-  width: 22px;
-  height: 22px;
+  width: 14px;
+  height: 14px;
   animation: hero-cue-arrow 1.6s ease-in-out infinite;
 }
 
@@ -929,8 +931,14 @@ p {
     padding: 0.85rem 0.85rem 0.95rem;
   }
 
+  .hero-commercial-intro {
+    top: auto;
+    bottom: 22%;
+  }
+
   .hero-commercial-invite h2 {
     font-size: 1.15rem;
+    color: #fff8ee;
   }
 
   .hero-commercial-invite p {
@@ -3126,7 +3134,7 @@ a.ba-frame:hover img {
   .hero-content.container,
   .hero-content {
     width: min(1140px, calc(100% - 1.75rem));
-    top: min(calc(100dvh - 8.75rem - env(safe-area-inset-bottom, 0px)), calc(100% - 8.75rem));
+    top: min(calc(100dvh - 12.2rem - env(safe-area-inset-bottom, 0px)), calc(100% - 12.2rem));
     padding: 0.45rem env(safe-area-inset-right, 0px) 0.45rem env(safe-area-inset-left, 0px);
   }
 }
