@@ -4220,17 +4220,19 @@ body.home-premium main > section.example-sites::before {
   content: "";
   position: absolute;
   z-index: 0;
-  inset: -30% -55%;
+  inset: 0;
   pointer-events: none;
-  background: linear-gradient(
-    118deg,
-    transparent 34%,
-    rgba(64, 49, 43, 0.05) 42%,
-    rgba(64, 49, 43, 0.28) 50%,
-    rgba(64, 49, 43, 0.05) 58%,
-    transparent 66%
+  background-image: linear-gradient(
+    104deg,
+    transparent 18%,
+    rgba(64, 49, 43, 0.16) 36%,
+    rgba(64, 49, 43, 0.55) 50%,
+    rgba(64, 49, 43, 0.16) 64%,
+    transparent 82%
   );
-  transform: translate3d(-62%, 10%, 0);
+  background-repeat: repeat-y;
+  background-size: 150vw 100vh;
+  background-position: 150vw 0;
   animation: examples-shimmer 10s linear infinite;
 }
 
@@ -4256,9 +4258,9 @@ body.home-premium .example-sites .section-intro .section-lead {
 }
 
 @keyframes examples-shimmer {
-  0% { transform: translate3d(-62%, 10%, 0); }
-  26% { transform: translate3d(62%, -10%, 0); }
-  100% { transform: translate3d(62%, -10%, 0); }
+  0% { background-position: 150vw 0; }
+  26% { background-position: -150vw 0; }
+  100% { background-position: -150vw 0; }
 }
 
 @media (prefers-reduced-motion: reduce) {
