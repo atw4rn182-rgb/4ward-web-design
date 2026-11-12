@@ -4057,6 +4057,39 @@ body.home-premium .tier4-example .example-preview-burrito img {
   object-position: center center;
 }
 
+.example-shot {
+  display: block;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  cursor: pointer;
+  color: inherit;
+}
+
+.example-shot img {
+  transition: transform 0.35s var(--ease), filter 0.35s var(--ease);
+}
+
+.example-shot:focus-visible {
+  outline: 2px solid #f0c48a;
+  outline-offset: -6px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .example-shot:hover img {
+    transform: scale(1.025);
+    filter: saturate(1.04) brightness(1.05);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .example-shot img,
+  .example-shot:hover img {
+    transition: none;
+    transform: none;
+  }
+}
+
 body.home-premium .tier1-example h3,
 body.home-premium .tier4-example h3 {
   font-size: 1.2rem;
