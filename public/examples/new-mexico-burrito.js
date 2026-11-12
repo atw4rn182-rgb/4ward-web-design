@@ -39,9 +39,17 @@
   function syncGlass() {
     const glass = glassButton();
     if (!glass) return;
-    const maxed = level >= 3;
-    glass.disabled = maxed;
-    glass.setAttribute("aria-label", maxed ? "Chalkboard is at maximum magnification" : "Magnify the chalkboard menu");
+    glass.disabled = false;
+    const label = level === 3 ? "Return to the menu close-up" : level === 2 ? "Zoom a little closer" : "Magnify the chalkboard menu";
+    glass.setAttribute("aria-label", label);
+  }
+
+  function quietHint() {
+    scene?.parentElement?.querySelector(".menu-hint-open")?.classList.add("is-quiet");
+  }
+
+  function showOpenHint() {
+    scene?.parentElement?.querySelector(".menu-hint-open")?.classList.remove("is-quiet");
   }
 
   function placeGlass() {
@@ -71,24 +79,32 @@
     y = Math.max(56, Math.min(fr.height - size - 8, y));
     glass.style.left = x + "px";
     glass.style.top = y + "px";
+    const hint = frame.querySelector(".menu-hint-closed");
+    if (hint) {
+      const hintW = hint.offsetWidth || 148;
+      const hintH = hint.offsetHeight || 28;
+      let hx = x + size + 6;
+      let hy = y + (size - hintH) / 2;
+      if (hx + hintW > fr.width - 8) hx = Math.max(8, x - hintW - 6);
+      hint.style.left = Math.max(8, Math.min(fr.width - hintW - 8, hx)) + "px";
+      hint.style.top = Math.max(52, hy) + "px";
+    }
   }
 
   function zoomToBoard(zoomLevel) {
     if (!scene || !board) return;
     const frame = scene.parentElement;
-    const box = frameBox();
-    if (!frame || !box) return;
+    if (!frame) return;
     const closer = zoomLevel >= 3;
-    const [left, top, width, height] = box;
-    const targetW = closer ? board.offsetWidth : scene.offsetWidth * width;
-    const targetH = closer ? board.offsetHeight : scene.offsetHeight * height;
-    const originX = closer ? board.offsetLeft + board.offsetWidth / 2 : scene.offsetWidth * (left + width / 2);
-    const originY = closer ? board.offsetTop + board.offsetHeight / 2 : scene.offsetHeight * (top + height / 2);
-    const insetBottom = 76;
-    const availW = frame.clientWidth - 32;
-    const availH = frame.clientHeight - insetBottom - 12;
+    const originX = board.offsetLeft + board.offsetWidth / 2;
+    const originY = board.offsetTop + board.offsetHeight / 2;
+    const targetW = board.offsetWidth * (closer ? 1.02 : 1.1);
+    const targetH = board.offsetHeight * (closer ? 1.04 : 1.14);
+    const insetBottom = 78;
+    const availW = Math.max(120, frame.clientWidth - 16);
+    const availH = Math.max(120, frame.clientHeight - insetBottom);
     const fit = Math.min(availW / targetW, availH / targetH);
-    const scale = fit * (closer ? 0.94 : 0.92);
+    const scale = fit * 0.92;
     const tilt = (scene.dataset.tilt || "0,0").split(",").map(Number);
     const rx = tilt[0] || 0;
     const ry = tilt[1] || 0;
@@ -105,10 +121,12 @@
     window.clearTimeout(closeTimer);
     document.body.classList.remove("is-closing");
     if (!already) scene.style.width = scene.offsetWidth + "px";
+    const opening = !already;
     level = target;
     document.body.classList.add("is-menu");
     document.body.classList.toggle("is-zoom-3", level === 3);
     if (board) board.inert = false;
+    if (opening) showOpenHint();
     syncGlass();
     placeGlass();
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => zoomToBoard(level)));
@@ -162,8 +180,12 @@
     }
     if (event.target.closest("[data-zoom-in]")) {
       event.preventDefault();
-      if (level >= 3 && document.body.classList.contains("is-menu")) return;
-      openMenu(document.body.classList.contains("is-menu") ? 3 : 2);
+      if (document.body.classList.contains("is-menu")) {
+        quietHint();
+        openMenu(level === 3 ? 2 : 3);
+      } else {
+        openMenu(2);
+      }
       return;
     }
     if (event.target.closest("[data-open-menu]")) {
@@ -181,6 +203,7 @@
     }
     const jump = event.target.closest("[data-jump]");
     if (jump) {
+      quietHint();
       jumpTo(jump.getAttribute("data-jump"));
       return;
     }
@@ -188,11 +211,11 @@
       board &&
       event.target.closest("#menu") &&
       document.body.classList.contains("is-menu") &&
-      level < 3 &&
       !boardDrag &&
       !event.target.closest("button, a, article, h3, p, strong, span")
     ) {
-      openMenu(3);
+      quietHint();
+      openMenu(level === 3 ? 2 : 3);
       return;
     }
     if (event.target.closest("#site-nav a") && nav && menuButton) {
@@ -224,6 +247,12 @@
     };
     board.addEventListener("pointerup", stop);
     board.addEventListener("pointercancel", stop);
+  }
+
+  if (scroller) {
+    scroller.addEventListener("scroll", () => {
+      if (scroller.scrollTop > 6) quietHint();
+    }, { passive: true });
   }
 
   window.addEventListener("resize", () => {

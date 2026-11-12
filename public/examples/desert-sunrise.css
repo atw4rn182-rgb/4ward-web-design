@@ -215,6 +215,42 @@ body.is-menu .board-hit { visibility: hidden; pointer-events: none; }
 .zoom-glass:active { transform: translateY(1px); }
 .zoom-glass:disabled { opacity: 0.55; cursor: default; filter: none; }
 .zoom-glass:focus-visible { outline: 2px solid #fff; outline-offset: 3px; }
+.menu-hint {
+  position: absolute;
+  z-index: 6;
+  margin: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  max-width: calc(100% - 1.2rem);
+  padding: 0.22rem 0.55rem;
+  border-radius: 999px;
+  background: rgba(18, 12, 10, 0.5);
+  color: #fff8ee;
+  font-family: "Nunito Sans", sans-serif;
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.menu-hint svg { width: 0.85rem; height: 0.85rem; flex: none; }
+.hint-pointer { display: none; }
+@media (hover: hover) and (pointer: fine) {
+  .hint-touch { display: none; }
+  .hint-pointer { display: inline; }
+}
+.menu-hint-open {
+  left: 50%;
+  bottom: 4.55rem;
+  transform: translateX(-50%);
+  opacity: 1;
+  transition: opacity 480ms ease;
+}
+body:not(.is-menu) .menu-hint-open,
+body.is-menu .menu-hint-closed { visibility: hidden; }
+.menu-hint-open.is-quiet { opacity: 0; }
 body.is-menu .zoom-glass {
   top: max(0.75rem, env(safe-area-inset-top));
   right: max(0.75rem, env(safe-area-inset-right));
@@ -237,7 +273,7 @@ body.is-menu .zoom-glass {
   container-type: size;
   font-family: "Caveat", cursive;
 }
-.board-inner { height: 100%; display: flex; flex-direction: column; padding: 1.5cqh 5cqw 1.5cqh; }
+.board-inner { height: 100%; display: flex; flex-direction: column; padding: 0.4cqh 4.5cqw 1cqh; }
 .board-top { display: flex; justify-content: flex-end; }
 .board-back, .menu-tabs button {
   min-height: 0;
@@ -255,13 +291,13 @@ body.is-menu .zoom-glass {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.15cqh 0.35cqw;
-  margin: 0 0 0.6cqh;
+  gap: 0.05cqh 0.3cqw;
+  margin: 0 0 0.3cqh;
   flex-shrink: 0;
 }
 .menu-tabs button {
   padding: 2px 1px;
-  font-size: 6.6cqw;
+  font-size: 8.2cqw;
   line-height: 1;
   white-space: nowrap;
   text-align: left;
@@ -512,5 +548,5 @@ body.is-menu .mobile-back:focus-visible { outline: 2px solid #fff; outline-offse
 }
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .scene, .order-bar .btn, .back-home, .zoom-glass, .mobile-back { transition: none; }
+  .scene, .order-bar .btn, .back-home, .zoom-glass, .mobile-back, .menu-hint-open { transition: none; }
 }
