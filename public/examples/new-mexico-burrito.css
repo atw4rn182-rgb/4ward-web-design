@@ -124,14 +124,14 @@ h1 { font-size: clamp(2rem, 5vw, 3.4rem); margin-bottom: 0.4rem; }
 }
 .board {
   position: absolute;
-  left: 25.2%;
-  top: 37.7%;
-  width: 8.6%;
-  height: 27.9%;
+  left: 25.56%;
+  top: 42.96%;
+  width: 8.28%;
+  height: 20.88%;
   overflow: hidden;
   pointer-events: none;
   color: #f3ece4;
-  background: #231816;
+  background: transparent;
   border: 0;
   border-radius: 0;
   box-shadow: none;
@@ -165,7 +165,7 @@ h1 { font-size: clamp(2rem, 5vw, 3.4rem); margin-bottom: 0.4rem; }
   overflow: auto;
   flex: 1;
   min-height: 0;
-  padding-right: 8px;
+  padding-right: 1.5cqw;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
@@ -182,6 +182,7 @@ h1 { font-size: clamp(2rem, 5vw, 3.4rem); margin-bottom: 0.4rem; }
 }
 .board-scroll article p { grid-column: 1 / -1; margin: 0.25cqh 0 0; color: #e6d8c8; font-size: 3.6cqw; }
 body.is-menu .board { pointer-events: auto; }
+body.is-menu .order-bar { visibility: hidden; }
 body.is-menu { overflow: hidden; }
 body.is-menu .stage-frame {
   position: fixed;
