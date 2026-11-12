@@ -581,6 +581,21 @@
     });
   });
 
+  document.querySelectorAll(".growth-showcase").forEach((block) => {
+    block.querySelectorAll("[data-growth]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        const view = btn.getAttribute("data-growth") === "after" ? "after" : "before";
+        block.dataset.view = view;
+        block.querySelectorAll("[data-growth]").forEach((item) => {
+          item.setAttribute("aria-pressed", item === btn ? "true" : "false");
+        });
+        block.querySelectorAll(".growth-score").forEach((score) => {
+          score.textContent = score.getAttribute(view === "after" ? "data-after" : "data-before") || "";
+        });
+      });
+    });
+  });
+
   function trackEvent(name, params) {
     if (typeof window.gtag !== "function") return;
     window.gtag("event", name, params);
