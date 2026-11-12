@@ -333,6 +333,58 @@ body.is-menu .zoom-glass {
 .board-scroll h3 { font-size: 6.5cqw; margin: 1.2cqh 0 0.6cqh; color: #e2b15a; }
 .board-scroll article { display: grid; grid-template-columns: 1fr auto; gap: 0 2cqw; padding: 0.8cqh 0; border-bottom: 1px solid rgba(246, 241, 230, 0.14); font-size: 4.6cqw; }
 .board-scroll article p { grid-column: 1 / -1; margin: 0.3cqh 0 0; color: #e6d8c8; font-size: 3.8cqw; }
+.hours-row { margin: 1.2cqh 0 0.4cqh; }
+.hours-link, .chalk-back, .place-pick, .place-phone {
+  border: 0;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+  color: #f3ece4;
+  font: inherit;
+  font-weight: 700;
+  line-height: 1.05;
+  text-align: left;
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-thickness: 0.07em;
+  text-underline-offset: 0.18em;
+  text-decoration-color: rgba(243, 236, 228, 0.5);
+}
+.hours-link, .chalk-back { padding: 3cqh 1.2cqw; }
+.hours-link { font-size: 5.6cqw; }
+.board-places[hidden] { display: none; }
+.board.is-hours .menu-tabs,
+.board.is-hours .board-scroll { display: none; }
+.board-places {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  scrollbar-width: none;
+}
+.board-places::-webkit-scrollbar { display: none; }
+.chalk-back { font-size: 5.3cqw; margin-bottom: 0.4cqh; }
+.place-picks { display: flex; flex-direction: column; align-items: flex-start; }
+.place-pick {
+  font-size: 5.2cqw;
+  padding: 2.6cqh 1cqw;
+  text-decoration: underline;
+  text-decoration-color: rgba(243, 236, 228, 0.28);
+}
+.place-pick[aria-current="true"] {
+  color: #fffdf8;
+  text-decoration-color: rgba(226, 177, 90, 0.85);
+}
+.place-detail { margin-top: 0.5cqh; }
+.place-detail p, .place-phone {
+  margin: 0.28cqh 0;
+  font-size: 4.4cqw;
+  font-weight: 600;
+  color: #e6d8c8;
+}
+.place-phone { font-size: 5cqw; color: #f3ece4; padding: 2.2cqh 0.4cqw; text-underline-offset: 0.32em; }
 body.is-menu .board { pointer-events: auto; }
 body.is-menu .order-bar,
 body.is-menu .hero-disclaimer,

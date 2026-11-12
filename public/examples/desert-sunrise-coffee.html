@@ -8,7 +8,7 @@
   <meta name="robots" content="noindex, nofollow" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fraunces:opsz,wght@9..144,560;9..144,640&family=Nunito+Sans:wght@400;700;800&display=swap" />
-  <link rel="stylesheet" href="/examples/desert-sunrise.css?v=hint3" />
+  <link rel="stylesheet" href="/examples/desert-sunrise.css?v=hours1" />
 </head>
 <body>
   <a class="skip" href="#content">Skip to content</a>
@@ -95,6 +95,26 @@
                   <article><strong>Adobe Brownie</strong><span>$3.50</span><p data-en="A fudgy square with a pinch of salt." data-es="Un cuadro de brownie con una pizca de sal.">A fudgy square with a pinch of salt.</p></article>
                   <article><strong>Sunrise Muffin</strong><span>$3.75</span><p data-en="Orange and blueberry, wrapped for the road." data-es="Naranja y arándano, envuelto para el camino.">Orange and blueberry, wrapped for the road.</p></article>
                 </section>
+                <p class="hours-row">
+                  <button type="button" class="hours-link" data-show-hours>
+                    <span data-en="Hours & Locations" data-es="Horario y lugares">Hours & Locations</span>
+                  </button>
+                </p>
+              </div>
+              <div class="board-places" hidden>
+                <button type="button" class="chalk-back" data-show-menu>
+                  <span data-en="← Back to Menu" data-es="← Volver al menú">← Back to Menu</span>
+                </button>
+                <div class="place-picks" role="group" aria-label="Sample locations">
+                  <button type="button" class="place-pick" data-location="mesa" aria-current="true"><span data-en="Sunset Mesa" data-es="Mesa del atardecer">Sunset Mesa</span></button>
+                  <button type="button" class="place-pick" data-location="arroyo"><span data-en="Arroyo Stop" data-es="Parada del arroyo">Arroyo Stop</span></button>
+                </div>
+                <div class="place-detail">
+                  <p data-phone-area></p>
+                  <p data-phone-hours></p>
+                  <a class="place-phone" data-phone href="tel:+15550142200">(555) 014-2200</a>
+                  <p class="place-note" data-en="Sample number. Not in service." data-es="Número de muestra. Fuera de servicio.">Sample number. Not in service.</p>
+                </div>
               </div>
             </div>
           </div>
@@ -164,6 +184,6 @@
     <p><a class="btn btn-gold" href="/consultation.html?tier=tier4">Get Started With Tier 4</a></p>
     <p class="fine">Desert Brew Coffee Trailer is a fictional sample created by 4Ward Web Design. It is not a client and it does not take orders.</p>
   </footer>
-  <script src="/examples/desert-sunrise.js?v=hint3"></script>
+  <script src="/examples/desert-sunrise.js?v=hours1"></script>
 </body>
 </html>
