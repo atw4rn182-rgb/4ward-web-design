@@ -162,7 +162,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=x59burrito" />
+  <link rel="stylesheet" href="styles.css?v=x60polish" />
   <link rel="icon" href="assets/favicon.png?v=5" type="image/png" sizes="64x64" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=5" />
@@ -243,9 +243,14 @@
             <span class="hero-commercial-progress" aria-hidden="true"></span>
           </div>
           <div class="hero-commercial-intro">
-            <button class="btn btn-accent hero-learn-more" type="button" data-commercial-learn>
-              Learn More
-            </button>
+            <div class="hero-commercial-invite">
+              <h2>See What We Can Build for Your Business</h2>
+              <p>Watch a quick demonstration of what 4Ward Web Design can do for your business.</p>
+              <button class="btn btn-accent hero-learn-more" type="button" data-commercial-learn>
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M10.2 8.6v6.8l5.4-3.4z" fill="currentColor"/></svg>
+                Watch Our Quick Demo
+              </button>
+            </div>
           </div>
           <div class="hero-commercial-controls">
             <button class="hero-commercial-btn hero-commercial-sound" type="button" data-commercial-sound aria-pressed="false" aria-label="Play commercial with sound">
@@ -317,10 +322,10 @@
           <a class="btn btn-ghost" href="#pricing">See pricing</a>
         </div>
       </div>
-      <p class="hero-scroll-cue" id="hero-scroll-cue" hidden>
-        <span>Scroll to Explore</span>
+      <a class="hero-scroll-cue is-visible" id="hero-scroll-cue" href="#work">
+        <span>Explore Our Work</span>
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>
-      </p>
+      </a>
     </section>
 
     <section class="example-sites section" id="work" aria-labelledby="examples-heading">
