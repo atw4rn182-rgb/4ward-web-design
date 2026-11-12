@@ -32,19 +32,19 @@ import {
 const TIERS = {
   tier1: {
     id: "tier1",
-    name: "Tier 1 — Small Business Starter",
+    name: "Tier 1 — Small Business Website",
     amount: 9900,
     mode: "subscription",
   },
   tier2: {
     id: "tier2",
-    name: "Tier 2 — E-Commerce & Business Management",
+    name: "Tier 2 — Business Management",
     amount: 22500,
     mode: "subscription",
   },
   tier3: {
     id: "tier3",
-    name: "Tier 3 — Advanced Multi-Department Business",
+    name: "Tier 3 — Premium Multi-Department Website",
     amount: 39900,
     mode: "subscription",
   },
