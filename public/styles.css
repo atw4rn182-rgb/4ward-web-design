@@ -4237,12 +4237,16 @@ body.home-premium main > section.contact::before {
   content: "";
   position: absolute;
   z-index: -1;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 160vw;
+  height: 180%;
   pointer-events: none;
   background-repeat: no-repeat;
-  background-size: 120vw 100%;
-  background-position: -96vw 0;
-  animation: section-shimmer-ltr 10s ease-in-out infinite;
+  background-position: center;
+  background-size: 120vw 80%;
+  transform: translate3d(-75%, -75%, 0);
+  animation: section-shimmer-diagonal 10s ease-in-out infinite;
 }
 
 body.home-premium main > section.example-sites::before,
@@ -4250,9 +4254,9 @@ body.home-premium main > section.tier-finder::before {
   background-image: linear-gradient(
     118deg,
     transparent 10%,
-    rgba(64, 49, 43, 0.12) 32%,
-    rgba(64, 49, 43, 0.46) 50%,
-    rgba(64, 49, 43, 0.12) 68%,
+    rgba(64, 49, 43, 0.114) 32%,
+    rgba(64, 49, 43, 0.437) 50%,
+    rgba(64, 49, 43, 0.114) 68%,
     transparent 90%
   );
 }
@@ -4266,9 +4270,9 @@ body.home-premium main > section.contact::before {
   background-image: linear-gradient(
     118deg,
     transparent 10%,
-    rgba(245, 226, 196, 0.14) 32%,
-    rgba(255, 228, 186, 0.44) 50%,
-    rgba(245, 226, 196, 0.14) 68%,
+    rgba(245, 226, 196, 0.133) 32%,
+    rgba(255, 228, 186, 0.418) 50%,
+    rgba(245, 226, 196, 0.133) 68%,
     transparent 90%
   );
   animation-delay: 5s;
@@ -4295,10 +4299,10 @@ body.home-premium .example-sites .section-intro .section-lead {
   color: #40312b;
 }
 
-@keyframes section-shimmer-ltr {
-  0% { background-position: -96vw 0; }
-  30% { background-position: 76vw 0; }
-  100% { background-position: 76vw 0; }
+@keyframes section-shimmer-diagonal {
+  0% { transform: translate3d(-75%, -75%, 0); }
+  30% { transform: translate3d(42%, 58%, 0); }
+  100% { transform: translate3d(42%, 58%, 0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
