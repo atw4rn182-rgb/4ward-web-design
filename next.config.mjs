@@ -22,6 +22,7 @@ const nextConfig = {
   async rewrites() {
     return [
       { source: "/", destination: "/index.html" },
+      { source: "/case-studies/4-elements", destination: "/case-studies/4-elements.html" },
       { source: "/examples/desert-sunrise-coffee", destination: "/examples/desert-sunrise-coffee.html" },
       { source: "/examples/new-mexico-burrito", destination: "/examples/new-mexico-burrito.html" },
       { source: "/examples/canyon-trail-outfitters", destination: "/examples/canyon-trail-outfitters.html" },

@@ -324,6 +324,7 @@
       while (true) {
         if (seqId !== heroSequenceId || prefersReduced) break;
         const video = activeHeroVideo();
+        if (!video && !heroSlides.length) break;
         const other = inactiveHeroVideo();
         if (other) disarmVideo(other);
         if (!prepared) {
@@ -425,7 +426,7 @@
 
   if (commercial && typeof commercial.showPoster === "function") {
     commercial.showPoster();
-  } else {
+  } else if (desktopVideo || phoneVideo || heroSlides.length) {
     phase = "sequence";
     sequenceStarted = true;
     blockBrandingClicks(false);

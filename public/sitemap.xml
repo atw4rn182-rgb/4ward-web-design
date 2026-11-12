@@ -38,4 +38,10 @@
       <video:live>no</video:live>
     </video:video>
   </url>
+  <url>
+    <loc>https://www.4wardwebdesign.com/case-studies/4-elements</loc>
+    <lastmod>2026-11-12</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
 </urlset>
