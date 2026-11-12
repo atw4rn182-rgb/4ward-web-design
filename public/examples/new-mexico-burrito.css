@@ -234,10 +234,15 @@ body.is-menu .board-hit { visibility: hidden; pointer-events: none; }
   white-space: nowrap;
 }
 .menu-hint svg { width: 0.85rem; height: 0.85rem; flex: none; }
-.hint-pointer { display: none; }
+.hint-pointer, .hint-short { display: none; }
+@media (max-width: 400px) {
+  .menu-hint-closed .hint-long { display: none; }
+  .menu-hint-closed .hint-short { display: inline; }
+}
 @media (hover: hover) and (pointer: fine) {
   .hint-touch { display: none; }
   .hint-pointer { display: inline; }
+  .menu-hint-closed .hint-short { display: none; }
 }
 .menu-hint-open {
   left: 50%;

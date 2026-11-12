@@ -61,34 +61,34 @@
       return;
     }
     const frame = scene.parentElement;
-    const fr = frame.getBoundingClientRect();
-    const br = board.getBoundingClientRect();
-    const size = 48;
-    const gap = 18;
-    const spaceRight = fr.right - br.right;
-    const spaceLeft = br.left - fr.left;
-    let x;
-    let y = br.top - fr.top + Math.max(0, (br.height - size) / 2);
-    if (spaceRight >= size + gap) x = br.right - fr.left + gap;
-    else if (spaceLeft >= size + gap) x = br.left - fr.left - size - gap;
-    else {
-      x = br.left - fr.left;
-      y = br.bottom - fr.top + gap;
-    }
-    x = Math.max(8, Math.min(fr.width - size - 8, x));
-    y = Math.max(56, Math.min(fr.height - size - 8, y));
-    glass.style.left = x + "px";
-    glass.style.top = y + "px";
+    const bar = frame.querySelector(".order-bar");
     const hint = frame.querySelector(".menu-hint-closed");
-    if (hint) {
-      const hintW = hint.offsetWidth || 148;
-      const hintH = hint.offsetHeight || 28;
-      let hx = x + size + 6;
-      let hy = y + (size - hintH) / 2;
-      if (hx + hintW > fr.width - 8) hx = Math.max(8, x - hintW - 6);
-      hint.style.left = Math.max(8, Math.min(fr.width - hintW - 8, hx)) + "px";
-      hint.style.top = Math.max(52, hy) + "px";
-    }
+    const hit = frame.querySelector(".board-hit") || board;
+    if (!bar || !hint || !hit) return;
+    const fr = frame.getBoundingClientRect();
+    const barR = bar.getBoundingClientRect();
+    const hitR = hit.getBoundingClientRect();
+    const size = 48;
+    const pairGap = 8;
+    const hintW = hint.offsetWidth || 150;
+    const hintH = hint.offsetHeight || 32;
+    const clusterH = Math.max(size, hintH);
+    const total = size + pairGap + hintW;
+    const boardLeft = hitR.left - fr.left;
+    const boardCenter = boardLeft + hitR.width / 2;
+    let x = boardCenter > fr.width / 2 ? boardLeft : boardCenter - total / 2;
+    x = Math.max(8, Math.min(fr.width - total - 8, x));
+    const boardBottom = hitR.bottom - fr.top;
+    const barTop = barR.top - fr.top;
+    const room = Math.max(0, barTop - boardBottom);
+    const drop = Math.max(24, Math.min(Math.max(room * 0.5, hitR.height * 0.9), 160));
+    let y = boardBottom + drop;
+    y = Math.min(y, barTop - 12 - clusterH);
+    y = Math.max(8, y);
+    glass.style.left = x + "px";
+    glass.style.top = y + (clusterH - size) / 2 + "px";
+    hint.style.left = x + size + pairGap + "px";
+    hint.style.top = y + (clusterH - hintH) / 2 + "px";
   }
 
   function zoomToBoard(zoomLevel) {
