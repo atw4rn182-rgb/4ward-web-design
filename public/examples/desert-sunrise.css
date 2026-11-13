@@ -325,15 +325,39 @@ body.is-menu .zoom-glass {
   overflow: auto;
   flex: 1;
   min-height: 0;
-  padding: 0.3cqh 1.5cqw 0.65cqh 0;
+  padding: 0.3cqh 1.5cqw 1.3cqh 0;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
 .board-scroll::-webkit-scrollbar { display: none; }
 .board-scroll section { padding-bottom: 2cqh; }
 .board-scroll h3 { font-size: 6.5cqw; margin: 1.2cqh 0 0.6cqh; color: #e2b15a; }
-.board-scroll article { display: grid; grid-template-columns: 1fr auto; gap: 0 2cqw; padding: 0.8cqh 0; border-bottom: 1px solid rgba(246, 241, 230, 0.14); font-size: 4.6cqw; }
-.board-scroll article p { grid-column: 1 / -1; margin: 0.3cqh 0 0; color: #e6d8c8; font-size: 3.8cqw; }
+.board-scroll article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.2cqh 2cqw;
+  padding: 0.9cqh 0;
+  border-bottom: 1px solid rgba(246, 241, 230, 0.14);
+  font-size: 7.2cqw;
+  line-height: 1.15;
+}
+.board-scroll article strong {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.board-scroll article > span {
+  white-space: nowrap;
+  line-height: 1.05;
+}
+.board-scroll article p {
+  grid-column: 1 / -1;
+  margin: 0.35cqh 0 0;
+  color: #e6d8c8;
+  font-size: 6.3cqw;
+  line-height: 1.28;
+  overflow-wrap: break-word;
+}
 .hours-footer {
   flex: none;
   display: flex;
