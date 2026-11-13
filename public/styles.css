@@ -4360,22 +4360,18 @@ body.home-premium main > section.contact::before {
   content: "";
   position: absolute;
   z-index: -1;
-  top: 0;
-  left: 0;
-  width: 160vw;
-  height: 180%;
+  inset: 0;
   pointer-events: none;
   background-repeat: no-repeat;
-  background-position: center;
-  background-size: 120vw 80%;
-  transform: translate3d(-75%, -75%, 0);
+  background-size: 280% 280%;
+  background-position: 130% 130%;
   animation: section-shimmer-diagonal 10s ease-in-out infinite;
 }
 
 body.home-premium main > section.example-sites::before,
 body.home-premium main > section.tier-finder::before {
   background-image: linear-gradient(
-    118deg,
+    135deg,
     transparent 10%,
     rgba(64, 49, 43, 0.114) 32%,
     rgba(64, 49, 43, 0.437) 50%,
@@ -4391,7 +4387,7 @@ body.home-premium main > section.services::before,
 body.home-premium main > section.impact::before,
 body.home-premium main > section.contact::before {
   background-image: linear-gradient(
-    118deg,
+    135deg,
     transparent 10%,
     rgba(245, 226, 196, 0.133) 32%,
     rgba(255, 228, 186, 0.418) 50%,
@@ -4423,9 +4419,9 @@ body.home-premium .example-sites .section-intro .section-lead {
 }
 
 @keyframes section-shimmer-diagonal {
-  0% { transform: translate3d(-75%, -75%, 0); }
-  30% { transform: translate3d(42%, 58%, 0); }
-  100% { transform: translate3d(42%, 58%, 0); }
+  0% { background-position: 130% 130%; }
+  30% { background-position: -30% -30%; }
+  100% { background-position: -30% -30%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
