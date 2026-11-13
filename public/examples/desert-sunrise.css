@@ -278,7 +278,7 @@ body.is-menu .zoom-glass {
   container-type: size;
   font-family: "Caveat", cursive;
 }
-.board-inner { height: 100%; display: flex; flex-direction: column; padding: 0.4cqh 4.5cqw 1cqh; }
+.board-inner { height: 100%; display: flex; flex-direction: column; padding: 0.08cqh 4.5cqw 0.15cqh; }
 .board-top { display: flex; justify-content: flex-end; }
 .board-back, .menu-tabs button {
   min-height: 0;
@@ -297,7 +297,7 @@ body.is-menu .zoom-glass {
   flex-wrap: wrap;
   align-items: center;
   gap: 0.05cqh 0.3cqw;
-  margin: 0 0 0.3cqh;
+  margin: 0 0 4.2cqh;
   flex-shrink: 0;
 }
 .menu-tabs button {
@@ -324,7 +324,7 @@ body.is-menu .zoom-glass {
   overflow: auto;
   flex: 1;
   min-height: 0;
-  padding-right: 1.5cqw;
+  padding: 0.3cqh 1.5cqw 0.65cqh 0;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
@@ -338,8 +338,8 @@ body.is-menu .zoom-glass {
   display: flex;
   justify-content: center;
   width: 100%;
-  margin: 0;
-  padding: 0.5cqh 1cqw 0.2cqh;
+  margin: 3.2cqh 0 0;
+  padding: 0.12cqh 1cqw 0;
   text-align: center;
 }
 .hours-link, .chalk-back, .place-pick, .place-phone {
