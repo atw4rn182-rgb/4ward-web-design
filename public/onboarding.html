@@ -7,6 +7,9 @@
   <meta name="description" content="Start your 4Ward Web Design project: review the service agreement, confirm your plan, share company details, and set up secure monthly billing with Stripe." />
   <meta name="robots" content="noindex, follow" />
   <link rel="canonical" href="https://www.4wardwebdesign.com/onboarding.html" />
+  <link rel="alternate" hreflang="en" href="https://www.4wardwebdesign.com/onboarding.html" />
+  <link rel="alternate" hreflang="es" href="https://www.4wardwebdesign.com/onboarding.html?lang=es" />
+  <link rel="alternate" hreflang="x-default" href="https://www.4wardwebdesign.com/onboarding.html" />
   <meta name="theme-color" content="#F8F9FA" />
 
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-B2NNE9XPW9"></script>
@@ -20,7 +23,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=x47tiers" />
+  <link rel="stylesheet" href="styles.css?v=lang1" />
   <link rel="icon" href="assets/favicon.png?v=5" type="image/png" sizes="64x64" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=5" />
@@ -47,7 +50,17 @@
         <span class="header-contact-line">Call/Text: Adam — <a href="tel:+19705602575">(970) 560-2575</a></span>
         <span class="header-contact-note"><a href="sms:+19705602575">Texting preferred</a></span>
       </div>
-      <nav class="site-nav onboard-nav" aria-label="Primary">
+      <div class="header-tools">
+        <div class="lang-switch" role="group" aria-label="Language">
+          <button type="button" data-set-lang="en" aria-pressed="true">EN</button>
+          <span class="lang-sep" aria-hidden="true">|</span>
+          <button type="button" data-set-lang="es" aria-pressed="false">ES</button>
+        </div>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+      <nav class="site-nav onboard-nav" id="site-nav" aria-label="Primary">
         <a href="/#pricing">Pricing</a>
         <a href="quote.html">Request a Quote</a>
         <a href="/#contact">Contact</a>
@@ -139,7 +152,7 @@
             <input id="signed-agreement" name="signedAgreement" type="checkbox" value="Yes — I agree to the service agreement" required />
             <span>I have read and agree to the 4Ward Web Design, LLC Service Agreement.</span>
           </label>
-          <p class="onboard-meta">Signed electronically on <time id="sign-date"></time></p>
+          <p class="onboard-meta">Signed electronically on <time id="sign-date" data-i18n-skip></time></p>
 
           <div class="onboard-actions">
             <button class="btn btn-accent" type="button" data-next>Continue to plan</button>
@@ -381,5 +394,7 @@
   <script src="https://js.stripe.com/v3/"></script>
   <script src="pricing-addons.js"></script>
   <script src="onboarding.js?v=9"></script>
+  <script src="script.js?v=lang1"></script>
+  <script type="module" src="i18n.js?v=lang1"></script>
 </body>
 </html>

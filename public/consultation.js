@@ -33,6 +33,15 @@
   const note = (params.get("note") || "").replace(/\s+/g, " ").trim().slice(0, 900);
   const description = document.getElementById("consult-description");
   if (note && description && !description.value) description.value = note;
+  if (description) {
+    description.addEventListener("input", () => {
+      description.dataset.userEdited = "yes";
+    });
+  }
+  document.addEventListener("fwd-lang", () => {
+    if (!note || !description || description.dataset.userEdited) return;
+    description.value = window.fwdTranslateLong ? window.fwdTranslateLong(note) : note;
+  });
 
   const offer = ["local", "service", "both"].includes(params.get("offer") || "") ? params.get("offer") : "";
 

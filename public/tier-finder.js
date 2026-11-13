@@ -102,6 +102,7 @@ if (root) {
     stage.append(title, group);
     if (section) section.setAttribute("aria-labelledby", title.id);
     focusHeading();
+    if (window.fwdApplyLang) window.fwdApplyLang();
   }
 
   function renderFinding() {
@@ -120,6 +121,7 @@ if (root) {
     wrap.append(title, bar);
     stage.append(wrap);
     focusHeading();
+    if (window.fwdApplyLang) window.fwdApplyLang();
   }
 
   function renderResult(result) {
@@ -264,6 +266,7 @@ if (root) {
     stage.append(disclaimer, actions, paymentNote);
     if (section) section.setAttribute("aria-labelledby", title.id);
     focusHeading();
+    if (window.fwdApplyLang) window.fwdApplyLang();
   }
 
   function showResult() {

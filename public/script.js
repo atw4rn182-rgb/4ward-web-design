@@ -495,10 +495,16 @@
   onScroll();
   window.addEventListener("scroll", onScroll, { passive: true });
 
+  function menuLabel(open) {
+    const spanish = document.documentElement.lang === "es";
+    if (open) return spanish ? "Cerrar menú" : "Close menu";
+    return spanish ? "Abrir menú" : "Open menu";
+  }
+
   if (toggle && nav) {
     const closeNav = () => {
       toggle.setAttribute("aria-expanded", "false");
-      toggle.setAttribute("aria-label", "Open menu");
+      toggle.setAttribute("aria-label", menuLabel(false));
       nav.classList.remove("is-open");
     };
 
@@ -506,7 +512,7 @@
       event.stopPropagation();
       const open = toggle.getAttribute("aria-expanded") === "true";
       toggle.setAttribute("aria-expanded", String(!open));
-      toggle.setAttribute("aria-label", open ? "Open menu" : "Close menu");
+      toggle.setAttribute("aria-label", menuLabel(!open));
       nav.classList.toggle("is-open", !open);
     });
 
@@ -518,6 +524,12 @@
       if (!nav.classList.contains("is-open")) return;
       if (nav.contains(event.target) || toggle.contains(event.target)) return;
       closeNav();
+    });
+
+    document.addEventListener("fwd-lang", () => {
+      if (!toggle) return;
+      const open = toggle.getAttribute("aria-expanded") === "true";
+      toggle.setAttribute("aria-label", menuLabel(open));
     });
 
     window.addEventListener("resize", () => {
