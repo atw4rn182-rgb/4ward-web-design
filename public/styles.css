@@ -436,29 +436,57 @@ p {
 .lang-switch {
   display: inline-flex;
   align-items: center;
-  gap: 0.15rem;
+  gap: 2px;
+  box-sizing: border-box;
   min-height: 44px;
+  padding: 2px;
+  border: 1px solid #b97850;
+  border-radius: 999px;
+  background: transparent;
+}
+
+.lang-switch .lang-sep {
+  display: none;
 }
 
 .lang-switch button {
+  appearance: none;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 0;
   background: transparent;
-  color: #7a4520;
+  color: #30231e;
   font: inherit;
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 800;
-  letter-spacing: 0.06em;
-  min-width: 2rem;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
   min-height: 44px;
-  padding: 0 0.2rem;
+  padding: 0;
+  border-radius: 999px;
   cursor: pointer;
+  text-decoration: none;
+  transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .lang-switch button.is-active {
-  color: #b45309;
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 0.28em;
+  color: #fff8f3;
+  background: #8d5a3c;
+  text-decoration: none;
+}
+
+.lang-switch button:hover:not(.is-active) {
+  background: rgba(185, 120, 80, 0.18);
+}
+
+.lang-switch button:focus-visible {
+  outline: 2px solid #8d5a3c;
+  outline-offset: 2px;
 }
 
 html[lang="es"] .hero-commercial-btn,
@@ -477,7 +505,8 @@ html[lang="es"] .tier-finder {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .nav-toggle span {
+  .nav-toggle span,
+  .lang-switch button {
     transition: none;
   }
 }
