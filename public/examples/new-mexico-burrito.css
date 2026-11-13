@@ -323,7 +323,7 @@ body.is-menu .zoom-glass {
   overflow: auto;
   flex: 1;
   min-height: 0;
-  padding: 0.35cqh 1.5cqw 0.7cqh 0;
+  padding: 0.35cqh 1.5cqw 1.4cqh 0;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
 }
@@ -332,14 +332,30 @@ body.is-menu .zoom-glass {
 .board-scroll h3 { font-size: 8cqw; margin: 0.8cqh 0 0.3cqh; color: #f0d48a; }
 .board-scroll article {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0 2cqw;
-  padding: 0.35cqh 0;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 0.15cqh 2cqw;
+  padding: 0.55cqh 0;
   border-bottom: 1px solid rgba(246, 241, 230, 0.16);
-  font-size: 6.8cqw;
+  font-size: 8.4cqw;
+  line-height: 1.15;
+}
+.board-scroll article strong {
+  min-width: 0;
+  overflow-wrap: break-word;
+}
+.board-scroll article > span {
+  white-space: nowrap;
   line-height: 1.05;
 }
-.board-scroll article p { grid-column: 1 / -1; margin: 0.15cqh 0 0; color: #efe4d4; font-size: 5cqw; line-height: 1.1; }
+.board-scroll article p {
+  grid-column: 1 / -1;
+  margin: 0.2cqh 0 0;
+  color: #efe4d4;
+  font-size: 6.5cqw;
+  line-height: 1.25;
+  overflow-wrap: break-word;
+}
 .hours-footer {
   flex: none;
   display: flex;
