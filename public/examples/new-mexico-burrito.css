@@ -770,9 +770,9 @@ body.is-menu .mobile-back:focus-visible { outline: 2px solid #fff; outline-offse
   .board,
   .board-hit {
     left: 10.93%;
-    top: 51.28%;
+    top: 51.14%;
     width: 14.04%;
-    height: 10.52%;
+    height: 11.40%;
   }
 }
 @media (max-width: 420px) {
