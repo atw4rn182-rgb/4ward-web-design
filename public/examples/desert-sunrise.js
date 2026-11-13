@@ -4,6 +4,7 @@
   const scene = document.getElementById("scene");
   const board = document.getElementById("menu");
   const scroller = document.getElementById("board-scroll");
+  const scrollHint = document.querySelector(".scroll-hint");
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const mobileScene = window.matchMedia("(max-width: 900px) and (orientation: portrait)");
   let spanish = false;
@@ -144,6 +145,39 @@
     scene.style.transform = "translate(" + dx + "px, " + dy + "px) scale(" + scale + ") rotateX(" + rx + "deg) rotateY(" + ry + "deg)";
   }
 
+  const chalkBar = document.querySelector(".chalk-bar");
+  const chalkThumb = chalkBar?.querySelector(".chalk-bar-thumb");
+
+  function chalkMetrics() {
+    const max = Math.max(0, scroller.scrollHeight - scroller.clientHeight);
+    const track = chalkBar.clientHeight;
+    const ratio = scroller.scrollHeight > 0 ? scroller.clientHeight / scroller.scrollHeight : 1;
+    const thumbH = Math.min(Math.max(0, track - 4), Math.max(6, track * ratio));
+    const travel = Math.max(1, track - thumbH);
+    return { max, thumbH, travel };
+  }
+
+  function syncChalkBar() {
+    if (!chalkBar || !chalkThumb || !scroller || !board) return;
+    const open = document.body.classList.contains("is-menu") && !board.classList.contains("is-hours");
+    const max = scroller.scrollHeight - scroller.clientHeight;
+    const needed = open && max > 3;
+    chalkBar.classList.toggle("is-on", needed);
+    if (!needed) return;
+    const metrics = chalkMetrics();
+    chalkThumb.style.height = metrics.thumbH + "px";
+    const top = (scroller.scrollTop / metrics.max) * metrics.travel;
+    chalkThumb.style.transform = "translateX(-50%) translateY(" + top + "px)";
+  }
+
+  function syncScrollHint() {
+    if (!scrollHint || !scroller || !board) return;
+    const open = document.body.classList.contains("is-menu") && !board.classList.contains("is-hours");
+    const remaining = scroller.scrollHeight - scroller.clientHeight - scroller.scrollTop;
+    scrollHint.classList.toggle("is-visible", open && remaining > 3);
+    syncChalkBar();
+  }
+
   function openMenu(nextLevel) {
     if (!scene) return;
     const target = nextLevel === 3 ? 3 : 2;
@@ -160,6 +194,7 @@
     syncGlass();
     placeGlass();
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => zoomToBoard(level)));
+    syncScrollHint();
     if (!already) scene.parentElement.querySelector(".mobile-back")?.focus();
   }
 
@@ -168,6 +203,7 @@
     level = 1;
     document.body.classList.remove("is-zoom-3");
     document.body.classList.add("is-closing");
+    scrollHint?.classList.remove("is-visible");
     syncGlass();
     scene.style.transform = "none";
     const release = () => {
@@ -229,6 +265,7 @@
     });
     window.requestAnimationFrame(() => {
       scroller.scrollTop = savedScroll;
+      syncScrollHint();
     });
   }
 
@@ -311,7 +348,7 @@
       event.target.closest("#menu") &&
       document.body.classList.contains("is-menu") &&
       !boardDrag &&
-      !event.target.closest("button, a, article, h3, p, strong, span, .board-places, .hours-footer")
+      !event.target.closest("button, a, article, h3, p, strong, span, .board-places, .hours-footer, .chalk-bar")
     ) {
       quietHint();
       openMenu(level === 3 ? 2 : 3);
@@ -351,17 +388,51 @@
   if (scroller) {
     scroller.addEventListener("scroll", () => {
       if (scroller.scrollTop > 6) quietHint();
+      syncScrollHint();
     }, { passive: true });
+  }
+
+  if (chalkBar && scroller) {
+    chalkBar.addEventListener("pointerdown", (event) => {
+      if (!chalkBar.classList.contains("is-on")) return;
+      event.preventDefault();
+      event.stopPropagation();
+      chalkBar.setPointerCapture(event.pointerId);
+      const scale = chalkBar.getBoundingClientRect().height / Math.max(1, chalkBar.clientHeight);
+      const start = chalkMetrics();
+      const localY = (event.clientY - chalkBar.getBoundingClientRect().top) / scale;
+      const thumbTop = (scroller.scrollTop / start.max) * start.travel;
+      const grabbed = localY >= thumbTop && localY <= thumbTop + start.thumbH;
+      const offset = grabbed ? localY - thumbTop : start.thumbH / 2;
+      const move = (ev) => {
+        const box = chalkBar.getBoundingClientRect();
+        const currentScale = box.height / Math.max(1, chalkBar.clientHeight);
+        const y = (ev.clientY - box.top) / currentScale;
+        const metrics = chalkMetrics();
+        const nextTop = Math.min(metrics.travel, Math.max(0, y - offset));
+        scroller.scrollTop = (nextTop / metrics.travel) * metrics.max;
+      };
+      const end = () => {
+        chalkBar.removeEventListener("pointermove", move);
+        chalkBar.removeEventListener("pointerup", end);
+        chalkBar.removeEventListener("pointercancel", end);
+      };
+      chalkBar.addEventListener("pointermove", move);
+      chalkBar.addEventListener("pointerup", end);
+      chalkBar.addEventListener("pointercancel", end);
+    });
   }
 
   window.addEventListener("resize", () => {
     if (document.body.classList.contains("is-menu")) zoomToBoard(level);
     else placeGlass();
+    syncScrollHint();
   });
   window.addEventListener("load", placeGlass);
   placeGlass();
   document.addEventListener("fwd-lang", (event) => {
     spanish = event.detail.lang === "es";
+    syncScrollHint();
   });
 
   selectLocation(selectedId);
