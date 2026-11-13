@@ -183,6 +183,7 @@ function render() {
   };
   view.innerHTML = (pages[route.name] || pages.missing)();
   view.focus({ preventScroll: true });
+  if (window.fwdApplyLang) window.fwdApplyLang();
 }
 
 function go(url) {
@@ -216,6 +217,7 @@ document.addEventListener("click", (event) => {
     demo.addToCart(add.getAttribute("data-add"));
     count.textContent = String(demo.cartCount());
     add.textContent = "Added";
+    if (window.fwdApplyLang) window.fwdApplyLang();
     return;
   }
   const remove = event.target.closest("[data-remove]");
@@ -226,6 +228,7 @@ document.addEventListener("click", (event) => {
   if (event.target.id === "demo-checkout") {
     const result = demo.checkoutAttempt();
     document.getElementById("checkout-result").textContent = result.message;
+    if (window.fwdApplyLang) window.fwdApplyLang();
   }
 });
 
@@ -242,6 +245,7 @@ document.addEventListener("submit", async (event) => {
   if (form.id === "contact-form") {
     event.preventDefault();
     document.getElementById("contact-result").textContent = "Demonstration only. This message was not sent.";
+    if (window.fwdApplyLang) window.fwdApplyLang();
     form.reset();
   }
   if (form.id === "add-form") {
@@ -257,6 +261,7 @@ document.addEventListener("submit", async (event) => {
     });
     document.getElementById("add-result").textContent = result.ok ? "Listing added to the demo shop." : result.error;
     if (result.ok) render();
+    else if (window.fwdApplyLang) window.fwdApplyLang();
   }
   if (form.id === "content-form") {
     event.preventDefault();

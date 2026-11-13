@@ -7,6 +7,12 @@
   const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const mobileScene = window.matchMedia("(max-width: 900px) and (orientation: portrait)");
   let spanish = false;
+  try {
+    const requested = new URLSearchParams(window.location.search).get("lang");
+    spanish = requested === "es" || (requested !== "en" && localStorage.getItem("4ward-lang") === "es");
+  } catch {
+    spanish = false;
+  }
   document.documentElement.dataset.burritoDemo = "ready";
 
   function applyLanguage() {
@@ -15,7 +21,7 @@
       node.textContent = spanish ? node.getAttribute("data-es") : node.getAttribute("data-en");
     });
     const toggle = document.querySelector("[data-lang]");
-    if (toggle) {
+    if (toggle && !toggle.querySelector("[data-set-lang]")) {
       toggle.textContent = spanish ? "English" : "Español";
       toggle.setAttribute("aria-pressed", spanish ? "true" : "false");
     }
@@ -241,8 +247,11 @@
   document.addEventListener("click", (event) => {
     const toggle = event.target.closest("[data-lang]");
     if (toggle) {
-      spanish = !spanish;
-      applyLanguage();
+      if (event.target.closest("[data-set-lang]")) return;
+      const next = document.documentElement.lang === "es" ? "en" : "es";
+      spanish = next === "es";
+      if (window.fwdSetLang) window.fwdSetLang(next);
+      else applyLanguage();
       return;
     }
     if (event.target.closest(".nav-toggle") && nav && menuButton) {
@@ -350,5 +359,9 @@
   });
   window.addEventListener("load", placeGlass);
   placeGlass();
+  document.addEventListener("fwd-lang", (event) => {
+    spanish = event.detail.lang === "es";
+  });
+
   selectLocation(selectedId);
 })();

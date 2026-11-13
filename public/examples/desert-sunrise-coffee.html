@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fraunces:opsz,wght@9..144,560;9..144,640&family=Nunito+Sans:wght@400;700;800&display=swap" />
   <link rel="stylesheet" href="/examples/desert-sunrise.css?v=space2" />
+  <link rel="stylesheet" href="/examples/demo-lang.css?v=demo1" />
 </head>
 <body>
   <a class="skip" href="#content">Skip to content</a>
@@ -20,12 +21,15 @@
     <a class="brand" href="#top">
       <span><strong>Desert Brew</strong><small>Coffee Trailer</small></span>
     </a>
-    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav">Menu</button>
+    <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" data-en="Menu" data-es="Menú">Menu</button>
+    <div class="demo-lang" data-lang role="group" aria-label="Language" data-i18n-skip>
+      <button type="button" data-set-lang="en" aria-pressed="true">EN</button>
+      <button type="button" data-set-lang="es" aria-pressed="false">ES</button>
+    </div>
     <nav class="nav" id="site-nav" aria-label="Desert Brew Coffee Trailer">
       <a href="#menu" data-open-menu data-en="Menu" data-es="Menú">Menu</a>
       <a href="#hours" data-en="Hours" data-es="Horario">Hours</a>
       <a href="#visit" data-en="Visit" data-es="Visítanos">Visit</a>
-      <button class="lang-toggle" type="button" data-lang aria-pressed="false">Español</button>
     </nav>
   </header>
 
@@ -135,11 +139,11 @@
         <div class="order-bar">
           <a class="btn btn-call" href="tel:+15550142200">
             <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6.6 10.8a15 15 0 0 0 6.6 6.6l2.2-2.2a1 1 0 0 1 1-.24 11 11 0 0 0 3.6.58 1 1 0 0 1 1 1V20a1 1 0 0 1-1 1A17 17 0 0 1 3 7a1 1 0 0 1 1-1h3.5a1 1 0 0 1 1 1 11 11 0 0 0 .58 3.6 1 1 0 0 1-.25 1z"/></svg>
-            <span>Call to Order</span>
+            <span data-en="Call to Order" data-es="Llamar para ordenar">Call to Order</span>
           </a>
           <button class="btn btn-menu" type="button" data-open-menu>
             <svg class="btn-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M11 9H9V2H7v7H5V2H3v7c0 2.12 1.66 3.84 3.75 3.97V22h2.5v-9.03C11.34 12.84 13 11.12 13 9V2h-2zm5-3v8h2.5v8H21V2c-2.76 0-5 2.24-5 4z"/></svg>
-            <span>View Menu</span>
+            <span data-en="View Menu" data-es="Ver menú">View Menu</span>
           </button>
           <p class="call-note">Demonstration number, (555) 014-2200. Not in service.</p>
         </div>
@@ -218,6 +222,7 @@
     <p><a class="btn btn-gold" href="/consultation.html?tier=tier4">Get Started With Tier 4</a></p>
     <p class="fine">Desert Brew Coffee Trailer is a fictional sample created by 4Ward Web Design. It is not a client and it does not take orders.</p>
   </footer>
-  <script src="/examples/desert-sunrise.js?v=hours2"></script>
+  <script type="module" src="/i18n.js?v=demo1"></script>
+  <script src="/examples/desert-sunrise.js?v=demo1"></script>
 </body>
 </html>

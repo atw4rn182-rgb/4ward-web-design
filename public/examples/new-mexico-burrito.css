@@ -87,6 +87,7 @@ button, a { -webkit-tap-highlight-color: transparent; }
   background: transparent;
   border-bottom: 0;
 }
+.site-header .demo-lang { color: var(--cream); }
 .brand {
   position: absolute;
   width: 1px;
