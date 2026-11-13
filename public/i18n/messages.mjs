@@ -15,6 +15,7 @@ export const PHRASES = [
   ["Get a quote for extra work", "Cotizar trabajo extra"],
   ["get a quote for extra work", "pida una cotización por trabajo extra"],
   ["Contact", "Contacto"],
+  ["More", "Más"],
   ["Get started", "Comenzar"],
   ["See What We Can Build for Your Business", "Vea lo que podemos crear para su negocio"],
   ["Watch a quick demonstration of what 4Ward Web Design can do for your business.", "Vea una demostración breve de lo que 4Ward Web Design puede hacer por su negocio."],

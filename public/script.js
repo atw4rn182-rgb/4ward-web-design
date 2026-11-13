@@ -533,9 +533,24 @@
     });
 
     window.addEventListener("resize", () => {
-      if (window.innerWidth > 1100) closeNav();
+      if (window.innerWidth > 1179) closeNav();
     });
   }
+
+  document.querySelectorAll(".nav-extra").forEach((menu) => {
+    document.addEventListener("click", (event) => {
+      if (!menu.open || menu.contains(event.target)) return;
+      menu.open = false;
+    });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") menu.open = false;
+    });
+    menu.querySelectorAll("a").forEach((link) => {
+      link.addEventListener("click", () => {
+        menu.open = false;
+      });
+    });
+  });
 
   const reveals = document.querySelectorAll(".reveal");
 

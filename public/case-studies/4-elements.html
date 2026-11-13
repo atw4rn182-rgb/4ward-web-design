@@ -18,7 +18,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="/styles.css?v=ivory1" />
+  <link rel="stylesheet" href="/styles.css?v=layout1" />
   <link rel="icon" href="/assets/favicon.png?v=5" type="image/png" sizes="64x64" />
   <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="/assets/apple-touch-icon.png?v=5" />
@@ -44,16 +44,6 @@
         <span class="header-contact-line">Call/Text: Adam — <a href="tel:+19705602575">(970) 560-2575</a></span>
         <span class="header-contact-note"><a href="sms:+19705602575">Texting preferred</a></span>
       </div>
-      <div class="header-tools">
-        <div class="lang-switch" role="group" aria-label="Language">
-          <button type="button" data-set-lang="en" aria-pressed="true">EN</button>
-          <span class="lang-sep" aria-hidden="true">|</span>
-          <button type="button" data-set-lang="es" aria-pressed="false">ES</button>
-        </div>
-        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
-          <span></span><span></span><span></span>
-        </button>
-      </div>
       <nav class="site-nav" id="site-nav" aria-label="Primary">
         <div class="mobile-nav-contact">
           <p class="mobile-nav-contact-line">Call/Text: Adam — <a href="tel:+19705602575">(970) 560-2575</a></p>
@@ -63,10 +53,29 @@
         <a href="/#pricing">Pricing</a>
         <a href="/#work">Our Work</a>
         <a href="/case-studies/4-elements" aria-current="page">Case Studies</a>
-        <a href="/quote.html">Get a quote for extra work</a>
+        <a class="nav-compact-link" href="/quote.html">Get a quote for extra work</a>
         <a href="/#contact">Contact</a>
-        <a class="btn btn-accent btn-sm" href="/consultation.html">Get started</a>
+        <details class="nav-extra">
+          <summary>More</summary>
+          <div class="nav-extra-panel">
+            <a href="/quote.html">Get a quote for extra work</a>
+            <span class="header-contact-line">Call/Text: Adam — <a href="tel:+19705602575">(970) 560-2575</a></span>
+            <span class="header-contact-note"><a href="sms:+19705602575">Texting preferred</a></span>
+          </div>
+        </details>
+        <a class="btn btn-accent btn-sm nav-cta" href="/consultation.html">Get started</a>
       </nav>
+      <div class="header-tools">
+        <div class="lang-switch" role="group" aria-label="Language">
+          <button type="button" data-set-lang="en" aria-pressed="true">EN</button>
+          <span class="lang-sep" aria-hidden="true">|</span>
+          <button type="button" data-set-lang="es" aria-pressed="false">ES</button>
+        </div>
+        <a class="btn btn-accent btn-sm header-cta" href="/consultation.html">Get started</a>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
     </div>
   </header>
 
@@ -156,7 +165,7 @@
       <a class="footer-top" href="/">Back to 4Ward</a>
     </div>
   </footer>
-  <script src="/script.js?v=lang1"></script>
-  <script type="module" src="/i18n.js?v=demo1"></script>
+  <script src="/script.js?v=layout1"></script>
+  <script type="module" src="/i18n.js?v=layout1"></script>
 </body>
 </html>
