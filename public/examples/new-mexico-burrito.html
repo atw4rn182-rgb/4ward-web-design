@@ -9,6 +9,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Caveat:wght@600;700&family=Fraunces:opsz,wght@9..144,560;9..144,640&family=Nunito+Sans:wght@400;700;800&display=swap" />
   <link rel="stylesheet" href="/examples/new-mexico-burrito.css?v=space2" />
+  <link rel="stylesheet" href="/examples/demo-lang.css?v=demo1" />
 </head>
 <body>
   <a class="skip" href="#content">Skip to content</a>
@@ -21,11 +22,14 @@
       <span><strong>New Mexico</strong><small>Burrito Co.</small></span>
     </a>
     <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" data-en="Menu" data-es="Menú">Menu</button>
+    <div class="demo-lang" data-lang role="group" aria-label="Language" data-i18n-skip>
+      <button type="button" data-set-lang="en" aria-pressed="true">EN</button>
+      <button type="button" data-set-lang="es" aria-pressed="false">ES</button>
+    </div>
     <nav class="nav" id="site-nav" aria-label="Burrito trailer">
       <a href="#menu" data-open-menu data-en="Menu" data-es="Menú">Menu</a>
       <a href="#hours" data-en="Hours" data-es="Horario">Hours</a>
       <a href="#visit" data-en="Visit" data-es="Visítanos">Visit</a>
-      <button class="lang-toggle" type="button" data-lang aria-pressed="false">Español</button>
     </nav>
   </header>
 
@@ -226,6 +230,7 @@
     <p><a class="btn btn-gold" href="/consultation.html?tier=tier4">Get Started With Tier 4</a></p>
     <p class="fine">New Mexico Burrito Co. is a fictional sample created by 4Ward Web Design. It is not a client and it does not take orders.</p>
   </footer>
-  <script src="/examples/new-mexico-burrito.js?v=hours2"></script>
+  <script type="module" src="/i18n.js?v=demo1"></script>
+  <script src="/examples/new-mexico-burrito.js?v=demo1"></script>
 </body>
 </html>

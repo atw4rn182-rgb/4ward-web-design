@@ -1,4 +1,4 @@
-import { translateLong, translatePhrase } from "./i18n/messages.mjs";
+import { translateLong, translatePhrase } from "./i18n/messages.mjs?v=demo1";
 
 const STORAGE_KEY = "4ward-lang";
 const originals = new WeakMap();
@@ -88,7 +88,7 @@ function applyAttribute(node, attr, lang) {
 
 function walk(node, lang) {
   if (node.nodeType === 3) {
-    if (node.parentElement && skipElement(node.parentElement)) return;
+    if (node.parentElement && (skipElement(node.parentElement) || node.parentElement.hasAttribute("data-en"))) return;
     applyText(node, lang);
     return;
   }
@@ -97,6 +97,11 @@ function walk(node, lang) {
   if (tag === "SCRIPT" || tag === "STYLE") return;
   if (skipElement(node)) return;
   ["placeholder", "aria-label", "alt", "title"].forEach((attr) => applyAttribute(node, attr, lang));
+  if (node.hasAttribute("data-en") && node.hasAttribute("data-es")) {
+    const next = lang === "es" ? node.getAttribute("data-es") : node.getAttribute("data-en");
+    if (next != null && node.textContent !== next) node.textContent = next;
+    return;
+  }
   for (const child of node.childNodes) walk(child, lang);
 }
 

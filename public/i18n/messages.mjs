@@ -1,5 +1,5 @@
 /** Exact English text-node or attribute value to Spanish. Prices and names stay unchanged. */
-import { EXTRA } from "./extra.mjs";
+import { EXTRA } from "./extra.mjs?v=demo1";
 
 export const PHRASES = [
   ["Skip to content", "Saltar al contenido"],
@@ -241,6 +241,7 @@ const PATTERNS = [
   [/^(\$[\d,]+(?:\.\d{2})?) today \((\$[\d,]+(?:\.\d{2})?) launch \+ (\$[\d,]+(?:\.\d{2})?) this month\)$/, "$1 hoy ($2 de inicio + $3 este mes)"],
   [/^(\$[\d,]+(?:\.\d{2})?) today, including the \$200 setup\. One-time payment, not a monthly subscription\.$/, "$1 hoy, incluida la configuración de $$200. Pago único, no es una suscripción mensual."],
   [/^(\$[\d,]+(?:\.\d{2})?)\/month until canceled$/, "$1/mes hasta que cancele"],
+  [/^Sample total (\$[\d,]+\.\d{2})$/, "Total de muestra $1"],
   [/^Tier Finder recommendation: (tier\d)\./, "Recomendación del buscador de nivel: $1."],
 ];
 

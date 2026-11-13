@@ -1,0 +1,39 @@
+.demo-lang {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 2px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: inherit;
+}
+
+.demo-lang button {
+  appearance: none;
+  box-sizing: border-box;
+  min-width: 44px;
+  min-height: 40px;
+  padding: 0 0.35rem;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.demo-lang button.is-active {
+  background: #8d5a3c;
+  color: #fff8f3;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-lang button {
+    transition: none;
+  }
+}

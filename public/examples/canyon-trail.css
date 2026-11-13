@@ -18,6 +18,7 @@ button, input, select, textarea { font: inherit; }
 .skip { position: absolute; left: 12px; top: -40px; background: #fff; padding: 8px 12px; z-index: 80; }
 .skip:focus { top: 52px; }
 .demo-banner, .site-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.site-header .demo-lang { color: #24170f; }
 .demo-banner { position: sticky; top: 0; z-index: 50; padding: 0.35rem 4vw; background: #111815; color: #f3efe6; font-size: 0.82rem; }
 .demo-banner a { color: #fff; min-height: 44px; display: inline-flex; align-items: center; }
 .site-header { position: sticky; top: 44px; z-index: 40; min-height: 74px; padding: 0.5rem 4vw; background: rgba(243, 239, 230, 0.94); border-bottom: 1px solid var(--line); backdrop-filter: blur(8px); }
