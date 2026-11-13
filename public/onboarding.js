@@ -182,14 +182,19 @@
   let currentStep = 1;
   let logoMeta = { name: "", type: "" };
 
-  if (year) year.textContent = String(new Date().getFullYear());
-  if (signDate) {
-    signDate.textContent = new Date().toLocaleDateString("en-US", {
+  function writeSignDate() {
+    if (!signDate) return;
+    const spanish = document.documentElement.lang === "es";
+    signDate.textContent = new Date().toLocaleDateString(spanish ? "es-US" : "en-US", {
       year: "numeric",
       month: "long",
       day: "numeric",
     });
   }
+
+  if (year) year.textContent = String(new Date().getFullYear());
+  writeSignDate();
+  document.addEventListener("fwd-lang", writeSignDate);
 
   const params = new URLSearchParams(window.location.search);
   const initialTier = {
@@ -524,7 +529,7 @@
       if (field.name === "phone") {
         const formatted = formatUsPhone(field.value);
         if (!formatted) {
-          field.setCustomValidity("Enter a 10-digit U.S. phone number.");
+          field.setCustomValidity(window.fwdT ? window.fwdT("Enter a 10-digit U.S. phone number.") : "Enter a 10-digit U.S. phone number.");
           field.reportValidity();
           return false;
         }
@@ -534,7 +539,9 @@
         const normalized = normalizeDomain(field.value);
         if (!isValidDomain(normalized)) {
           field.setCustomValidity(
-            "Enter a valid preferred domain (example: yourbusiness.com). You do not need to own it yet."
+            window.fwdT
+              ? window.fwdT("Enter a valid preferred domain (example: yourbusiness.com). You do not need to own it yet.")
+              : "Enter a valid preferred domain (example: yourbusiness.com). You do not need to own it yet."
           );
           field.reportValidity();
           return false;
@@ -546,7 +553,7 @@
         if (raw) {
           const normalized = normalizeDomain(raw);
           if (!isValidDomain(normalized)) {
-            field.setCustomValidity("Enter a valid domain name or leave this field blank.");
+            field.setCustomValidity(window.fwdT ? window.fwdT("Enter a valid domain name or leave this field blank.") : "Enter a valid domain name or leave this field blank.");
             field.reportValidity();
             return false;
           }
@@ -669,6 +676,7 @@
         logoInput.value = "";
         statusEl.classList.add("is-error");
         statusEl.textContent = "Logo must be 1.2MB or smaller.";
+        if (window.fwdApplyLang) window.fwdApplyLang();
         return;
       }
       logoMeta = { name: file.name, type: file.type };

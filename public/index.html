@@ -11,6 +11,9 @@
   <meta name="geo.region" content="US-NM" />
   <meta name="geo.placename" content="Carlsbad" />
   <link rel="canonical" href="https://www.4wardwebdesign.com/" />
+  <link rel="alternate" hreflang="en" href="https://www.4wardwebdesign.com/" />
+  <link rel="alternate" hreflang="es" href="https://www.4wardwebdesign.com/?lang=es" />
+  <link rel="alternate" hreflang="x-default" href="https://www.4wardwebdesign.com/" />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
@@ -162,7 +165,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="styles.css?v=shimmer4" />
+  <link rel="stylesheet" href="styles.css?v=lang1" />
   <link rel="icon" href="assets/favicon.png?v=5" type="image/png" sizes="64x64" />
   <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png?v=5" />
@@ -202,9 +205,16 @@
         <span class="header-contact-line">Call/Text: Adam — <a href="tel:+19705602575">(970) 560-2575</a></span>
         <span class="header-contact-note"><a href="sms:+19705602575">Texting preferred</a></span>
       </div>
-      <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
-        <span></span><span></span>
-      </button>
+      <div class="header-tools">
+        <div class="lang-switch" role="group" aria-label="Language">
+          <button type="button" data-set-lang="en" aria-pressed="true">EN</button>
+          <span class="lang-sep" aria-hidden="true">|</span>
+          <button type="button" data-set-lang="es" aria-pressed="false">ES</button>
+        </div>
+        <button class="nav-toggle" type="button" aria-expanded="false" aria-controls="site-nav" aria-label="Open menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
       <nav class="site-nav" id="site-nav" aria-label="Primary">
         <div class="mobile-nav-contact">
           <p class="mobile-nav-contact-line">Call/Text: Adam — <a href="tel:+19705602575">(970) 560-2575</a></p>
@@ -1138,7 +1148,8 @@
   </footer>
 
   <script src="hero-commercial.js?v=hero-x2e"></script>
-  <script src="script.js?v=growth2"></script>
+  <script src="script.js?v=lang1"></script>
+  <script type="module" src="i18n.js?v=lang1"></script>
   <script type="module" src="tier-finder.js?v=finder4"></script>
 </body>
 </html>
