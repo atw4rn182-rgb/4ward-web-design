@@ -1,4 +1,4 @@
-import { translateLong, translatePhrase } from "./i18n/messages.mjs?v=demo1";
+import { translateLong, translatePhrase } from "./i18n/messages.mjs?v=layout1";
 
 const STORAGE_KEY = "4ward-lang";
 const originals = new WeakMap();

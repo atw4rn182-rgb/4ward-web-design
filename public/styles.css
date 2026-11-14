@@ -445,6 +445,11 @@ p {
   flex-shrink: 0;
 }
 
+.header-cta,
+.nav-extra {
+  display: none;
+}
+
 .lang-switch {
   display: inline-flex;
   align-items: center;
@@ -4338,6 +4343,177 @@ body.home-premium #site-nav a {
   color: #1a2428;
 }
 
+body.home-premium .header-contact {
+  display: none;
+}
+
+@media (max-width: 1179px) {
+  body.home-premium .nav-toggle {
+    display: inline-flex;
+  }
+
+  body.home-premium #site-nav {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    left: 0;
+    right: 0;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0;
+    padding: 0.35rem 1rem 1rem;
+    background: #f1f5f7;
+    border: 1px solid #c5ced5;
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    z-index: 220;
+    max-height: min(75vh, 640px);
+    overflow-y: auto;
+  }
+
+  body.home-premium #site-nav.is-open {
+    display: flex;
+  }
+
+  body.home-premium #site-nav a {
+    padding: 0.95rem 0.25rem;
+    border-bottom: 1px solid #c5ced5;
+    font-size: 1rem;
+    white-space: normal;
+  }
+
+  body.home-premium #site-nav a:last-child {
+    border-bottom: 0;
+  }
+
+  body.home-premium #site-nav .btn {
+    margin-top: 0.65rem;
+    width: 100%;
+  }
+
+  body.home-premium #site-nav .mobile-nav-contact {
+    display: block;
+  }
+}
+
+@media (min-width: 1180px) {
+  body.home-premium .header-inner {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto;
+    align-items: center;
+    column-gap: 1.5rem;
+    width: min(1280px, calc(100% - 3rem));
+  }
+
+  body.home-premium .brand {
+    margin-right: 0;
+  }
+
+  body.home-premium .header-inner .brand-wordmark {
+    width: 248px;
+    max-width: none;
+  }
+
+  body.home-premium .site-nav {
+    justify-content: center;
+    gap: clamp(0.75rem, 1.3vw, 1.45rem);
+    min-width: 0;
+  }
+
+  body.home-premium .site-nav a:not(.btn) {
+    font-size: 0.92rem;
+  }
+
+  body.home-premium .nav-compact-link,
+  body.home-premium .nav-cta {
+    display: none;
+  }
+
+  body.home-premium .header-cta {
+    display: inline-flex;
+    flex-shrink: 0;
+  }
+
+  body.home-premium .header-tools {
+    gap: 0.7rem;
+  }
+
+  body.home-premium .nav-extra {
+    position: relative;
+    display: block;
+  }
+
+  body.home-premium .nav-extra summary {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    min-height: 44px;
+    padding: 0 0.1rem;
+    color: #1a2428;
+    font-size: 0.92rem;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    list-style: none;
+    cursor: pointer;
+  }
+
+  body.home-premium .nav-extra summary::-webkit-details-marker {
+    display: none;
+  }
+
+  body.home-premium .nav-extra summary::after {
+    content: "";
+    width: 0.4rem;
+    height: 0.4rem;
+    border-right: 1.5px solid #b48756;
+    border-bottom: 1.5px solid #b48756;
+    transform: translateY(-2px) rotate(45deg);
+  }
+
+  body.home-premium .nav-extra[open] summary::after {
+    transform: translateY(1px) rotate(225deg);
+  }
+
+  body.home-premium .nav-extra summary:focus-visible {
+    outline: 2px solid #b48756;
+    outline-offset: 3px;
+    border-radius: 8px;
+  }
+
+  body.home-premium .nav-extra-panel {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    right: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+    width: max-content;
+    max-width: min(18rem, 70vw);
+    padding: 0.85rem 1rem;
+    border: 1px solid #c5ced5;
+    border-radius: 14px;
+    background: linear-gradient(180deg, #ffffff, #f7fafb);
+    box-shadow:
+      inset 0 1px 0 #ffffff,
+      0 1px 0 rgba(180, 135, 86, 0.28),
+      0 16px 28px rgba(26, 36, 40, 0.1);
+    z-index: 30;
+  }
+
+  body.home-premium .site-nav .nav-extra-panel a,
+  body.home-premium .nav-extra-panel .header-contact-line,
+  body.home-premium .nav-extra-panel .header-contact-note {
+    white-space: normal;
+    text-align: left;
+  }
+
+  body.home-premium .site-nav .nav-extra-panel a {
+    padding: 0.15rem 0;
+    border: 0;
+  }
+}
+
 body.home-premium main > section:not(.hero) {
   --ink: #1a2428;
   --muted: #4a5960;
@@ -4426,6 +4602,7 @@ body.home-premium main > section.contact::before {
 body.home-premium main > section.example-sites > .container {
   position: relative;
   z-index: 1;
+  width: min(1280px, calc(100% - 2.5rem));
 }
 
 body.home-premium .example-sites .section-intro h2 {
@@ -4474,13 +4651,41 @@ body.home-premium .example-sites h2 {
 }
 
 body.home-premium .example-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.9rem;
-  align-items: start;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: stretch;
+  gap: 1.25rem;
+}
+
+body.home-premium .example-card {
+  flex: 0 0 100%;
+  max-width: 100%;
+}
+
+body.home-premium .growth-showcase {
+  flex: 1 0 100%;
+  width: 100%;
+  max-width: none;
+}
+
+@media (min-width: 640px) and (max-width: 1023px) {
+  body.home-premium .example-card {
+    flex-basis: calc((100% - 1.25rem) / 2);
+    max-width: calc((100% - 1.25rem) / 2);
+  }
+}
+
+@media (min-width: 1024px) {
+  body.home-premium .example-card {
+    flex-basis: calc((100% - 2.5rem) / 3);
+    max-width: 420px;
+  }
 }
 
 body.home-premium .example-card {
   display: flex;
+  flex-direction: column;
   gap: 0.35rem;
   padding: 0.85rem 0.85rem 1rem;
   border-radius: 22px;
@@ -4513,6 +4718,7 @@ body.home-premium .example-card-stack {
 body.home-premium .tier1-example,
 body.home-premium .tier4-example {
   display: flex;
+  flex: 1;
   flex-direction: column;
   gap: 0.55rem;
   min-width: 0;
@@ -4634,6 +4840,7 @@ body.home-premium .example-card p {
 
 body.home-premium .example-actions {
   display: grid;
+  margin-top: auto;
 }
 
 body.home-premium .example-actions .btn-accent,
@@ -4699,21 +4906,7 @@ body.home-premium .find-tier-links a {
   color: #b48756;
 }
 
-@media (max-width: 1100px) {
-  body.home-premium .example-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  body.home-premium .example-card-stack {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (max-width: 700px) {
-  body.home-premium .example-grid {
-    grid-template-columns: 1fr;
-  }
-
+@media (max-width: 1023px) {
   body.home-premium .example-card-stack {
     grid-column: auto;
   }
