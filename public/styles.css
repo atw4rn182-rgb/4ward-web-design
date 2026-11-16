@@ -5950,10 +5950,14 @@ body.home-premium .contact-cta-card::after {
   background-size: 240% 240%;
   background-position: -40% -40%;
   pointer-events: none;
-  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0);
+  -webkit-mask-clip: content-box, border-box;
   -webkit-mask-composite: xor;
-  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-repeat: no-repeat;
+  mask-image: linear-gradient(#fff 0 0), linear-gradient(#fff 0 0);
+  mask-clip: content-box, border-box;
   mask-composite: exclude;
+  mask-repeat: no-repeat;
   animation: metal-edge 6.8s var(--metal-ease) infinite;
 }
 
