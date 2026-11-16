@@ -750,4 +750,18 @@
       remember();
     }
   }
+
+  if (!prefersReduced && "IntersectionObserver" in window) {
+    const metalNodes = document.querySelectorAll(
+      ".btn-ghost, .btn-outline, .lang-switch, .copper-words, .example-card, .plan, .growth-showcase, .tier-finder-panel, .showcase-tier-link"
+    );
+    if (metalNodes.length) {
+      const metalWatcher = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          entry.target.classList.toggle("is-metal-paused", !entry.isIntersecting);
+        });
+      }, { rootMargin: "120px" });
+      metalNodes.forEach((node) => metalWatcher.observe(node));
+    }
+  }
 })();
