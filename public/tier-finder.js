@@ -340,7 +340,9 @@ if (root) {
     return true;
   }
 
-  startButton.addEventListener("click", openQuiz);
+  root.querySelectorAll("[data-tier-start]").forEach((button) => {
+    button.addEventListener("click", openQuiz);
+  });
   backButton.addEventListener("click", back);
   restartButton.addEventListener("click", restart);
 
