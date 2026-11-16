@@ -5896,15 +5896,49 @@ body.home-premium .plan,
 body.home-premium .growth-showcase,
 body.home-premium .tier-finder-panel,
 body.home-premium .contact-cta-card {
-  border: 2px solid transparent;
+  position: relative;
+  border: 0;
+  background-color: #f0ebe5;
   background-image:
-    linear-gradient(180deg, #ffffff 0%, #f7fafb 100%),
-    linear-gradient(135deg, #8f6840 0%, #c5ced5 28%, #fff6e8 50%, #b48756 72%, #6e533f 100%);
+    radial-gradient(90% 62% at 8% 0%, rgba(255, 252, 248, 0.95), rgba(255, 252, 248, 0) 48%),
+    linear-gradient(180deg, #f7f2ec 0%, #f0ebe5 62%, #e7e0d8 100%);
   background-origin: border-box;
-  background-clip: padding-box, border-box;
-  background-size: 100% 100%, 260% 260%;
-  background-position: 0 0, -30% -30%;
-  animation: metal-rim 6.8s var(--metal-ease) infinite;
+  background-clip: border-box;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 248, 0.95),
+    inset 14px 12px 28px rgba(255, 250, 244, 0.42),
+    inset -10px -12px 20px rgba(166, 132, 86, 0.07),
+    0 0 0 1px #f8edd8,
+    0 0 0 2px #d6b47c,
+    0 0 0 3px #a68455,
+    0 12px 24px rgba(74, 56, 38, 0.12);
+  animation: none;
+}
+
+body.home-premium .example-card::after,
+body.home-premium .plan::after,
+body.home-premium .growth-showcase::after,
+body.home-premium .tier-finder-panel::after,
+body.home-premium .contact-cta-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 2px;
+  background: linear-gradient(135deg, transparent 38%, rgba(255, 252, 245, 0) 46%, rgba(255, 252, 245, 0.9) 50%, rgba(255, 252, 245, 0) 54%, transparent 62%);
+  background-size: 240% 240%;
+  background-position: -40% -40%;
+  pointer-events: none;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  animation: metal-edge 6.8s var(--metal-ease) infinite;
+}
+
+@keyframes metal-edge {
+  0%, 76% { background-position: -40% -40%; }
+  98%, 100% { background-position: 140% 140%; }
 }
 
 body.home-premium .example-card { animation-delay: 0.8s; }
@@ -5914,14 +5948,71 @@ body.home-premium .plan:nth-child(2) { animation-delay: 1.5s; }
 body.home-premium .plan:nth-child(3) { animation-delay: 2.8s; }
 body.home-premium .plan:nth-child(4) { animation-delay: 4.1s; }
 body.home-premium .plan-featured {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 252, 248, 0.95),
+    inset 14px 12px 28px rgba(255, 250, 244, 0.42),
+    0 0 0 1px #f8edd8,
+    0 0 0 2px #e4c98a,
+    0 0 0 3px #d6b47c,
+    0 0 0 4px #8f6840,
+    0 16px 30px rgba(74, 56, 38, 0.14);
+}
+
+body.home-premium .btn-accent,
+body.home-premium .example-actions .btn-accent,
+body.home-premium .tier1-example .btn-accent,
+body.home-premium .tier4-example .btn-accent {
+  border: 1px solid rgba(246, 231, 196, 0.9);
   background-image:
-    linear-gradient(180deg, #ffffff 0%, #f7fafb 100%),
-    linear-gradient(135deg, #6e533f 0%, #d7b48a 36%, #fff6e8 50%, #b48756 68%, #6e533f 100%);
+    linear-gradient(128deg, transparent 38%, rgba(255, 248, 236, 0) 46%, rgba(255, 252, 244, 0.88) 50%, rgba(255, 248, 236, 0) 54%, transparent 62%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.58) 0%, rgba(255, 255, 255, 0.06) 34%, rgba(48, 26, 10, 0.32) 100%),
+    linear-gradient(100deg, #1e3a8a 0%, #1d4ed8 40%, #3b6fd8 50%, #c9a36a 64%, #f6e6c4 78%, #d6b47c 90%, #8d6438 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.75),
+    inset 0 -3px 0 rgba(70, 42, 18, 0.48),
+    0 0 0 1px rgba(214, 180, 124, 0.72),
+    0 8px 16px rgba(30, 64, 175, 0.2),
+    0 14px 24px rgba(120, 78, 32, 0.22);
+}
+
+body.home-premium .lang-switch button.is-active {
+  background-image:
+    linear-gradient(128deg, transparent 42%, rgba(255, 248, 236, 0) 47%, rgba(255, 252, 244, 0.8) 50%, rgba(255, 248, 236, 0) 54%, transparent 60%),
+    linear-gradient(180deg, #f8ead2 0%, #e4c48a 30%, #c4965a 58%, #8f6840 100%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  body.home-premium .example-card:hover,
+  body.home-premium .plan:hover,
+  body.home-premium .growth-showcase:hover,
+  body.home-premium .tier-finder-panel:hover,
+  body.home-premium .contact-cta-card:hover {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 252, 248, 0.95),
+      inset 14px 12px 28px rgba(255, 250, 244, 0.42),
+      0 0 0 1px #f8edd8,
+      0 0 0 2px #e4c98a,
+      0 0 0 3px #a68455,
+      0 18px 32px rgba(74, 56, 38, 0.16);
+  }
+
+  body.home-premium .btn-accent:hover,
+  body.home-premium .example-actions .btn-accent:hover,
+  body.home-premium .tier1-example .btn-accent:hover,
+  body.home-premium .tier4-example .btn-accent:hover {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.82),
+      inset 0 -3px 0 rgba(70, 42, 18, 0.4),
+      0 0 0 1px rgba(246, 230, 196, 0.9),
+      0 12px 22px rgba(30, 64, 175, 0.24),
+      0 18px 30px rgba(120, 78, 32, 0.26);
+  }
 }
 
 body.home-premium .lang-switch.is-metal-paused,
 body.home-premium .lang-switch.is-metal-paused button.is-active,
-body.home-premium .is-metal-paused {
+body.home-premium .is-metal-paused,
+body.home-premium .is-metal-paused::after {
   animation-play-state: paused;
 }
 
@@ -5937,9 +6028,13 @@ body.home-premium .is-metal-paused {
   body.home-premium .plan,
   body.home-premium .growth-showcase,
   body.home-premium .tier-finder-panel,
-  body.home-premium .contact-cta-card {
+  body.home-premium .contact-cta-card,
+  body.home-premium .example-card::after,
+  body.home-premium .plan::after,
+  body.home-premium .growth-showcase::after,
+  body.home-premium .tier-finder-panel::after,
+  body.home-premium .contact-cta-card::after {
     animation: none;
-    background-position: 0 0, -30% -30%;
   }
 
   body.home-premium .copper-words,
