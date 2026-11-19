@@ -118,7 +118,7 @@
         body: JSON.stringify(payload),
       });
       const result = await response.json().catch(() => ({}));
-      if (!response.ok || result.ok === false || result.skipped) {
+      if (!response.ok || result.ok === false) {
         throw new Error(result.error || "We couldn't send your request. Please try again.");
       }
       form.hidden = true;

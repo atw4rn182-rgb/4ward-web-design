@@ -69,20 +69,31 @@ export async function POST(request) {
     });
   }
 
-  after(async () => {
-    try {
-      const result = await deliverConsultationEmail(saved);
-      if (!result.ok && !result.skipped) {
-        const { category, safeMessage } = classifyStaticFormsError(new Error(result.error || "email failed"));
-        console.error(
-          `[consultation] email incomplete id=${saved.id} category=${category} ${safeMessage}`
-        );
+  if (!saved || !saved.id) {
+    console.error("Consultation save returned no record id");
+    return json(503, {
+      error: "We couldn't save your request. Please try again, or text Adam at (970) 560-2575.",
+    });
+  }
+
+  try {
+    after(async () => {
+      try {
+        const result = await deliverConsultationEmail(saved);
+        if (!result.ok && !result.skipped) {
+          const { category, safeMessage } = classifyStaticFormsError(new Error(result.error || "email failed"));
+          console.error(
+            `[consultation] email incomplete id=${saved.id} category=${category} ${safeMessage}`
+          );
+        }
+      } catch (error) {
+        const { category, safeMessage } = classifyStaticFormsError(error);
+        console.error(`[consultation] email failed id=${saved.id} category=${category} ${safeMessage}`);
       }
-    } catch (error) {
-      const { category, safeMessage } = classifyStaticFormsError(error);
-      console.error(`[consultation] email failed id=${saved.id} category=${category} ${safeMessage}`);
-    }
-  });
+    });
+  } catch (error) {
+    console.error("Consultation email schedule failed:", error.message);
+  }
 
   return json(200, { ok: true, id: saved.id });
 }
